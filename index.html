@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blom OS - N.E.X.U.S Space Map</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Döljer scrollbaren */
+        ::-webkit-scrollbar { display: none; }
+        * { scrollbar-width: none; }
+        
+        body { margin: 0; overflow: hidden; background-color: black; }
+
+        .bg-radial-gradient {
+          background-image: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,1) 100%);
+        }
+
+        /* Rymd animationer */
+        @keyframes spaceSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-space-spin {
+            animation: spaceSpin 150s linear infinite;
+        }
+
+        /* Modal animationer */
+        @keyframes modalFadeIn {
+          from { opacity: 0; transform: scale(0.95) translateY(20px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-modal-in {
+            animation: modalFadeIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+
+        /* Data ström animationer (SVG Trådar) */
+        @keyframes flowData {
+          to { stroke-dashoffset: -60; }
+        }
+        .animate-data-flow-amber {
+          stroke-dasharray: 10 40;
+          animation: flowData 1.5s linear infinite;
+          stroke: #f59e0b;
+        }
+        .animate-data-flow-emerald {
+          stroke-dasharray: 10 40;
+          animation: flowData 1.5s linear infinite;
+          stroke: #10b981;
+        }
+    </style>
+</head>
+<body class="h-screen w-full text-white select-none">
+
+    <!-- Sömlös roterande rymdbakgrund -->
+    <div class="fixed inset-0 z-0 pointer-events-none">
+        <div class="w-[300vw] h-[300vh] absolute -top-[100vh] -left-[100vw] opacity-70 animate-space-spin"
+             style="background-image: url('https://i.imgur.com/03qVtdg.jpeg'); background-size: cover; background-position: center;">
+        </div>
+        <div class="absolute inset-0 bg-radial-gradient pointer-events-none"></div>
+    </div>
+
+    <!-- Huvudcontainer för panorering -->
+    <main id="pan-container" class="h-full w-full overflow-auto relative z-10 cursor-grab">
+        <div class="w-[3000px] h-[3000px] relative flex items-center justify-center">
+            
+            <!-- TRÄDET (SVG-Linjer ritas ut här via JS) -->
+            <svg id="svg-layer" class="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-0">
+                <g id="svg-group" transform="translate(1500, 1500)"></g>
+            </svg>
+
+            <!-- Dekorativa cirklar i bakgrunden -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] border border-neutral-800 rounded-full opacity-30 z-0"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border-2 border-dashed rounded-full z-0 border-neutral-800 opacity-20" style="animation: spaceSpin 60s linear infinite;"></div>
+
+            <!-- KNOTERNA (Knappar ritas ut här via JS) -->
+            <div id="nodes-container" class="absolute top-1/2 left-1/2 z-10 w-0 h-0"></div>
+
+        </div>
+    </main>
+
+    <!-- === MODAL FÖNSTER === -->
+    <div id="modal-container" class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 hidden">
+        <!-- Mörk overlay som stänger fönstret vid klick -->
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onclick="closeModal()"></div>
+        
+        <!-- Fri svävande popup-bild -->
+        <div class="relative inline-flex flex-col items-center justify-center max-w-full max-h-[90vh] animate-modal-in">
+            <img id="modal-image" src="" alt="Presentation" referrerpolicy="no-referrer" class="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-[0_0_100px_rgba(0,0,0,0.9)] pointer-events-auto" />
+            <button onclick="closeModal()" class="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-black/50 hover:bg-neutral-800 border border-neutral-700 hover:border-white rounded-full text-neutral-400 hover:text-white transition-all backdrop-blur-xl z-50">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIK -->
+    <script>
+        // --- DATABAS ---
+        const mapNodes = [
+            { id: 'core', type: 'core', category: 'core', x: 0, y: 0, title: 'Jonas Blomquist', buttonImageUrl: 'https://i.imgur.com/e15bk2d.png', modal: { imageUrl: 'https://i.imgur.com/jBnpApX.jpeg' } },
+            { id: 'dna_1', type: 'info', category: 'dna', x: 150, y: -90, title: 'DNA-Arkivarien', buttonImageUrl: 'https://i.imgur.com/PFAdjgu.png', modal: { imageUrl: 'https://i.imgur.com/Ne2QW0P.jpeg' } },
+            { id: 'dna_2', type: 'info', category: 'dna', x: 260, y: 70, title: 'Fragmenteraren', buttonImageUrl: 'https://i.imgur.com/ca2F98e.png', modal: { imageUrl: 'https://i.imgur.com/WbiHLes.png' } },
+            { id: 'dna_3', type: 'info', category: 'dna', x: 370, y: -100, title: 'Analysatorn', buttonImageUrl: 'https://i.imgur.com/aR5GMF8.png', modal: { imageUrl: 'https://i.imgur.com/ChpOXSG.png' } },
+            { id: 'dna_link', type: 'link', category: 'dna', x: 480, y: 50, title: 'Öppna App-Valv', url: 'app-valv.html', buttonImageUrl: 'https://i.imgur.com/6CFcYkI.png' },
+            { id: 'prompt_1', type: 'info', category: 'prompt', x: -150, y: -90, title: 'Prompt Scout Flow', buttonImageUrl: 'https://i.imgur.com/zJhIYWA.png', modal: { imageUrl: 'https://i.imgur.com/oMUYiaZ.png' } },
+            { id: 'prompt_2', type: 'info', category: 'prompt', x: -260, y: 70, title: 'Ad Scout Flow', buttonImageUrl: 'https://i.imgur.com/akeUclH.png', modal: { imageUrl: 'https://i.imgur.com/zf6dqoA.png' } },
+            { id: 'prompt_3', type: 'info', category: 'prompt', x: -370, y: -100, title: 'Prompt Scout Motion', buttonImageUrl: 'https://i.imgur.com/X3hHys6.png', modal: { imageUrl: 'https://i.imgur.com/zf6dqoA.png' } },
+            { id: 'prompt_link', type: 'link', category: 'prompt', x: -480, y: 50, title: 'Öppna Prompt-Valv', url: 'promptvalvet.html', buttonImageUrl: 'https://i.imgur.com/QffWYdp.png' }
+        ];
+
+        const mapEdges = [
+            { from: 'core', to: 'dna_1', branch: 'dna' },
+            { from: 'dna_1', to: 'dna_2', branch: 'dna' },
+            { from: 'dna_2', to: 'dna_3', branch: 'dna' },
+            { from: 'dna_3', to: 'dna_link', branch: 'dna' },
+            { from: 'core', to: 'prompt_1', branch: 'prompt' },
+            { from: 'prompt_1', to: 'prompt_2', branch: 'prompt' },
+            { from: 'prompt_2', to: 'prompt_3', branch: 'prompt' },
+            { from: 'prompt_3', to: 'prompt_link', branch: 'prompt' }
+        ];
+
+        // --- REFERENSER ---
+        const panContainer = document.getElementById('pan-container');
+        const nodesContainer = document.getElementById('nodes-container');
+        const svgGroup = document.getElementById('svg-group');
+        const modalContainer = document.getElementById('modal-container');
+        const modalImage = document.getElementById('modal-image');
+
+        // --- INITIERING OCH CENTRERING ---
+        window.onload = () => {
+            // Skapa linjerna
+            renderEdges();
+            // Skapa noderna
+            renderNodes();
+            // Starta ikoner
+            lucide.createIcons();
+            // Centrera kameran exakt i mitten (1500px - halva skärmen)
+            panContainer.scrollLeft = (panContainer.scrollWidth - panContainer.clientWidth) / 2;
+            panContainer.scrollTop = (panContainer.scrollHeight - panContainer.clientHeight) / 2;
+        };
+
+        // --- RITA TRÅDARNA (SVG) ---
+        function renderEdges() {
+            const xmlns = "http://www.w3.org/2000/svg";
+            mapEdges.forEach(edge => {
+                const fromNode = mapNodes.find(n => n.id === edge.from);
+                const toNode = mapNodes.find(n => n.id === edge.to);
+                if (!fromNode || !toNode) return;
+
+                const midX = (fromNode.x + toNode.x) / 2;
+                const pathData = `M ${fromNode.x} ${fromNode.y} C ${midX} ${fromNode.y}, ${midX} ${toNode.y}, ${toNode.x} ${toNode.y}`;
+
+                const g = document.createElementNS(xmlns, "g");
+
+                // Bas-linje (mörk)
+                const basePath = document.createElementNS(xmlns, "path");
+                basePath.setAttribute("d", pathData);
+                basePath.setAttribute("fill", "none");
+                basePath.setAttribute("stroke", "#1a1a1a");
+                basePath.setAttribute("stroke-width", "4");
+
+                // Pulserande linje
+                const pulsePath = document.createElementNS(xmlns, "path");
+                pulsePath.setAttribute("d", pathData);
+                pulsePath.setAttribute("fill", "none");
+                pulsePath.setAttribute("stroke-width", "2");
+                const pulseClass = edge.branch === 'dna' ? 'animate-data-flow-amber opacity-80' : 'animate-data-flow-emerald opacity-80';
+                pulsePath.setAttribute("class", pulseClass);
+
+                g.appendChild(basePath);
+                g.appendChild(pulsePath);
+                svgGroup.appendChild(g);
+            });
+        }
+
+        // --- RITA NODERNA ---
+        function renderNodes() {
+            mapNodes.forEach(node => {
+                const btn = document.createElement('button');
+                const sizeClass = node.type === 'core' ? 'w-40 h-40 z-30' : 'w-40 h-16 z-20';
+                btn.className = `absolute transition-all duration-500 hover:scale-110 flex items-center justify-center group outline-none ${sizeClass}`;
+                btn.style.left = `calc(50% + ${node.x}px)`;
+                btn.style.top = `calc(50% + ${node.y}px)`;
+                btn.style.transform = 'translate(-50%, -50%)';
+                btn.title = node.title;
+
+                // Stoppa drag and drop över knappen
+                btn.addEventListener('mousedown', (e) => e.stopPropagation());
+
+                // Klick logik
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (isDragging) return;
+                    if (node.url) {
+                        window.location.href = node.url;
+                    } else if (node.modal) {
+                        openModal(node.modal.imageUrl);
+                    }
+                });
+
+                let innerHTML = '';
+
+                // Pulserande glöd bakom bilden
+                if (node.type !== 'core') {
+                    const pulseColor = node.category === 'dna' ? 'bg-amber-500 animate-[pulse_4s_ease-in-out_infinite]' : 'bg-emerald-500 animate-[pulse_3s_ease-in-out_infinite]';
+                    innerHTML += `<div class="absolute inset-2 blur-xl opacity-40 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none rounded-full ${pulseColor}"></div>`;
+                } else {
+                    innerHTML += `<div class="absolute inset-0 bg-[#e58e26] rounded-full blur-2xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 animate-[pulse_4s_ease-in-out_infinite] pointer-events-none"></div>`;
+                }
+
+                // Själva knappen / Bilden
+                const coreShadow = node.type === 'core' ? 'drop-shadow-[0_0_25px_rgba(229,142,38,0.3)] group-hover:drop-shadow-[0_0_35px_rgba(229,142,38,0.6)]' : '';
+                innerHTML += `
+                    <img 
+                        src="${node.buttonImageUrl}" 
+                        alt="${node.title}" 
+                        referrerpolicy="no-referrer"
+                        draggable="false"
+                        class="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] transition-transform duration-500 group-hover:rotate-2 relative z-10 ${coreShadow}" 
+                    />
+                `;
+
+                btn.innerHTML = innerHTML;
+                nodesContainer.appendChild(btn);
+            });
+        }
+
+        // --- PANORERINGS LOGIK ---
+        let isDragging = false;
+        let dragStartX, dragStartY, scrollStartX, scrollStartY;
+
+        panContainer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            panContainer.classList.remove('cursor-grab');
+            panContainer.classList.add('cursor-grabbing');
+            dragStartX = e.pageX - panContainer.offsetLeft;
+            dragStartY = e.pageY - panContainer.offsetTop;
+            scrollStartX = panContainer.scrollLeft;
+            scrollStartY = panContainer.scrollTop;
+        });
+
+        panContainer.addEventListener('mouseleave', () => {
+            if(!isDragging) return;
+            isDragging = false;
+            panContainer.classList.remove('cursor-grabbing');
+            panContainer.classList.add('cursor-grab');
+        });
+
+        panContainer.addEventListener('mouseup', () => {
+            isDragging = false;
+            panContainer.classList.remove('cursor-grabbing');
+            panContainer.classList.add('cursor-grab');
+        });
+
+        panContainer.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.pageX - panContainer.offsetLeft;
+            const y = e.pageY - panContainer.offsetTop;
+            const walkX = (x - dragStartX) * 1.5; // Känslighet i draget
+            const walkY = (y - dragStartY) * 1.5;
+            panContainer.scrollLeft = scrollStartX - walkX;
+            panContainer.scrollTop = scrollStartY - walkY;
+        });
+
+        // --- MODAL LOGIK ---
+        function openModal(imgUrl) {
+            modalImage.src = imgUrl;
+            modalContainer.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            modalContainer.classList.add('hidden');
+            // Töm src så att den inte flimrar nästa gång man öppnar en ny
+            setTimeout(() => { modalImage.src = ''; }, 300);
+        }
+
+    </script>
+</body>
+</html>
