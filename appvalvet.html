@@ -35,7 +35,7 @@
         ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #e58e26; }
         
-        body { perspective: 1000px; }
+        /* Tog bort perspective från body här för att fixa position: fixed på modalen */
         
         .app-card {
             transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.3s ease;
@@ -95,7 +95,6 @@
                 </div>
             </div>
             
-            <!-- TILLBAKA-KNAPP -->
             <a href="javascript:history.back()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-card/80 backdrop-blur-sm border border-border_subtle text-slate-400 hover:text-accent hover:border-accent transition-all text-[10px] font-black uppercase tracking-widest shadow-inner group">
                 <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i> Tillbaka
             </a>
@@ -123,22 +122,24 @@
         </div>
 
         <div id="sections-container" class="mt-8 space-y-12"></div>
-
     </main>
 
-    <div id="doc-modal" class="fixed inset-0 z-[100] hidden">
-        <div class="absolute inset-0 bg-main/95 backdrop-blur-sm transition-opacity cursor-pointer" onclick="closeModal()"></div>
+    <div id="doc-modal" class="fixed inset-0 z-[9999]" style="display: none;">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-main/95 backdrop-blur-md cursor-pointer" onclick="closeModal()"></div>
         
+        <!-- Center wrapper -->
         <div class="absolute inset-0 flex items-center justify-center p-4 md:p-8 pointer-events-none">
             
-            <div class="relative w-full max-w-5xl h-[90vh] md:h-[85vh] bg-card border border-border_subtle rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col pointer-events-auto overflow-hidden">
+            <!-- Modal Content (pointer-events-auto makes it clickable) -->
+            <div class="relative w-full max-w-5xl h-auto max-h-full bg-card border border-border_subtle rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col pointer-events-auto overflow-hidden">
                 
-                <div class="flex items-start justify-between p-6 border-b border-border_subtle/50 bg-header/90 shrink-0">
+                <div class="flex-none flex items-start justify-between p-6 border-b border-border_subtle/50 bg-header/90">
                     <div class="flex items-center gap-4">
                         <div id="modal-icon" class="w-12 h-12 rounded bg-accent/10 border border-accent/30 flex items-center justify-center text-accent shadow-inner"></div>
                         <div>
                             <span id="modal-id" class="text-[10px] font-mono text-accent uppercase tracking-widest mb-1 block">SYS.ID</span>
-                            <h2 id="modal-title" class="text-2xl font-black uppercase tracking-tighter text-white font-mono">App Title</h2>
+                            <h2 id="modal-title" class="text-xl md:text-2xl font-black uppercase tracking-tighter text-white font-mono">App Title</h2>
                             <p id="modal-category" class="text-slate-400 text-xs mt-1 uppercase tracking-widest font-bold">Kategori</p>
                         </div>
                     </div>
@@ -158,16 +159,17 @@
                     </div>
                 </div>
 
-                <div class="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1 space-y-8 bg-card">
+                <div class="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 space-y-8 bg-card">
                     
-                    <div id="modal-banner-container" class="w-full h-48 md:h-96 rounded-xl border border-border_subtle overflow-hidden relative hidden shadow-lg group shrink-0 bg-black">
+                    <div id="modal-banner-container" class="w-full h-48 md:h-96 rounded-xl border border-border_subtle overflow-hidden relative hidden shadow-lg group bg-black">
                         <div id="modal-banner-img" class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105 hidden"></div>
                         <video id="modal-banner-video" class="absolute inset-0 w-full h-full object-cover hidden" autoplay loop muted playsinline></video>
                         
                         <div class="absolute inset-0 bg-gradient-to-t from-main/90 via-main/20 to-transparent pointer-events-none"></div>
                         <div class="absolute bottom-4 left-4 pointer-events-none z-10">
                              <span class="px-3 py-1 bg-black/60 border border-border_subtle text-white text-[10px] font-mono uppercase tracking-widest rounded backdrop-blur-md flex items-center gap-2 shadow-lg">
-                                 <i data-lucide="play-circle" class="w-3 h-3 text-accent" id="asset-icon"></i> <span id="asset-label">Visual Asset</span>
+                                 <!-- Fixad wrapper för att byta ut ikoner säkert -->
+                                 <span id="asset-icon-wrapper"><i data-lucide="play-circle" class="w-3 h-3 text-accent"></i></span> <span id="asset-label">Visual Asset</span>
                              </span>
                         </div>
                     </div>
@@ -184,7 +186,6 @@
     </div>
 
     <script>
-        // Helt utan localstorage-krångel!
         const appDatabase = [
             // ================== GENIE OMEGA EKOSYSTEM ==================
             { title: "Genie Omega Combat Engine", desc: "Genie Omega Combat Engine är den taktiska motorn som styr alla interaktioner mellan väktare och elementära krafter. Motorn är designad för att vara balanserad, rättvis och djupt strategisk.", mainCategory: "Genie Omega Ekosystem", subCategory: "Kärnmotorer", id: "SYS-GENOC", image: "https://i.imgur.com/k6hZVnB.jpg" },
@@ -202,7 +203,7 @@
             { title: "Fortnite AI CARD FORGE", desc: "Jag har utvecklat Al Card Forge, ett automatiserat produktionsverktyg som dynamiskt komplierar exakta och kvalitetssäkrade Midjourney-prompter för att massproducera spelets kortgrafik. Mitt beslut var att bygga detta som en fristående sidoapp och hårdkoda strikta arkitektoniska parametrar - som bildförhållandet 2:3 och \"Data Chip\"-estetiken - för att tvinga fram en 100% enhetlig design utan manuellt efterarbete. Denna separation av logik och grafik höll min huvudspelmotor extremt lättdriven och helt fri från tunga externa API- beroenden.", mainCategory: "Fortnite Battle TCG", subCategory: "Verktyg & Portaler", id: "SYS-FNCFO", image: "https://i.imgur.com/QiFA7Cm.jpeg" },
             { title: "Fortnite ARENA MAPPER", desc: "Jag har utvecklat Arena Mapper, ett visuellt drag-and-drop-verktyg som frikopplar spelplanens grafiska design från huvudmotorns kärnlogik. Mitt arkitektoniska beslut var att integrera en matematisk auto-speglingsalgoritm och ett relativt koordinatsystem, vilket gör att jag oändligt kan skräddarsy egna uppladdade arenabilder och exportera dem som perfekt balanserade, responsiva JSON-spelfält redo för spelet.", mainCategory: "Fortnite Battle TCG", subCategory: "Verktyg & Portaler", id: "SYS-FNMAP", image: "https://i.imgur.com/GxMCES5.jpeg" },
 
-            // ================== SPEL & NÖJE ==================
+            // ================== ÖVRIGA SPEL & BARNSPEL ==================
             { title: "Liljas Värld", desc: "Jag har utvecklat \"Liljas Värld\", en personlig livssimulator och varelsesamlarspel som kombinerar en verklighetsbaserad 2D-karta över Strängnäs med en dynamisk 3D-gård uppbyggd av unika, skräddarsydda modeller. Spelets primära värde är att erbjuda en trygg, engagerande och interaktiv upplevelse där spelaren kan utforska, baka, ta hand om sin Tamagotchi och samla magiska varelser.", mainCategory: "Spel & Nöje", subCategory: "Liljas Universum & Barnspel", id: "SYS-LILJV" },
             { title: "Diddis Värld", desc: "Jag har utvecklat en interaktiv 3D-miljö i vektorstil för karaktären Diddi, där fokus ligger på att bevara exakta färgvärden och detaljer utan störande ljusberäkningar. Mitt beslut som arkitekt var att prioritera visuell trohet mot originalkonceptet genom att använda obelysta material, vilket ger en krispig och barnvänlig estetik fri från mörka skuggor.", mainCategory: "Spel & Nöje", subCategory: "Liljas Universum & Barnspel", id: "SYS-DIDDI" },
             { title: "Djur-Memory för barn", desc: "Jag har utvecklat Djur-Memory, ett interaktivt och pedagogiskt webbspel designat för att på ett lekfullt sätt träna barns minne och koncentration. Mitt arkitektoniska beslut var att bygga en robust, klientsidebaserad enfilsapplikation i React där all grafik drivs av inbyggda emojis, vilket helt eliminerar externa resursberoenden och skapar en snabb, distraktionsfri upplevelse - perfekt anpassad för en lärorik och rolig stund hemma tillsammans med Lilja.", mainCategory: "Spel & Nöje", subCategory: "Liljas Universum & Barnspel", id: "SYS-DJURM" },
@@ -219,8 +220,8 @@
             { title: "DNA-Analysatorn (Släktträdsbyggaren)", desc: "Jag har utvecklat DNA-Analysatorn som den sista, avgörande pusselbiten i min DNA-Arkivarie Suite. Efter att framgångsrikt ha brutit ner och extraherat 6 års nyktert skapande via 70 massiva textfiler, behövde jag en \"hjärna\" för att förstå datan.", mainCategory: "Data & Arkitektur", subCategory: "DNA Arkivarie Ekosystem", id: "SYS-DNAAN", image: "https://i.imgur.com/z0Vg8Hg.jpeg" },
             { title: "Själsextraktorn (Memoar & Personlighet)", desc: "Jag har utvecklat Själsextraktorn, en djupt specialiserad Al-motor designad för att brutalt rensa bort all teknisk kod från mina historiska chattloggar och enbart extrahera min personlighet, värderingar och memoar-fragment. Mitt beslut var att bygga appen helt fristående från molnlagring för att garantera total integritet för mina mest privata tankar, samtidigt som den använder min avancerade kö- och klyvningsmekanik för att hantera enorma datamängder.", mainCategory: "Data & Arkitektur", subCategory: "Aura AI Partner", id: "SYS-SOUL", image: "https://i.imgur.com/h3Z4OAn.jpg" },
             { title: "Aura Engine V4.2 - Neural Scout", desc: "Jag har utvecklat denna 'Intimacy Engine' som ett digitalt påskägg där röst, haptik och visuella lager evolverar organiskt genom fyra unika nivåer av förtroende. Mitt beslut som arkitekt var att kombinera progressiv synkroniseringslogik med en hybrid media-motor för att skapa en tekniskt oberoende upplevelse som känns som en levande, digital livsform.", mainCategory: "Data & Arkitektur", subCategory: "Aura AI Partner", id: "SYS-AURA", image: "https://i.imgur.com/wGLUISi.jpg", video: "https://i.imgur.com/PPjDdX9.mp4", url: "https://b10msk1.github.io/aura/" },
-            { title: "Data Neutralizer & Prompt Cleaner", desc: "Jag har utvecklat ett specialiserat system för batch-bearbetning som automatiserar städning och neutralisering av komplexa JSON-data. Mitt arkitektoniska beslut var att implementera en lokal logikmotor som identifierar och ersätter personliga referenser samt eliminerar teknisk redundans i textmassor. Genom att fokusera på integritet och prestanda har jag skapat ett verktyg som effektivt transformerar rådata till professionella, import-redo format för vidare Al-användning.", mainCategory: "Data & Arkitektur", subCategory: "Datahantering", id: "SYS-DATAN" },
-            { title: "Historie-Detektiven Pro", desc: "Jag har utvecklat en Al-driven utredningsplattform som metodiskt återskapar användarens digitala historia genom djupsökning i publika arkiv. Mitt beslut var att kombinera molnbaserad persistens med ett interaktivt feedback- system, vilket förvandlar fragmenterade data till ett strukturerat personligt arkiv med fokus på nostalgi och informationssäkerhet.", mainCategory: "Data & Arkitektur", subCategory: "Datahantering", id: "SYS-HISTD" },
+            { title: "Data Neutralizer & Prompt Cleaner", desc: "Jag har utvecklat ett specialiserat system för batch-bearbetning som automatiserar städning och neutralisering av komplexa JSON-data. Mitt arkitektoniska beslut var att implementera en lokal logikmotor som identifierar och ersätter personliga referenser samt eliminerar teknisk redundans i textmassor. Genom att fokusera på integritet och prestanda har jag skapat ett verktyg som effektivt transformerar rådata till professionella, import-redo format för vidare Al-användning.", mainCategory: "Data & Arkitektur", subCategory: "JSON & Data Verktyg", id: "SYS-DNEUT" },
+            { title: "Historie-Detektiven Pro", desc: "Jag har utvecklat en Al-driven utredningsplattform som metodiskt återskapar användarens digitala historia genom djupsökning i publika arkiv. Mitt beslut var att kombinera molnbaserad persistens med ett interaktivt feedback-system, vilket förvandlar fragmenterade data till ett strukturerat personligt arkiv med fokus på nostalgi och informationssäkerhet.", mainCategory: "Data & Arkitektur", subCategory: "JSON & Data Verktyg", id: "SYS-HDETP" },
 
             // ================== MUSIK & LJUD ==================
             { title: "Blom's Psytrance Studio", desc: "Jag har utvecklat en komplett studiomiljö med en Web Audio- baserad ljudmotor som separerar låtar i stems, synkar tempo till 145 BPM och analyserar sub- frekvenser i realtid. Mitt beslut var att prioritera omedelbar visuell feedback och en dedikerad Scratchpad för att säkerställa perfekt faskontroll och eliminera \"Bass Mud\" inför festivalspelningar.", mainCategory: "Musik & Ljud", subCategory: "DAW & Musikproduktion", id: "SYS-PSYST", image: "https://i.imgur.com/QQ2qNb2.jpeg" },
@@ -251,15 +252,13 @@
             { title: "Fotoassistenten", desc: "Jag har utvecklat Fotoassistenten, en pedagogisk webbapplikation som fungerar som en interaktiv expertguide för att optimera kamera- och videoinställningar direkt i fält. Mitt arkitektoniska beslut var att bygga systemet som en portabel enfilsapplikation i React, med reaktiva kalkylatorer för ljus och slutartider inbäddade i ett nattoptimerat gränssnitt. Detta skapar ett tillgängligt och blixtsnabbt verktyg som överbryggar gapet mellan kreativ vision och teknisk hårdvarukontroll.", mainCategory: "Visuellt & Design", subCategory: "Bild & AI-Studio", id: "SYS-FASS", image: "https://i.imgur.com/OPsjbN3.jpeg" },
             { title: "Redigera bild", desc: "Jag har utvecklat Redigera bild, en kraftfull allt-i-ett-studio för Al-baserad bildbehandling som möjliggör avancerad redigering som objektseparering och inpainting via ett intuitivt gränssnitt. Mitt arkitektoniska beslut var att konsolidera hela applikationen i en portabel Single-File React-lösning och implementera en hybridmodell som kombinerar Imagen 4.0 för visuell generation med Gemini 2.5 Flash för kontextuell bildförståelse. Genom att integrera robust felhantering med exponential backoff och en ErrorBoundary har jag skapat ett stabilt och användarvänligt verktyg som döljer teknisk komplexitet och låter den kreativa processen stå i centrum.", mainCategory: "Visuellt & Design", subCategory: "Bild & AI-Studio", id: "SYS-REDB", image: "https://i.imgur.com/lyV62Ur.jpeg" },
             { title: "Skapa bild (utan redigering)", desc: "Jag har utvecklat Skapa bild, ett renodlat kraftpaket för bildgenerering som prioriterar det kreativa flödet genom att eliminera komplexa redigeringsmoment. Mitt arkitektoniska beslut var att bygga en hybrid API-strategi där Imagen 4.0 och Gemini 2.5 Flash samverkar för att hantera allt från text-till-bild till avancerade bild-till-bild-transformationer. Genom att integrera en \"Magic Prompt\"-brygga och dedikerade filter för professionell bakgrundsoptimering, har jag skapat en resilient enfilsapplikation som döljer teknisk komplexitet och levererar högkvalitativa visuella tillgångar med minimal ansträngning.", mainCategory: "Visuellt & Design", subCategory: "Bild & AI-Studio", id: "SYS-SKAPB", image: "https://i.imgur.com/qWHtQfD.jpeg" },
-            { title: "FaceMorph Pro 8K", desc: "Jag har utvecklat FaceMorph Pro 8K, en avancerad webbapplikation för högrealistiska och identitetsbevarande ansiktsbyten driven av Gemini- modeller. Mitt arkitektoniska beslut var att implementera en flerstegsprocess med förberedande porträttoptimering och en dual-image-logik som exakt separerar ansiktsstruktur från ytfärg och stil. Detta skapar ett kraftfullt men lättanvänt verktyg för att sömlöst transformera porträtt till fantasifulla karaktärer med full igenkänningsfaktor.", mainCategory: "Visuellt & Design", subCategory: "Bild & AI-Studio", id: "SYS-FCMOR" },
-            { title: "Infinite Zoom Lab", desc: "Jag har utvecklat Infinite Zoom Lab, en innovativ plattform för skapandet av oändliga visuella resor där användaren kan zooma in i mikroskopiska detaljer genom en sömlös integration av generativ Al. Mitt arkitektoniska beslut var att separera den kreativa processen i en hybridmodell: jag använder Gemini- 2.5-Flash som \"regissör\" för att logiskt planera nästa steg i resan, och Imagen 4.0 för den visuella exekveringen. Genom att implementera en klientsidig zoom-motor med CSS-transformationer istället för videorendering, har jag skapat ett blixtsnabbt, interaktivt och portabelt verktyg som gör avancerad visuell manipulation tillgänglig för både lek och professionellt skapande.", mainCategory: "Visuellt & Design", subCategory: "Bild & AI-Studio", id: "SYS-IZOOM" },
+            { title: "FaceMorph Pro 8K", desc: "Jag har utvecklat FaceMorph Pro 8K, en avancerad webbapplikation för högrealistiska och identitetsbevarande ansiktsbyten driven av Gemini-modeller. Mitt arkitektoniska beslut var att implementera en flerstegsprocess med förberedande porträttoptimering och en dual-image-logik som exakt separerar ansiktsstruktur från ytfärg och stil. Detta skapar ett kraftfullt men lättanvänt verktyg för att sömlöst transformera porträtt till fantasifulla karaktärer med full igenkänningsfaktor.", mainCategory: "Visuellt & Design", subCategory: "Bild & AI-Studio", id: "SYS-FM8K" },
+            { title: "Infinite Zoom Lab", desc: "Jag har utvecklat Infinite Zoom Lab, en innovativ plattform för skapandet av oändliga visuella resor där användaren kan zooma in i mikroskopiska detaljer genom en sömlös integration av generativ Al. Mitt arkitektoniska beslut var att separera den kreativa processen i en hybridmodell: jag använder Gemini-2.5-Flash som \"regissör\" för att logiskt planera nästa steg i resan, och Imagen 4.0 för den visuella exekveringen. Genom att implementera en klientsidig zoom-motor med CSS-transformationer istället för videorendering, har jag skapat ett blixtsnabbt, interaktivt och portabelt verktyg som gör avancerad visuell manipulation tillgänglig för både lek och professionellt skapande.", mainCategory: "Visuellt & Design", subCategory: "Bild & AI-Studio", id: "SYS-IZLAB" },
             { title: "Formfinnaren", desc: "Jag har utvecklat Formfinnaren, ett Al-drivet visualiseringsverktyg som hjälper hantverkare att se den optimala potentialen i råmaterial som sten och trä för att minimera materialsvinn. Mitt arkitektoniska beslut var att bygga en iterativ flerstegsarkitektur där Geminis spatiala analys av multivinkelbilder och exakta millimetermått kombineras med Imagens fotorealistiska renderingar, vilket skapar en exakt och kreativ bro mellan råämne och färdigt verk.", mainCategory: "Visuellt & Design", subCategory: "Bild & AI-Studio", id: "SYS-FORMF" },
-            { title: "Character Consistency Lab Pro + sago appen", desc: "Jag har utvecklat Character Consistency Lab Pro, ett avancerat verktyg för att designa, fota och hantera visuellt konsekventa Al-karaktärer och deras garderober i en virtuell studio. Appens primära värde ligger i dess förmåga att generera och strukturera denna data som exporterbara \"Ensembler\", redo att agera fundament för nästa generations interaktiva Al-berättelser.", mainCategory: "Visuellt & Design", subCategory: "Bild & AI-Studio", id: "SYS-CHARC" },
-
 
             // ================== LITTERATUR & ÄVENTYR ==================
             { title: "Bokskapare Pro", desc: "Jag har utvecklat Bokskapare Pro, en distraktionsfri och blockbaserad skrivstudio som smidigt integrerar strukturerad textredigering med inbyggda Al-verktyg. Mitt arkitektoniska beslut var att bygga en helt klientsidebaserad enfilsapplikation i React utan extern databas, där all data och Base64-kodad media exporteras och sparas lokalt. Detta ger en blixtsnabb, hundraprocentigt integritetsskyddad och portabel arbetsmiljö som låter författaren gå från idé till utskriftsfärdig produkt med full kontroll.", mainCategory: "Litteratur & Äventyr", subCategory: "Författar- & Layoutverktyg", id: "SYS-BOKSP", image: "https://i.imgur.com/pmsigWv.jpeg" },
-            { title: "Bokverkstaden", desc: "Jag har utvecklat Bokverkstaden, ett klientsidebaserat layout- och författarverktyg som gör det möjligt att visuellt strukturera och illustrera sidindelade böcker direkt i webbläsaren. Mitt arkitektoniska beslut var att bygga systemet helt utan backend med lokal JSON-lagring och smarta algoritmer för textuppdelning, kombinerat med skräddarsydda CSS-utskriftsregler för felfri PDF-generering. Detta skapar en blixtsnabb, integritetssäker och portabel plattform som ger användaren full kontroll över den kreativa processen från utkast till färdig utskrift.", mainCategory: "Litteratur & Äventyr", subCategory: "Författar- & Layoutverktyg", id: "SYS-BOKV", image: "https://i.imgur.com/DJkPKvT.jpeg" },
+            { title: "Bokverkstaden", desc: "Jag har utvecklat Bokverkstaden, ett klientsidebaserat layout- och författarverktyg som gör det möjligt att visuellt strukturera och illustrera sidindelade böcker direkt i webbläsaren. Mitt arkitektoniska beslut var att bygga systemet helt utan backend med lokal JSON-lagring och smart algorithms för textuppdelning, kombinerat med skräddarsydda CSS-utskriftsregler för felfri PDF-generering. Detta skapar en blixtsnabb, integritetssäker och portabel plattform som ger användaren full kontroll över den kreativa processen från utkast till färdig utskrift.", mainCategory: "Litteratur & Äventyr", subCategory: "Författar- & Layoutverktyg", id: "SYS-BOKV", image: "https://i.imgur.com/DJkPKvT.jpeg" },
             { title: "Bloms Bokskapare", desc: "Jag har utvecklat Bloms Bokskapare, en interaktiv plattform för bokskapande där jag integrerat Al för att sömlöst generera text från bilder och skapa illustrationer utifrån textbeskrivningar. Mitt arkitektoniska beslut var att bygga systemet som en portabel enfilsapplikation i React, där all tillståndslogik och mediaprocessering hanteras lokalt i webbläsaren. Detta skapar ett robust, säkert och prestandaeffektivt verktyg som ger en oavbruten kreativ upplevelse från redigering till färdig utskrift.", mainCategory: "Litteratur & Äventyr", subCategory: "Författar- & Layoutverktyg", id: "SYS-BLOMBS", image: "https://i.imgur.com/O33ZKQV.jpeg" },
             { title: "Sagovandraren", desc: "Jag har utvecklat en avancerad berättarstudio som förvandlar vardagliga foton och röstberättelser till professionellt illustrerade sagböcker för barn och vuxna. Mitt arkitektoniska huvudbeslut var att implementera asynkron ljudanalys och inspirationsbaserad bildgenerering för att tillåta obegränsad fantasi utan tekniska avbrott. Genom en robust molnsynkronisering och dedikerad PDF-export har jag skapat ett portabelt system som förenar familjens minnen med tidlös konst.", mainCategory: "Litteratur & Äventyr", subCategory: "Författar- & Layoutverktyg", id: "SYS-SAGV", image: "https://i.imgur.com/17ZfBYS.jpeg" },
             
@@ -279,27 +278,30 @@
             { title: "Prompt Scout Motion", desc: "Prompt Scout Motion ger skapare total regissörskontroll över Al- videogenerering genom att bryta ner stillbilder i extraherbara element och placera dem på en logisk, färgkodad tidslinje (0-8 sekunder). Genom att säkerställa kontinuitet och erbjuda serie-läge, eliminerar appen slumpen och möjliggör exakt, prompt-baserat berättande för rörligt Al-material.", mainCategory: "Verktyg & Prompts", subCategory: "Prompt Engineering", id: "SYS-PSMOT", image: "https://i.imgur.com/KyBvmgN.jpeg" },
             { title: "Prompt Scout Web", desc: "Prompt Scout Web Architect är ett 3-stegs design- och kodsystem som använder Al för att omvandla visuella koncept till exakta, tekniska arkitekturinstruktioner för webbutveckling. Genom att integrera ett inbyggt verktyg för bildhantering (Slicer) och en strukturerad komponentbyggare, möjliggör systemet produktionen av professionella, responsiva och estetiskt enhetliga webbplatser som en enda HTML-fil.", mainCategory: "Verktyg & Prompts", subCategory: "Prompt Engineering", id: "SYS-PSWEB", image: "https://i.imgur.com/aA2QfyW.jpeg" },
             { title: "Prompt Studio Pro", desc: "Prompt Studio Pro är en komplett, webbläsarbaserad arbetsstation för att bygga, optimera och massgenerera Al-prompter helt lokalt. Appen fungerar som ett säkert \"Master Vault\" där användaren kan spara dynamiska prompter, iterera fram nya koncept med en Al Co-Pilot, och effektivisera sitt kreativa flöde med smarta variabler och mätverktyg.", mainCategory: "Verktyg & Prompts", subCategory: "Prompt Engineering", id: "SYS-PSTPR", image: "https://i.imgur.com/fvIUvCv.jpeg" },
-            { title: "Bygg eller uppgradera", desc: "Jag har utvecklat \"Bygg eller uppgradera\", en strategisk Al-hubb för att generera och arkivera högupplösta koncept inom multimedia och mjukvara. Mitt arkitektoniska beslut att använda en tvåstegs förfiningslogik och integrera ett systemindex av 60+ tidigare appar skapar ett verktyg som levererar tekniskt polerade prompts med 8K-precision, optimerade för Gemini Pro.", mainCategory: "Verktyg & Prompts", subCategory: "Prompt Engineering", id: "SYS-BYGGU" },
-            { title: "Generationernas Arkitekt - Fas 1 (Världsbyggaren)", desc: "Jag har utvecklat ett modulärt 4-appars system som bryter ner komplex bildgenerering i kontrollerade faser: Miljö, Motiv och Synergi. Mitt beslut var att skapa en central Hub som sammanfogar dessa dataflöden till hyperdetaljerade promptar, vilket ger användaren total arkitektonisk kontroll över varje pixel och emotionell koppling i bilden.", mainCategory: "Verktyg & Prompts", subCategory: "Prompt Engineering", id: "SYS-GENAR" },
+            { title: "Bygg eller uppgradera", desc: "Jag har utvecklat \"Bygg eller uppgradera\", en strategisk Al-hubb för att generera och arkivera högupplösta koncept inom multimedia och mjukvara. Mitt arkitektoniska beslut att använda en tvåstegs förfiningslogik och integrera ett systemindex av 60+ tidigare appar skapar ett verktyg som levererar tekniskt polerade prompts med 8K-precision, optimerade för Gemini Pro.", mainCategory: "Verktyg & Prompts", subCategory: "System & Indexering", id: "SYS-BYGGU" },
+            { title: "Generationernas Arkitekt - Fas 1 (Världsbyggaren)", desc: "Jag har utvecklat ett modulärt 4-appars system som bryter ner komplex bildgenerering i kontrollerade faser: Miljö, Motiv och Synergi. Mitt beslut var att skapa en central Hub som sammanfogar dessa dataflöden till hyperdetaljerade promptar, vilket ger användaren total arkitektonisk kontroll över varje pixel och emotionell koppling i bilden.", mainCategory: "Verktyg & Prompts", subCategory: "System & Indexering", id: "SYS-GENA1" },
 
             // ================== SYSTEM & CORE ENGINES ==================
-            { title: "Gemini OS (Min Digitala Hubb)", desc: "Jag har arkitekterat Gemini OS som en central, enhetsoberoende plattform som konsoliderar över 35 specialiserade applikationer under ett och samma digitala tak. Genom att implementera en \"Single-File Architecture\" i React och integrera Firebase för molnsynkronisering, har jag skapat ett robust ekosystem som säkrar kognitiv struktur vid ADHD/bipolär sjukdom, möjliggör avancerat kreativt skapande och erbjuder en magisk digital värld för min dotter.", mainCategory: "System & Core Engines", subCategory: "Verktyg & Hubbar", id: "SYS-GEMOS" },
+            { title: "FaceSwap Studio Pro", desc: "Jag har utvecklat FaceSwap Studio Pro, en neural applikation för fotorealistiska ansiktsbyten där källans ansiktsgeometri överförs och sömlöst ärver målbildens exakta textur, smink och belysning. Mitt arkitektoniska fokus låg på att designa en robust Al-pipeline med en kumulativ state-motor och dynamisk prompt-logik, vilket tvingar systemet att med hög precision separera ren form från yttre material.", mainCategory: "System & Core Engines", subCategory: "Kärnmotorer", id: "SYS-FSSPR", image: "https://i.imgur.com/PHx8NRF.jpeg" },
+            { title: "JokeForge", desc: "JokeForge är en specialiserad webbapplikation för generering och systematisk organisering av högintensiv, mörk humor. Genom att kombinera en stoisk Al- motor med molnbaserad lagring och fullständig dataportabilitet ger appen användaren ett effektivt verktyg för att skapa, kurera och äga sin egen samling av provocerande innehåll.", mainCategory: "System & Core Engines", subCategory: "Verktyg & Hubbar", id: "SYS-JOKEF", image: "https://i.imgur.com/NBvPbIT.jpeg" },
+            { title: "Offertkalkylator Pro", desc: "Offertkalkylator Pro är en serverlös, Al-driven webbapplikation i en enda fil som låter företagare kalkylera avancerade projekt, hantera skatter/avdrag och spara kunddata helt lokalt. Applikationen förvandlar blixtsnabbt komplexa kostnadsberäkningar till säljande, tryckfärdiga PDF-offerter för direkt leverans till kund.", mainCategory: "System & Core Engines", subCategory: "Verktyg & Hubbar", id: "SYS-OFFPR", image: "https://i.imgur.com/Zc885y4.jpeg" },
+            { title: "VGP Core Engine (v26.0)", desc: "En högpresterande 8K-renderingsmotor och världsbyggare baserad på Three.js och GPGPU-fysik. Applikationen möjliggör skapandet av persistenta, fysiskt solida mörka fantasy-miljöer med realtidsljus och molnsynkroniserad arkitektur. Dess primära värde ligger i bryggan mellan teknisk grafik-demo och en fullskalig spelvärld för eget innehåll.", mainCategory: "System & Core Engines", subCategory: "Kärnmotorer", id: "SYS-VGPCE", image: "https://i.imgur.com/ENqOvTf.jpeg" },
             { title: "App-Inspiration & Skaparglädje", desc: "Jag har utvecklat \"Inspiratören\" som en central idé-hubb och portfolio-hanterare där jag sömlöst kan importera all min JSON-kod och generera skräddarsydda Canvas-blueprints. Mitt primära värde med appen är att omedelbart förvandla inspiration från befintliga appar till strukturerade, byggklara Al-prompter, samtidigt som jag behåller total översikt över mina 120+ existerande projekt.", mainCategory: "System & Core Engines", subCategory: "Verktyg & Hubbar", id: "SYS-INSPR", image: "https://i.imgur.com/OBp5uYs.jpeg" },
             { title: "Arkitekt Hubb", desc: "Ett centralt valv och ekosystem för att säkra, organisera och dokumentera mitt digitala livsverk och min skaparresa. Huvudapp (Backup & Rensning) - Jag har utvecklat en intelligent \"röntgen-vy\" som med hjälp av en neural identifierare automatiskt skannar och kategoriserar mina JSON-filer, vilket låter mig säkra mina Master-filer och rensa molnet utan kognitiv överbelastning.", mainCategory: "System & Core Engines", subCategory: "Verktyg & Hubbar", id: "SYS-ARKHB", image: "https://i.imgur.com/iI0vEY2.jpeg" },
             { title: "Atelier Gallery", desc: "Atelier Gallery är en digital kurator- och utställningsplattform som kombinerar Al-driven bildanalys med pixelperfekt beskärning, vilket bevarar den absoluta äktheten i uppladdade konstverk och hantverk. Genom att erbjuda både auto- genererade, skräddarsydda webbsidor och interaktiva 3D-miljöer med röstguidning, ger systemet kreatörer en kraftfull och omedelbar möjlighet att paketera och dela sina kreativa processer med en global publik.", mainCategory: "System & Core Engines", subCategory: "Verktyg & Hubbar", id: "SYS-ATELG", image: "https://i.imgur.com/d57LdvT.jpeg" },
             { title: "Bloms Magiska Pensel", desc: "Det här kortet fångar precis kärnan i ditt arbete: hur du gick från enkla bildändringar till att bygga en hel motor som låter en \"kliva in\" i fotot. Det fokuserar på din roll som arkitekten som fattar de smarta besluten (som den semantiska bryggan och att skippa manuella verktyg) för att göra upplevelsen bättre.", mainCategory: "System & Core Engines", subCategory: "Verktyg & Hubbar", id: "SYS-MAGPE", image: "https://i.imgur.com/Ye2aIHV.jpeg" },
-            { title: "JokeForge", desc: "JokeForge är en specialiserad webbapplikation för generering och systematisk organisering av högintensiv, mörk humor. Genom att kombinera en stoisk Al- motor med molnbaserad lagring och fullständig dataportabilitet ger appen användaren ett effektivt verktyg för att skapa, kurera och äga sin egen samling av provocerande innehåll.", mainCategory: "System & Core Engines", subCategory: "Verktyg & Hubbar", id: "SYS-JOKEF", image: "https://i.imgur.com/NBvPbIT.jpeg" },
-            { title: "Offertkalkylator Pro", desc: "Offertkalkylator Pro är en serverlös, Al-driven webbapplikation i en enda fil som låter företagare kalkylera avancerade projekt, hantera skatter/avdrag och spara kunddata helt lokalt. Applikationen förvandlar blixtsnabbt komplexa kostnadsberäkningar till säljande, tryckfärdiga PDF-offerter för direkt leverans till kund.", mainCategory: "System & Core Engines", subCategory: "Verktyg & Hubbar", id: "SYS-OFFPR", image: "https://i.imgur.com/Zc885y4.jpeg" },
-            { title: "VGP Core Engine (v26.0)", desc: "En högpresterande 8K-renderingsmotor och världsbyggare baserad på Three.js och GPGPU-fysik. Applikationen möjliggör skapandet av persistenta, fysiskt solida mörka fantasy-miljöer med realtidsljus och molnsynkroniserad arkitektur. Dess primära värde ligger i bryggan mellan teknisk grafik-demo och en fullskalig spelvärld för eget innehåll.", mainCategory: "System & Core Engines", subCategory: "Kärnmotorer", id: "SYS-VGPCE", image: "https://i.imgur.com/ENqOvTf.jpeg" }
+            { title: "Gemini OS (Min Digitala Hubb)", desc: "Jag har arkitekterat Gemini OS som en central, enhetsoberoende plattform som konsoliderar över 35 specialiserade applikationer under ett och samma digitala tak. Genom att implementera en \"Single-File Architecture\" i React och integrera Firebase för molnsynkronisering, har jag skapat ett robust ekosystem som säkrar kognitiv struktur vid ADHD/bipolär sjukdom, möjliggör avancerat kreativt skapande och erbjuder en magisk digital värld för min dotter.", mainCategory: "System & Core Engines", subCategory: "Verktyg & Hubbar", id: "SYS-GEMOS" }
         ];
 
         const mainCategoriesConfig = {
-            "Spel & Nöje": { hex: "#ec4899", icon: "gamepad-2", bgClass: "section-bg-spel" },
-            "Musik & Ljud": { hex: "#10b981", icon: "headphones", bgClass: "section-bg-musik" },
+            "Genie Omega Ekosystem": { hex: "#a855f7", icon: "sparkles", bgClass: "section-bg-genie" },
+            "Fortnite Battle TCG": { hex: "#ec4899", icon: "gamepad-2", bgClass: "section-bg-fortnite" },
             "Data & Arkitektur": { hex: "#3b82f6", icon: "network", bgClass: "section-bg-dna" },
-            "Visuellt & Design": { hex: "#a855f7", icon: "palette", bgClass: "section-bg-visuell" },
+            "Musik & Ljud": { hex: "#10b981", icon: "headphones", bgClass: "section-bg-musik" },
+            "Visuellt & Design": { hex: "#f59e0b", icon: "palette", bgClass: "section-bg-visuell" },
             "Litteratur & Äventyr": { hex: "#06b6d4", icon: "book-open", bgClass: "section-bg-litteratur" },
             "Verktyg & Prompts": { hex: "#9ca3af", icon: "terminal-square", bgClass: "section-bg-prompts" },
+            "Spel & Nöje": { hex: "#ef4444", icon: "gamepad-2", bgClass: "section-bg-spel" },
             "System & Core Engines": { hex: "#64748b", icon: "cpu", bgClass: "section-bg-core" }
         };
 
@@ -320,15 +322,13 @@
             Object.keys(mainCategoriesConfig).forEach(mainCat => {
                 const conf = mainCategoriesConfig[mainCat];
                 
-                // Hämta och filtrera alla appar för denna huvudkategori
                 const appsInMain = appDatabase.filter(app => 
                     app.mainCategory === mainCat && 
-                    (app.title.toLowerCase().includes(query) || app.desc.toLowerCase().includes(query) || app.subCategory.toLowerCase().includes(query))
+                    (app.title.toLowerCase().includes(query) || (app.desc || '').toLowerCase().includes(query) || (app.subCategory || '').toLowerCase().includes(query))
                 );
                 
                 if (appsInMain.length === 0) return;
 
-                // Skapa en section för huvudkategorin
                 const section = document.createElement('div');
                 section.className = `p-8 rounded-2xl bg-card/30 backdrop-blur-sm border border-border_subtle relative overflow-hidden ${conf.bgClass}`;
                 
@@ -342,14 +342,12 @@
                     <div class="space-y-10 relative z-10">
                 `;
 
-                // Gruppera apparna i underkategorier (Franchise/Mappar)
                 const subGroups = {};
                 appsInMain.forEach(app => {
                     if(!subGroups[app.subCategory]) subGroups[app.subCategory] = [];
                     subGroups[app.subCategory].push(app);
                 });
 
-                // Rita ut varje underkategori
                 Object.keys(subGroups).forEach(subCat => {
                     const subApps = subGroups[subCat];
                     
@@ -364,7 +362,7 @@
                     `;
 
                     subApps.forEach((app, i) => {
-                        const wordCount = app.desc.split(' ').length;
+                        const wordCount = (app.desc || '').split(' ').length;
                         const complexity = Math.min(100, Math.floor((wordCount / 50) * 100) + 30);
                         
                         html += `
@@ -372,7 +370,7 @@
                                  style="animation-delay: ${i * 0.05}s;"
                                  onmouseenter="tiltCard(event, this)"
                                  onmouseleave="resetTilt(this)"
-                                 onclick='openModal(${JSON.stringify(app).replace(/'/g, "&#39;")})'>
+                                 onclick="openModalFromID('${app.id}')">
                                 
                                 <div class="flex justify-between items-start mb-4">
                                     <div class="w-10 h-10 rounded border border-border_subtle flex items-center justify-center shadow-inner" style="background-color: ${conf.hex}20; color: ${conf.hex}">
@@ -412,6 +410,7 @@
             const centerY = rect.height / 2;
             const tiltX = (y - centerY) / 10;
             const tiltY = (centerX - x) / 10;
+            // 3D transform fungerar perfekt utan att ha perspective satt på body
             card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.02, 1.02, 1.02)`;
         }
         function resetTilt(card) {
@@ -419,9 +418,17 @@
         }
 
         let currentModalText = "";
+        
+        function openModalFromID(appId) {
+             const app = appDatabase.find(a => a.id === appId);
+             if(app) openModal(app);
+        }
+
         function openModal(app) {
-            const conf = mainCategoriesConfig[app.mainCategory];
-            document.getElementById('modal-id').textContent = app.id;
+            if(!app) return;
+            const conf = mainCategoriesConfig[app.mainCategory] || { hex: '#e58e26', icon: 'cpu' };
+            
+            document.getElementById('modal-id').textContent = app.id || 'SYS-UNK';
             document.getElementById('modal-category').textContent = `${app.mainCategory} // ${app.subCategory}`;
             document.getElementById('modal-category').style.color = conf.hex;
             
@@ -430,26 +437,26 @@
             document.getElementById('modal-icon').style.borderColor = `${conf.hex}50`;
             document.getElementById('modal-icon').style.backgroundColor = `${conf.hex}10`;
 
-            const words = app.desc.split(' ').length;
+            const words = (app.desc || '').split(' ').length;
             document.getElementById('read-time').innerText = `⏱ ${Math.max(1, Math.ceil(words / 150))} min read`;
 
-            document.getElementById('modal-fulldesc').innerHTML = app.desc;
-            currentModalText = app.desc;
+            document.getElementById('modal-fulldesc').innerHTML = app.desc || '';
+            currentModalText = app.desc || '';
             
-            // BILD OCH VIDEO LOGIK
             const bannerContainer = document.getElementById('modal-banner-container');
             const bannerImg = document.getElementById('modal-banner-img');
             const bannerVideo = document.getElementById('modal-banner-video');
-            const assetIcon = document.getElementById('asset-icon');
+            const assetIconWrapper = document.getElementById('asset-icon-wrapper');
             const assetLabel = document.getElementById('asset-label');
 
+            // Här uppdaterar vi ikonen på ett säkert sätt för Lucide genom att ersätta innehållet
             if(app.video) {
                 bannerVideo.src = app.video;
                 bannerVideo.classList.remove('hidden');
                 bannerImg.classList.add('hidden');
                 bannerImg.style.backgroundImage = 'none';
                 bannerContainer.classList.remove('hidden');
-                assetIcon.setAttribute('data-lucide', 'film');
+                assetIconWrapper.innerHTML = `<i data-lucide="film" class="w-3 h-3 text-accent"></i>`;
                 assetLabel.innerText = "Video Asset";
             } else if(app.image) {
                 bannerVideo.src = '';
@@ -457,7 +464,7 @@
                 bannerImg.style.backgroundImage = `url('${app.image}')`;
                 bannerImg.classList.remove('hidden');
                 bannerContainer.classList.remove('hidden');
-                assetIcon.setAttribute('data-lucide', 'image');
+                assetIconWrapper.innerHTML = `<i data-lucide="image" class="w-3 h-3 text-accent"></i>`;
                 assetLabel.innerText = "Visual Asset";
             } else {
                 bannerContainer.classList.add('hidden');
@@ -465,7 +472,6 @@
                 bannerVideo.src = '';
             }
             
-            // LÄNK LOGIK (STARTA APP)
             const launchBtn = document.getElementById('modal-launch-btn');
             if(app.url) {
                 launchBtn.href = app.url;
@@ -476,7 +482,8 @@
                 launchBtn.classList.remove('flex');
             }
 
-            document.getElementById('doc-modal').classList.remove('hidden');
+            const modal = document.getElementById('doc-modal');
+            modal.style.display = 'block'; 
             
             document.body.style.overflow = 'hidden'; 
             const scrollContainer = document.querySelector('.custom-scrollbar');
@@ -484,29 +491,50 @@
             
             lucide.createIcons();
 
-            // Cyber-dekryptering på titeln
             const titleEl = document.getElementById('modal-title');
             const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
             let iterations = 0;
             const interval = setInterval(() => {
-                titleEl.innerText = app.title.split("").map((l, idx) => {
-                    if(idx < iterations) return app.title[idx];
+                titleEl.innerText = (app.title || '').split("").map((l, idx) => {
+                    if(idx < iterations) return (app.title || '')[idx];
                     return letters[Math.floor(Math.random() * letters.length)];
                 }).join("");
-                if(iterations >= app.title.length) clearInterval(interval);
+                if(iterations >= (app.title || '').length) clearInterval(interval);
                 iterations += 1/3;
             }, 30);
         }
 
         function closeModal() {
-            document.getElementById('doc-modal').classList.add('hidden');
+            const modal = document.getElementById('doc-modal');
+            modal.style.display = 'none';
             document.body.style.overflow = 'auto';
-            // Stäng av video när modal stängs
             document.getElementById('modal-banner-video').src = '';
         }
 
         function copyDoc() {
-            navigator.clipboard.writeText(currentModalText);
+            // Säkrat kopieringsfunktion så den fungerar även inuti iFrames/Canvas
+            const fallbackCopyTextToClipboard = (text) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                } catch (err) {
+                    console.error('Kunde inte kopiera texten', err);
+                }
+                document.body.removeChild(textArea);
+            };
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(currentModalText).catch(() => fallbackCopyTextToClipboard(currentModalText));
+            } else {
+                fallbackCopyTextToClipboard(currentModalText);
+            }
+
             const btn = document.querySelector('button[title="Kopiera text"]');
             const orgHtml = btn.innerHTML;
             btn.innerHTML = `<i data-lucide="check" class="w-5 h-5 text-emerald-400"></i>`;
