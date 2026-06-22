@@ -11,7 +11,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- Tailwind Konfiguration (Nytt: Variabel för Accentfärg) -->
+    <!-- Tailwind Konfiguration -->
     <script>
         tailwind.config = {
             theme: {
@@ -87,7 +87,7 @@
                 <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-100">System</span>
             </button>
 
-            <!-- SYSTEM ADMIN DROPDOWN (Utökad med Tema-väljare) -->
+            <!-- SYSTEM ADMIN DROPDOWN -->
             <div id="admin-panel" class="absolute top-14 right-0 w-64 bg-panel/95 backdrop-blur-md border border-[#1e293b] p-4 rounded-2xl shadow-2xl hidden z-50">
                 
                 <h3 class="text-accent font-black uppercase tracking-widest text-[10px] mb-2 border-b border-[#1e293b] pb-2">Galleritema (Färg)</h3>
@@ -125,7 +125,7 @@
         </div>
     </div>
 
-    <!-- MOBILKONTROLLER (Visas bara på små skärmar) -->
+    <!-- MOBILKONTROLLER -->
     <div id="mobile-controls" class="md:hidden absolute bottom-8 left-8 z-20 flex flex-col items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
         <button id="btn-w" class="w-12 h-12 bg-panel/80 border border-[#1e293b] rounded-xl text-slate-400 flex items-center justify-center active:bg-accent active:text-dark"><i data-lucide="arrow-up"></i></button>
         <div class="flex gap-2">
@@ -188,8 +188,7 @@
         const IDLE_ANIM_URL = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/idle.glb';
         const WALK_ANIM_URL = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/walk.glb';
         
-        // Exempel på din POPCORNMASKIN (Byt ut mot din egen länk från dina 400 filer!)
-        const POPCORN_GLB = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/bobba.glb'; // Platshållare tills du lägger in popcorn
+        const POPCORN_GLB = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/bobba.glb'; // Byt ut mot Popcornmaskin!
 
         const HANDICRAFT_URL_1 = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/bobba.glb'; 
         const HANDICRAFT_URL_2 = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/bystmedkedja.glb';
@@ -205,7 +204,7 @@
 
         // Belysning referenser för Temabyte
         let mainDirLight, hemiLight;
-        let currentThemeHex = '#e58e26'; // Startfärg
+        let currentThemeHex = '#e58e26'; 
 
         // Interaktion & Navigation
         const mouse = new THREE.Vector2();
@@ -217,10 +216,10 @@
         const cameraDistance = 8;
         
         const artworks = []; 
-        const floors = []; // NYTT: Array för att raycasta mot golvet vid autopromenad
+        const floors = []; 
         let hoveredArtwork = null;
 
-        // Auto-Move Variabler (NavMesh light)
+        // Auto-Move Variabler
         let autoMoveTarget = null;
         let pingMarker;
 
@@ -237,22 +236,16 @@
 
         const updateStatus = (text) => document.getElementById('loading-text').innerText = text;
 
-        // NYTT: Funktion för att byta tema live
         const changeTheme = (hexColor) => {
             currentThemeHex = hexColor;
             document.documentElement.style.setProperty('--theme-accent', hexColor);
             const numColor = parseInt(hexColor.replace('#', '0x'));
             
-            // Uppdatera GUI-element
             guideBot.material.emissive.setHex(numColor);
-            
-            // Uppdatera ljus
             mainDirLight.color.setHex(numColor);
             
-            // Uppdatera alla tavelramar
             artworks.forEach(art => {
                 if(art.userData.highlightMesh && !art.userData.isVideo) {
-                    // Behåll det starka ljuset om vi hovrar, annars svagt
                     const intensity = art === hoveredArtwork ? 2.5 : 0.5;
                     art.userData.highlightMesh.material.emissive.setHex(numColor);
                     art.userData.highlightMesh.material.emissiveIntensity = intensity;
@@ -308,7 +301,6 @@
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
             mainGltfLoader.setDRACOLoader(dracoLoader);
 
-            // Skapa Ping-markör för Teleportering
             const pingGeo = new THREE.RingGeometry(0.5, 0.6, 32);
             const pingMat = new THREE.MeshBasicMaterial({ color: 0xe58e26, transparent: true, opacity: 0, side: THREE.DoubleSide });
             pingMarker = new THREE.Mesh(pingGeo, pingMat);
@@ -327,7 +319,7 @@
             guideBot.position.set(0, 3, 0);
             scene.add(guideBot);
             
-            setTimeout(() => showGuideText("Dubbelklicka på golvet för Auto-promenad."), 3000);
+            setTimeout(() => showGuideText("Dubbeltryck på golvet för Auto-promenad."), 3000);
 
             const loadCharacterSystem = async () => {
                 const loadGLTF = (url) => new Promise((resolve, reject) => mainGltfLoader.load(url, resolve, undefined, reject));
@@ -358,7 +350,6 @@
             };
             loadCharacterSystem();
 
-            // Interaktions-lyssnare
             window.addEventListener('keydown', onKeyDown, false);
             window.addEventListener('keyup', onKeyUp, false);
             window.addEventListener('resize', onWindowResize, false);
@@ -367,11 +358,8 @@
             containerEL.addEventListener('mousemove', onMouseMove, false);
             containerEL.addEventListener('mousedown', onMouseDown, false); 
             containerEL.addEventListener('mouseup', () => isDragging = false, false);
-            
-            // DUBBELKLICK FÖR AUTO-MOVE
             containerEL.addEventListener('dblclick', onDoubleClick, false);
 
-            // MOBIL-TOUCH LOGIK
             let lastTap = 0;
             containerEL.addEventListener('touchstart', (e) => {
                 if (e.target.closest('#mobile-controls') || e.target.closest('header')) return;
@@ -381,7 +369,6 @@
                     mouse.x = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
                     mouse.y = -(e.touches[0].clientY / window.innerHeight) * 2 + 1;
                     
-                    // Dubbeltryck logik
                     const now = Date.now();
                     if(now - lastTap < 300) { onDoubleClick(e.touches[0]); }
                     lastTap = now;
@@ -402,10 +389,9 @@
 
             containerEL.addEventListener('touchend', (e) => {
                 isDragging = false;
-                if (Date.now() - lastTap < 250) onMouseDown(); // Enkel-tap för att inspektera konst
+                if (Date.now() - lastTap < 250) onMouseDown(); 
             });
 
-            // Länka mobilknappar till WASD (Visuellt och logiskt)
             const handleTouchBtn = (id, key) => {
                 const btn = document.getElementById(id);
                 if(btn) {
@@ -416,7 +402,6 @@
             handleTouchBtn('btn-w', 'w'); handleTouchBtn('btn-a', 'a');
             handleTouchBtn('btn-s', 's'); handleTouchBtn('btn-d', 'd');
 
-            // UI Listeners
             document.getElementById('close-panel').addEventListener('click', closeInfoPanel);
             document.getElementById('close-lightbox').addEventListener('click', () => {
                 const lb = document.getElementById('lightbox');
@@ -447,11 +432,8 @@
                 return texture;
             };
 
-            const floorMat = new THREE.MeshStandardMaterial({ 
-                color: 0x05080f, roughness: 0.6, metalness: 0.4, bumpMap: createNoiseTexture(), bumpScale: 0.015 
-            });
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x05080f, roughness: 0.6, metalness: 0.4, bumpMap: createNoiseTexture(), bumpScale: 0.015 });
             
-            // Skapa golv och lägg till dem i `floors` arrayen för Teleportering
             const floorMain = new THREE.Mesh(new THREE.PlaneGeometry(roomSize, roomSize), floorMat);
             floorMain.rotation.x = -Math.PI / 2; floorMain.receiveShadow = true;
             scene.add(floorMain); floors.push(floorMain);
@@ -471,7 +453,6 @@
                 scene.add(wall);
             };
 
-            // Bygg väggar
             createWall(40, 0, -20, 0); createWall(40, -20, 0, Math.PI / 2); createWall(40, 20, 0, -Math.PI / 2); 
             createWall(15, -12.5, 20, Math.PI); createWall(15, 12.5, 20, Math.PI);  
             createWall(20, -5, 30, Math.PI / 2); createWall(20, 5, 30, -Math.PI / 2); 
@@ -482,29 +463,50 @@
             addWallSign("AURA CORRIDOR", 0, 6, 20.1, Math.PI, '#a855f7'); 
             addWallSign("HALL B: BIO & AI", 0, 6, 40.1, 0, '#00e5ff');
 
-            // --- HALL A KONST ---
-            addArtworkPlaceholder(-12, 3, -19.9, 0, 'https://i.imgur.com/M31eTpz.png', { id: "art_1", title: "Original 01", desc: "Handgjort originalverk från Bloms kollektion." });
-            addArtworkPlaceholder(0, 3, -19.9, 0, 'https://i.imgur.com/Wm8YjcI.png', { id: "art_2", title: "Original 02", desc: "Ett stämningsfullt hantverk." });
-            addArtworkPlaceholder(12, 3, -19.9, 0, 'https://i.imgur.com/Di7y4yW.png', { id: "art_3", title: "Original 03", desc: "Detaljerad studie i form och textur." });
+            // --- HALL A ---
+            addArtworkPlaceholder(-12, 3, -19.9, 0, 'https://i.imgur.com/M31eTpz.png', { title: "Original 01" });
+            addArtworkPlaceholder(0, 3, -19.9, 0, 'https://i.imgur.com/Wm8YjcI.png', { title: "Original 02" });
+            addArtworkPlaceholder(12, 3, -19.9, 0, 'https://i.imgur.com/Di7y4yW.png', { title: "Original 03" });
 
-            addHandicraftDisplay(6, 0, -6, { title: "Stenhuvud (Bobba)", desc: "En massiv och detaljerad skulptur." }, HANDICRAFT_URL_1, 0xe58e26, 0xfff0dd, 1.0);
-            addHandicraftDisplay(-6, 0, -6, { title: "Betongbyst med kedja", desc: "Rå betong möter kall metall." }, HANDICRAFT_URL_2, 0xe58e26, 0xfff0dd, 1.0);
+            // NYTT: Fixade Offset för dina 3D modeller så de inte sjunker!
+            addHandicraftDisplay(6, 0, -6, { title: "Stenhuvud (Bobba)" }, HANDICRAFT_URL_1, 0xe58e26, 0xfff0dd, 1.0, 0.8);
+            addHandicraftDisplay(-6, 0, -6, { title: "Betongbyst med kedja" }, HANDICRAFT_URL_2, 0xe58e26, 0xfff0dd, 1.0, 0.8);
 
             // --- AURA KORRIDOR ---
             const tPurple = 0xa855f7, lPurple = 0xf3e8ff;
-            addArtworkPlaceholder(-4.9, 3, 30, Math.PI / 2, 'https://i.imgur.com/FRKCQdP.png', { title: "AURA", desc: "En storslagen närvaro i lila och blå toner." }, tPurple, lPurple);
+            addArtworkPlaceholder(-4.9, 3, 30, Math.PI / 2, 'https://i.imgur.com/FRKCQdP.png', { title: "AURA" }, tPurple, lPurple);
 
             // --- HALL B (AI, Bio & Props) ---
             const tCyan = 0x00e5ff, lCyan = 0xd0ffff;
-            addArtworkPlaceholder(-29.9, 3, 60, Math.PI / 2, 'https://i.imgur.com/vwCYbFE.jpg', { title: "Vision 01", desc: "AI-genererat verk." }, tCyan, lCyan);
-            
-            // BIO-SKÄRM PÅ BAKRE VÄGGEN (Ersätter de 4 gamla tavlorna)
-            addVideoDisplay(0, 4, 99.9, Math.PI, 'DIN_MP4_LANK_HAR.mp4', { title: "Huvudvisning", desc: "Exklusiv visning av den senaste processen." }, tCyan, lCyan);
 
-            // POPCORNMASKIN / PROPS (Placeras bredvid biografen)
-            addPropDisplay(-10, 0, 95, POPCORN_GLB, 1.5); // Ändra storleken (1.5) så den passar din popcornmaskin
+            // NYTT: Alla 14 "Visions"-tavlor är tillbaka på sidoväggarna och framväggen
+            // Vänster vägg
+            addArtworkPlaceholder(-29.9, 3, 45, Math.PI / 2, 'https://i.imgur.com/vwCYbFE.jpg', { title: "Vision 01" }, tCyan, lCyan);
+            addArtworkPlaceholder(-29.9, 3, 55, Math.PI / 2, 'https://i.imgur.com/mBOc9zN.jpg', { title: "Vision 02" }, tCyan, lCyan);
+            addArtworkPlaceholder(-29.9, 3, 65, Math.PI / 2, 'https://i.imgur.com/3TgqgyM.jpg', { title: "Vision 03" }, tCyan, lCyan);
+            addArtworkPlaceholder(-29.9, 3, 75, Math.PI / 2, 'https://i.imgur.com/ZEFtWlR.jpg', { title: "Vision 04" }, tCyan, lCyan);
+            addArtworkPlaceholder(-29.9, 3, 85, Math.PI / 2, 'https://i.imgur.com/hGTttUo.jpg', { title: "Vision 09" }, tCyan, lCyan);
+            addArtworkPlaceholder(-29.9, 3, 95, Math.PI / 2, 'https://i.imgur.com/hF8uU5p.jpg', { title: "Vision 10" }, tCyan, lCyan);
 
-            addHandicraftDisplay(0, 0, 70, { title: "Vit Betongbyst", desc: "Den centrala pelaren i Hall B." }, HANDICRAFT_URL_3, tCyan, lCyan, 1.0);
+            // Höger vägg
+            addArtworkPlaceholder(29.9, 3, 45, -Math.PI / 2, 'https://i.imgur.com/tFnltep.jpg', { title: "Vision 05" }, tCyan, lCyan);
+            addArtworkPlaceholder(29.9, 3, 55, -Math.PI / 2, 'https://i.imgur.com/zrdLjUk.jpg', { title: "Vision 06" }, tCyan, lCyan);
+            addArtworkPlaceholder(29.9, 3, 65, -Math.PI / 2, 'https://i.imgur.com/QO96lNK.jpg', { title: "Vision 07" }, tCyan, lCyan);
+            addArtworkPlaceholder(29.9, 3, 75, -Math.PI / 2, 'https://i.imgur.com/5irYQJf.jpg', { title: "Vision 08" }, tCyan, lCyan);
+            addArtworkPlaceholder(29.9, 3, 85, -Math.PI / 2, 'https://i.imgur.com/Za3w5uH.jpg', { title: "Vision 11" }, tCyan, lCyan);
+            addArtworkPlaceholder(29.9, 3, 95, -Math.PI / 2, 'https://i.imgur.com/PvdSNWn.jpg', { title: "Vision 12" }, tCyan, lCyan);
+
+            // Främre väggar i Hall B
+            addArtworkPlaceholder(-17.5, 3, 40.1, 0, 'https://i.imgur.com/fbVwI5D.jpg', { title: "Vision 13" }, tCyan, lCyan);
+            addArtworkPlaceholder(17.5, 3, 40.1, 0, 'https://i.imgur.com/jRLWVGE.jpg', { title: "Vision 14" }, tCyan, lCyan);
+
+            // BIOGRAF PÅ BAKRE VÄGGEN
+            addVideoDisplay(0, 4, 99.9, Math.PI, 'DIN_MP4_LANK_HAR.mp4', { title: "Huvudvisning" }, tCyan, lCyan);
+
+            // POPCORNMASKIN
+            addPropDisplay(-10, 0, 95, POPCORN_GLB, 1.5); 
+
+            addHandicraftDisplay(0, 0, 70, { title: "Vit Betongbyst" }, HANDICRAFT_URL_3, tCyan, lCyan, 1.0, 0.8);
         };
 
         const addWallSign = (text, x, y, z, rotY, colorHex) => {
@@ -542,28 +544,20 @@
             canvasMesh.userData = { isArtwork: true, highlightMesh: frame, info: info }; artworks.push(canvasMesh); scene.add(canvasMesh);
         };
 
-        // NYTT: BIO / VIDEO DISPLAY
         const addVideoDisplay = (x, y, z, rotY, videoUrl, info, themeColor = currentThemeHex, lightColor = 0xfff0dd) => {
-            const baseW = 16, baseH = 9, framePadding = 0.5; // Större format 16:9
+            const baseW = 16, baseH = 9, framePadding = 0.5; 
             const frame = new THREE.Mesh(new THREE.PlaneGeometry(baseW + framePadding, baseH + framePadding), new THREE.MeshStandardMaterial({ color: 0x161d2b, emissive: themeColor, emissiveIntensity: 0.5, side: THREE.DoubleSide }));
             frame.position.set(x, y, z); frame.rotation.y = rotY; scene.add(frame);
 
-            // Skapa en svart tavla först, vi laddar videon om URL:en fungerar
             const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(baseW, baseH), new THREE.MeshStandardMaterial({ color: 0x000000 }));
             canvasMesh.position.set(x, y, z + 0.1); canvasMesh.rotation.y = rotY;
-
-            // Avkommentera och kör om du har en länk
-            /* 
-            const video = document.createElement('video'); video.src = videoUrl; video.crossOrigin = 'anonymous'; video.loop = true; video.muted = true; video.play();
-            const videoTexture = new THREE.VideoTexture(video); videoTexture.encoding = THREE.sRGBEncoding;
-            canvasMesh.material = new THREE.MeshStandardMaterial({ map: videoTexture, roughness: 0.3, metalness: 0.1 });
-            */
 
             info.isVideo = true; canvasMesh.userData = { isArtwork: true, highlightMesh: frame, info: info };
             artworks.push(canvasMesh); scene.add(canvasMesh);
         };
 
-        const addHandicraftDisplay = (x, y, z, info, modelUrl, themeColor = currentThemeHex, lightColor = 0xfff0dd, modelScale = 1) => {
+        // NYTT: Lade tillbaka yOffset i funktionsanropet för att höja modellerna
+        const addHandicraftDisplay = (x, y, z, info, modelUrl, themeColor = currentThemeHex, lightColor = 0xfff0dd, modelScale = 1, yOffset = 0) => {
             const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 1.5, 32), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 }));
             base.position.set(x, y + 0.75, z); base.receiveShadow = true; scene.add(base);
 
@@ -580,13 +574,13 @@
 
             if (modelUrl) {
                 mainGltfLoader.load(modelUrl, (gltf) => {
-                    const artMesh = gltf.scene; artMesh.scale.set(modelScale, modelScale, modelScale); artMesh.position.set(x, y + 1.5, z); 
+                    const artMesh = gltf.scene; artMesh.scale.set(modelScale, modelScale, modelScale); 
+                    artMesh.position.set(x, y + 1.5 + yOffset, z); // Adderar yOffset här!
                     scene.add(artMesh); hitBox.userData.modelMesh = artMesh;
                 });
             }
         };
 
-        // NYTT: Funktion för att placera ut fristående 3D Props (som popcornmaskinen)
         const addPropDisplay = (x, y, z, modelUrl, scale = 1.0) => {
             if (modelUrl) {
                 mainGltfLoader.load(modelUrl, (gltf) => {
@@ -603,11 +597,11 @@
             if (isEditMode) {
                 document.getElementById('info-title').classList.add('hidden'); document.getElementById('info-desc').classList.add('hidden');
                 document.getElementById('edit-title').classList.remove('hidden'); document.getElementById('edit-desc').classList.remove('hidden'); document.getElementById('save-info').classList.remove('hidden');
-                document.getElementById('edit-title').value = info.title; document.getElementById('edit-desc').value = info.desc;
+                document.getElementById('edit-title').value = info.title || ""; document.getElementById('edit-desc').value = info.desc || "";
             } else {
                 document.getElementById('info-title').classList.remove('hidden'); document.getElementById('info-desc').classList.remove('hidden');
                 document.getElementById('edit-title').classList.add('hidden'); document.getElementById('edit-desc').classList.add('hidden'); document.getElementById('save-info').classList.add('hidden');
-                document.getElementById('info-title').innerText = info.title; document.getElementById('info-desc').innerText = info.desc;
+                document.getElementById('info-title').innerText = info.title || "Okänd Titel"; document.getElementById('info-desc').innerText = info.desc || "";
                 if (!is3D && info.imageUrl) {
                     document.getElementById('lightbox-img').src = info.imageUrl; const lb = document.getElementById('lightbox');
                     lb.classList.remove('hidden'); setTimeout(() => lb.classList.remove('opacity-0'), 10);
@@ -656,8 +650,8 @@
             isDragging = true;
             if (hoveredArtwork && hoveredArtwork.userData.info && !isFocused) {
                 isFocused = true; focusedArtwork = hoveredArtwork; openInfoPanel(hoveredArtwork.userData.info, hoveredArtwork.userData.is3D);
-                showGuideText(`Analyserar: ${hoveredArtwork.userData.info.title}`);
-                autoMoveTarget = null; pingMarker.material.opacity = 0; // Avbryt automove om vi klickar konst
+                showGuideText(`Analyserar: ${hoveredArtwork.userData.info.title || 'Objekt'}`);
+                autoMoveTarget = null; pingMarker.material.opacity = 0; 
                 const objPos = hoveredArtwork.position; const is3D = hoveredArtwork.userData.is3D;
                 const focusDist = isFirstPerson ? 2.5 : 4.5; 
                 if (is3D) {
@@ -669,7 +663,6 @@
             }
         };
 
-        // NYTT: Dubbelklick för Teleportering/Auto-Move
         const onDoubleClick = (event) => {
             let clientX, clientY;
             if (event.touches) { clientX = event.touches[0].clientX; clientY = event.touches[0].clientY; } 
@@ -681,7 +674,6 @@
             const floorIntersects = raycaster.intersectObjects(floors);
             if (floorIntersects.length > 0 && !isFocused) {
                 autoMoveTarget = floorIntersects[0].point;
-                // Animerar ping-markören
                 pingMarker.position.set(autoMoveTarget.x, 0.05, autoMoveTarget.z);
                 pingMarker.material.opacity = 1.0;
                 pingMarker.scale.set(0.1, 0.1, 0.1);
@@ -699,7 +691,6 @@
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
 
-            // Animera Ping-markör
             if (pingMarker.material.opacity > 0) {
                 pingMarker.scale.addScalar(delta * 2);
                 pingMarker.material.opacity -= delta * 1.5;
@@ -711,7 +702,6 @@
                 let moveX = 0, moveZ = 0;
                 let manualOverride = keys.w || keys.a || keys.s || keys.d;
 
-                // Bryt AutoMove om användaren rör WASD
                 if (manualOverride) autoMoveTarget = null;
 
                 if (autoMoveTarget) {
@@ -720,10 +710,9 @@
                     const dist = Math.sqrt(dx*dx + dz*dz);
                     
                     if (dist < 0.5) {
-                        autoMoveTarget = null; // Mål nått!
+                        autoMoveTarget = null; 
                         showGuideText("Waypoint nådd.");
                     } else {
-                        // Gå rakt mot målet (Förbikopplar kamerariktning för automove)
                         const nextX = playerGroup.position.x + (dx/dist) * moveSpeed * delta;
                         const nextZ = playerGroup.position.z + (dz/dist) * moveSpeed * delta;
                         playerGroup.position.x = nextX; playerGroup.position.z = nextZ;
@@ -758,7 +747,6 @@
                     playAnimation('idle'); 
                 }
 
-                // KOLLISION
                 let clampX = playerGroup.position.x;
                 let clampZ = playerGroup.position.z;
                 let inMain = clampZ <= 19.5; let inCorridor = clampZ > 19.5 && clampZ <= 40.5; let inHallB = clampZ > 40.5;
@@ -770,7 +758,6 @@
                 else if (inHallB) { if (clampX < -29.5) clampX = -29.5; if (clampX > 29.5) clampX = 29.5; if (clampZ > 99.5) clampZ = 99.5; }
                 playerGroup.position.x = clampX; playerGroup.position.z = clampZ;
 
-                // KAMERA
                 let targetCameraPos = new THREE.Vector3(); let targetLookAt = new THREE.Vector3();
                 if (isFocused) { targetCameraPos.copy(focusCameraTarget); targetLookAt.copy(focusLookAtTarget); } 
                 else if (isFirstPerson) {
@@ -813,7 +800,7 @@
                 if (!isFocused && hoveredArtwork) {
                     const vector = hoveredArtwork.position.clone(); vector.y += hoveredArtwork.userData.is3D ? 1.5 : 1.0; vector.project(camera);
                     holoUI.style.left = `${(vector.x * .5 + .5) * window.innerWidth}px`; holoUI.style.top = `${(vector.y * -.5 + .5) * window.innerHeight}px`;
-                    holoUI.classList.remove('opacity-0'); document.getElementById('hologram-title').innerText = hoveredArtwork.userData.info.title;
+                    holoUI.classList.remove('opacity-0'); document.getElementById('hologram-title').innerText = hoveredArtwork.userData.info.title || "Granska";
                 } else holoUI.classList.add('opacity-0');
             } else {
                 document.body.style.cursor = 'default'; holoUI.classList.add('opacity-0'); 
