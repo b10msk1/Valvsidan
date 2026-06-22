@@ -104,12 +104,14 @@
       { id: 'prompt_3', type: 'info', category: 'prompt', x: -370, y: -100, title: 'Prompt Scout Motion', buttonImageUrl: 'https://i.imgur.com/X3hHys6.png', modal: { imageUrl: 'https://i.imgur.com/RvTLUrJ.png' } },
       { id: 'prompt_link', type: 'link', category: 'prompt', x: -480, y: 50, title: 'Öppna Kreationer', url: 'promptvalvet.html', buttonImageUrl: 'https://i.imgur.com/QffWYdp.png' },
 
-      // NY GREN UPPÅT: KONSTHALL (Art Vault)
+      // NY GREN UPPÅT: KONSTHALL & 3D-HALL
       { id: 'art_1', type: 'info', category: 'art', x: -80, y: -160, title: 'Trä', buttonImageUrl: 'https://i.imgur.com/5XWTlKx.png', modal: { imageUrl: 'https://i.imgur.com/tAgt65c.png' } },
       { id: 'art_2', type: 'info', category: 'art', x: 80, y: -270, title: 'Sten', buttonImageUrl: 'https://i.imgur.com/XFaUeAZ.png', modal: { imageUrl: 'https://i.imgur.com/sSRCbRk.png' } },
       { id: 'art_3', type: 'info', category: 'art', x: -80, y: -380, title: 'Glas', buttonImageUrl: 'https://i.imgur.com/JCMZdfK.png', modal: { imageUrl: 'https://i.imgur.com/c0u8FZS.png' } },
       { id: 'art_4', type: 'info', category: 'art', x: 80, y: -490, title: 'Betong', buttonImageUrl: 'https://i.imgur.com/OvZ5usY.png', modal: { imageUrl: 'https://i.imgur.com/SWmCH98.png' } },
-      { id: 'art_link', type: 'link', category: 'art', x: 0, y: -600, title: 'Art Vault', url: 'konsthall.html', buttonImageUrl: 'https://i.imgur.com/ON1QUaC.png' }
+      // Förgrening från Betong (Y-korsning)
+      { id: 'art_link', type: 'link', category: 'art', x: -20, y: -600, title: 'Art Vault', url: 'konsthall.html', buttonImageUrl: 'https://i.imgur.com/ON1QUaC.png' },
+      { id: '3d_link', type: 'link', category: 'art', x: 180, y: -600, title: '3D-Hallen', url: '3dhallen.html', buttonImageUrl: 'https://i.imgur.com/Fz6iDRc.png' }
     ];
 
     const mapEdges = [
@@ -127,7 +129,9 @@
       { from: 'art_1', to: 'art_2', branch: 'art' },
       { from: 'art_2', to: 'art_3', branch: 'art' },
       { from: 'art_3', to: 'art_4', branch: 'art' },
-      { from: 'art_4', to: 'art_link', branch: 'art' }
+      // Y-korsningen från Betong
+      { from: 'art_4', to: 'art_link', branch: 'art' },
+      { from: 'art_4', to: '3d_link', branch: 'art' }
     ];
 
     // --- DOM ELEMENT ---
@@ -183,13 +187,10 @@
     function renderNodes() {
       mapNodes.forEach(node => {
         const isLink = !!node.url;
-        // Vi skapar en äkta a-tagg för länkar, div för bilderna.
         const el = document.createElement(isLink ? 'a' : 'div');
         
         if (isLink) {
-            // Tvingar fram en relativ sökväg i samma mapp
             el.href = './' + node.url;
-            // Valfritt: Om det fortfarnade strular i din editor-vy, prova att lägga in el.target = "_blank"; här
         }
 
         const isCore = node.type === 'core';
@@ -212,24 +213,20 @@
 
         const imgShadow = isCore ? 'drop-shadow-[0_0_25px_rgba(229,142,38,0.3)] group-hover:drop-shadow-[0_0_35px_rgba(229,142,38,0.6)]' : 'drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]';
 
-        // Lösningen: pointer-events-none på alla inre element så att klicket ALLTID träffar el (a-taggen)
         el.innerHTML = `
           ${pulseHTML}
           <img src="${node.buttonImageUrl}" alt="${node.title}" draggable="false" class="w-full h-full object-contain transition-transform duration-500 group-hover:rotate-2 relative z-10 ${imgShadow} pointer-events-none">
         `;
 
-        // Isolera mousedown så inte kartan börjar dras
         el.addEventListener('mousedown', (e) => e.stopPropagation());
         el.addEventListener('touchstart', (e) => e.stopPropagation(), {passive: true});
         
-        // För modal-bilderna:
         if (!isLink) {
             el.addEventListener('click', (e) => {
               e.stopPropagation();
               if (node.modal) { openModal(node.modal.imageUrl); }
             });
         }
-        // För länkar lägger vi INGEN click-eventlistener alls. Webbläsaren sköter det själv nu.
 
         mapArea.appendChild(el);
       });
