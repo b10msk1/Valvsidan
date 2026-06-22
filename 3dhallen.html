@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gallery.Ops | 3D Exhibition</title>
     
     <!-- Tailwind CSS -->
@@ -11,7 +11,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- Tailwind Konfiguration -->
+    <!-- Tailwind Konfiguration (Nytt: Variabel för Accentfärg) -->
     <script>
         tailwind.config = {
             theme: {
@@ -20,7 +20,7 @@
                         dark: '#0a0f1a',
                         panel: '#0f172a',
                         card: '#161d2b',
-                        accent: '#e58e26',
+                        accent: 'var(--theme-accent, #e58e26)',
                     },
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -44,7 +44,8 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; background-color: #0a0f1a; }
+        :root { --theme-accent: #e58e26; }
+        body { margin: 0; overflow: hidden; background-color: #0a0f1a; touch-action: none; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
         .fade-out { opacity: 0; pointer-events: none; transition: opacity 0.5s ease-in-out; }
         .panel-open { transform: translateX(0); }
@@ -59,7 +60,7 @@
         <p id="loading-text" class="text-accent text-[10px] font-black uppercase tracking-widest">Initierar 3D-motor...</p>
     </div>
 
-    <!-- LIGHTBOX (För högupplösta bilder) -->
+    <!-- LIGHTBOX -->
     <div id="lightbox" class="fixed inset-0 z-[60] bg-black/90 hidden flex-col items-center justify-center p-8 backdrop-blur-md opacity-0 transition-opacity duration-300">
         <button id="close-lightbox" class="absolute top-8 right-8 text-slate-400 hover:text-accent bg-panel p-3 rounded-2xl border border-[#1e293b] cursor-pointer transition-colors shadow-xl">
             <i data-lucide="x"></i>
@@ -67,7 +68,7 @@
         <img id="lightbox-img" class="max-w-full max-h-[85vh] rounded-xl border border-accent shadow-[0_0_50px_rgba(229,142,38,0.15)] object-contain" src="" />
     </div>
 
-    <!-- Taktisk Header -->
+    <!-- Header & Menyer -->
     <header class="absolute top-6 left-6 right-6 z-10 flex justify-between items-center bg-panel/80 backdrop-blur-md px-6 py-4 rounded-[2rem] border border-[#1e293b] shadow-2xl">
         <div class="flex items-center gap-3">
             <i data-lucide="box" class="w-5 h-5 text-accent"></i>
@@ -77,7 +78,7 @@
         </div>
 
         <nav class="flex gap-2 relative">
-            <button class="flex items-center gap-2 px-4 py-2 bg-card rounded-2xl border border-[#1e293b] hover:border-accent transition-all group cursor-pointer">
+            <button class="hidden sm:flex items-center gap-2 px-4 py-2 bg-card rounded-2xl border border-[#1e293b] hover:border-accent transition-all group cursor-pointer">
                 <i data-lucide="user" class="w-3 h-3 text-slate-400 group-hover:text-accent transition-colors"></i>
                 <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-100">Karaktär</span>
             </button>
@@ -86,9 +87,18 @@
                 <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-100">System</span>
             </button>
 
-            <!-- SYSTEM ADMIN DROPDOWN -->
-            <div id="admin-panel" class="absolute top-14 right-0 w-48 bg-panel/95 backdrop-blur-md border border-[#1e293b] p-4 rounded-2xl shadow-2xl hidden z-50">
-                <h3 class="text-accent font-black uppercase tracking-widest text-[10px] mb-4">Databas Kontroll</h3>
+            <!-- SYSTEM ADMIN DROPDOWN (Utökad med Tema-väljare) -->
+            <div id="admin-panel" class="absolute top-14 right-0 w-64 bg-panel/95 backdrop-blur-md border border-[#1e293b] p-4 rounded-2xl shadow-2xl hidden z-50">
+                
+                <h3 class="text-accent font-black uppercase tracking-widest text-[10px] mb-2 border-b border-[#1e293b] pb-2">Galleritema (Färg)</h3>
+                <div class="flex gap-2 mb-4">
+                    <button onclick="changeTheme('#e58e26')" class="w-6 h-6 rounded-full bg-[#e58e26] border-2 border-white/20 hover:scale-110 transition-transform"></button>
+                    <button onclick="changeTheme('#00e5ff')" class="w-6 h-6 rounded-full bg-[#00e5ff] border-2 border-white/20 hover:scale-110 transition-transform"></button>
+                    <button onclick="changeTheme('#a855f7')" class="w-6 h-6 rounded-full bg-[#a855f7] border-2 border-white/20 hover:scale-110 transition-transform"></button>
+                    <button onclick="changeTheme('#f43f5e')" class="w-6 h-6 rounded-full bg-[#f43f5e] border-2 border-white/20 hover:scale-110 transition-transform"></button>
+                </div>
+
+                <h3 class="text-accent font-black uppercase tracking-widest text-[10px] mb-2 border-b border-[#1e293b] pb-2">Databas Kontroll</h3>
                 <label class="flex items-center gap-2 mb-4 cursor-pointer">
                     <input type="checkbox" id="edit-mode-toggle" class="accent-accent w-4 h-4">
                     <span class="text-slate-100 text-[10px] font-black uppercase tracking-widest">Edit Mode</span>
@@ -105,13 +115,23 @@
     </header>
 
     <!-- Status panel -->
-    <div class="absolute bottom-6 left-6 z-10 flex flex-col gap-2 pointer-events-none">
+    <div class="hidden md:flex absolute bottom-6 left-6 z-10 flex-col gap-2 pointer-events-none">
         <div class="bg-panel/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1e293b] flex items-center gap-3 shadow-xl">
             <i data-lucide="crosshair" class="w-4 h-4 text-accent"></i>
             <div class="flex flex-col">
                 <span class="text-[8px] font-black uppercase tracking-widest text-slate-500">Status</span>
                 <span id="system-status" class="text-[10px] font-black uppercase tracking-widest text-slate-100">System Online</span>
             </div>
+        </div>
+    </div>
+
+    <!-- MOBILKONTROLLER (Visas bara på små skärmar) -->
+    <div id="mobile-controls" class="md:hidden absolute bottom-8 left-8 z-20 flex flex-col items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
+        <button id="btn-w" class="w-12 h-12 bg-panel/80 border border-[#1e293b] rounded-xl text-slate-400 flex items-center justify-center active:bg-accent active:text-dark"><i data-lucide="arrow-up"></i></button>
+        <div class="flex gap-2">
+            <button id="btn-a" class="w-12 h-12 bg-panel/80 border border-[#1e293b] rounded-xl text-slate-400 flex items-center justify-center active:bg-accent active:text-dark"><i data-lucide="arrow-left"></i></button>
+            <button id="btn-s" class="w-12 h-12 bg-panel/80 border border-[#1e293b] rounded-xl text-slate-400 flex items-center justify-center active:bg-accent active:text-dark"><i data-lucide="arrow-down"></i></button>
+            <button id="btn-d" class="w-12 h-12 bg-panel/80 border border-[#1e293b] rounded-xl text-slate-400 flex items-center justify-center active:bg-accent active:text-dark"><i data-lucide="arrow-right"></i></button>
         </div>
     </div>
 
@@ -124,8 +144,8 @@
         </div>
     </div>
 
-    <!-- Taktisk Informations-Panel (Inkl. Edit Mode inputs) -->
-    <div id="info-panel" class="absolute right-0 top-0 bottom-0 w-80 sm:w-96 bg-panel/95 backdrop-blur-xl border-l border-[#1e293b] panel-closed transition-transform duration-500 ease-in-out z-40 p-8 flex flex-col shadow-2xl">
+    <!-- Taktisk Informations-Panel -->
+    <div id="info-panel" class="absolute right-0 top-0 bottom-0 w-80 sm:w-96 bg-panel/95 backdrop-blur-xl border-l border-[#1e293b] panel-closed transition-transform duration-500 ease-in-out z-40 p-8 flex flex-col shadow-2xl overflow-y-auto">
         <div class="flex justify-between items-center mb-8">
             <div class="flex items-center gap-2">
                 <i data-lucide="database" class="w-4 h-4 text-accent"></i>
@@ -136,16 +156,12 @@
             </button>
         </div>
         
-        <!-- Vanlig Visning -->
         <h3 id="info-title" class="text-2xl font-black uppercase italic tracking-tighter text-slate-100 mb-4">Laddar...</h3>
         <p id="info-desc" class="text-slate-400 text-sm leading-relaxed mb-6">...</p>
         
-        <!-- Edit Mode Visning -->
         <input type="text" id="edit-title" class="hidden bg-dark text-slate-100 font-black uppercase italic tracking-tighter text-lg border border-[#1e293b] focus:border-accent focus:outline-none rounded-xl p-3 mb-4 w-full transition-colors" placeholder="Titel..." />
         <textarea id="edit-desc" class="hidden bg-dark text-slate-400 text-sm border border-[#1e293b] focus:border-accent focus:outline-none rounded-xl p-3 mb-6 w-full h-32 resize-none transition-colors" placeholder="Beskrivning..."></textarea>
-        <button id="save-info" class="hidden w-full bg-accent hover:bg-orange-400 text-dark font-black uppercase tracking-widest py-3 rounded-xl transition-colors mb-4">
-            Spara Ändringar
-        </button>
+        <button id="save-info" class="hidden w-full bg-accent hover:bg-orange-400 text-dark font-black uppercase tracking-widest py-3 rounded-xl transition-colors mb-4">Spara Ändringar</button>
         
         <div class="mt-auto p-4 bg-dark rounded-2xl border border-[#1e293b]">
             <span class="text-[8px] font-black uppercase tracking-widest text-slate-500 block mb-1">Klassificering</span>
@@ -162,17 +178,19 @@
         <p id="guide-text" class="text-slate-100 font-black uppercase tracking-widest text-[10px] italic">Initierar guide-protokoll...</p>
     </div>
 
-    <!-- 3D Canvas -->
     <div id="canvas-container"></div>
 
     <script>
         lucide.createIcons();
 
-        // --- FILVÄGAR ---
+        // --- DINA TILLGÅNGAR ---
         const MODEL_URL = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/character_base.glb';
         const IDLE_ANIM_URL = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/idle.glb';
         const WALK_ANIM_URL = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/walk.glb';
-        const ARTWORK_URL_1 = 'min_tavla.jpg'; 
+        
+        // Exempel på din POPCORNMASKIN (Byt ut mot din egen länk från dina 400 filer!)
+        const POPCORN_GLB = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/bobba.glb'; // Platshållare tills du lägger in popcorn
+
         const HANDICRAFT_URL_1 = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/bobba.glb'; 
         const HANDICRAFT_URL_2 = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/bystmedkedja.glb';
         const HANDICRAFT_URL_3 = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/vitbyst.glb';
@@ -185,7 +203,11 @@
         let currentAction = null;
         let mainGltfLoader;
 
-        // Kamera & Interaktions-variabler
+        // Belysning referenser för Temabyte
+        let mainDirLight, hemiLight;
+        let currentThemeHex = '#e58e26'; // Startfärg
+
+        // Interaktion & Navigation
         const mouse = new THREE.Vector2();
         const raycaster = new THREE.Raycaster();
         let isDragging = false;
@@ -193,8 +215,14 @@
         let cameraAngleX = 0; 
         let cameraAngleY = Math.PI / 6; 
         const cameraDistance = 8;
+        
         const artworks = []; 
+        const floors = []; // NYTT: Array för att raycasta mot golvet vid autopromenad
         let hoveredArtwork = null;
+
+        // Auto-Move Variabler (NavMesh light)
+        let autoMoveTarget = null;
+        let pingMarker;
 
         let isFocused = false;
         let isFirstPerson = false;
@@ -207,8 +235,30 @@
         const keys = { w: false, a: false, s: false, d: false };
         const moveSpeed = 4.0;
 
-        const updateStatus = (text) => {
-            document.getElementById('loading-text').innerText = text;
+        const updateStatus = (text) => document.getElementById('loading-text').innerText = text;
+
+        // NYTT: Funktion för att byta tema live
+        const changeTheme = (hexColor) => {
+            currentThemeHex = hexColor;
+            document.documentElement.style.setProperty('--theme-accent', hexColor);
+            const numColor = parseInt(hexColor.replace('#', '0x'));
+            
+            // Uppdatera GUI-element
+            guideBot.material.emissive.setHex(numColor);
+            
+            // Uppdatera ljus
+            mainDirLight.color.setHex(numColor);
+            
+            // Uppdatera alla tavelramar
+            artworks.forEach(art => {
+                if(art.userData.highlightMesh && !art.userData.isVideo) {
+                    // Behåll det starka ljuset om vi hovrar, annars svagt
+                    const intensity = art === hoveredArtwork ? 2.5 : 0.5;
+                    art.userData.highlightMesh.material.emissive.setHex(numColor);
+                    art.userData.highlightMesh.material.emissiveIntensity = intensity;
+                }
+            });
+            showGuideText(`Galleritema uppdaterat.`);
         };
 
         const init = () => {
@@ -243,29 +293,33 @@
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); 
             scene.add(ambientLight);
 
-            const hemiLight = new THREE.HemisphereLight(0x0a0f1a, 0x0f172a, 2.5); 
+            hemiLight = new THREE.HemisphereLight(0x0a0f1a, 0x0f172a, 2.5); 
             scene.add(hemiLight);
 
-            const dirLight = new THREE.DirectionalLight(0xe58e26, 1.5); 
-            dirLight.position.set(5, 10, 5);
-            dirLight.castShadow = true; 
-            dirLight.shadow.mapSize.width = 2048;
-            dirLight.shadow.mapSize.height = 2048;
-            scene.add(dirLight);
+            mainDirLight = new THREE.DirectionalLight(0xe58e26, 1.5); 
+            mainDirLight.position.set(5, 10, 5);
+            mainDirLight.castShadow = true; 
+            mainDirLight.shadow.mapSize.width = 2048;
+            mainDirLight.shadow.mapSize.height = 2048;
+            scene.add(mainDirLight);
 
             mainGltfLoader = new THREE.GLTFLoader();
             const dracoLoader = new THREE.DRACOLoader();
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
             mainGltfLoader.setDRACOLoader(dracoLoader);
 
+            // Skapa Ping-markör för Teleportering
+            const pingGeo = new THREE.RingGeometry(0.5, 0.6, 32);
+            const pingMat = new THREE.MeshBasicMaterial({ color: 0xe58e26, transparent: true, opacity: 0, side: THREE.DoubleSide });
+            pingMarker = new THREE.Mesh(pingGeo, pingMat);
+            pingMarker.rotation.x = -Math.PI / 2;
+            pingMarker.position.y = 0.05;
+            scene.add(pingMarker);
+
             buildGalleryRoom();
 
             playerGroup = new THREE.Group();
             scene.add(playerGroup);
-
-            const personalLight = new THREE.PointLight(0xffffff, 0.8, 15);
-            personalLight.position.set(0, 2.5, 0);
-            playerGroup.add(personalLight);
 
             const botGeo = new THREE.SphereGeometry(0.12, 16, 16);
             const botMat = new THREE.MeshStandardMaterial({ color: 0x161d2b, emissive: 0xe58e26, emissiveIntensity: 2.0 });
@@ -273,26 +327,20 @@
             guideBot.position.set(0, 3, 0);
             scene.add(guideBot);
             
-            setTimeout(() => showGuideText("Välkommen till hallen. WASD för att navigera. 'V' för First-Person."), 3000);
+            setTimeout(() => showGuideText("Dubbelklicka på golvet för Auto-promenad."), 3000);
 
             const loadCharacterSystem = async () => {
                 const loadGLTF = (url) => new Promise((resolve, reject) => mainGltfLoader.load(url, resolve, undefined, reject));
 
                 try {
-                    updateStatus("Laddar huvudmodell...");
                     const gltfModel = await loadGLTF(MODEL_URL);
                     characterModel = gltfModel.scene;
-                    
                     characterModel.scale.set(0.01, 0.01, 0.01); 
                     characterModel.rotation.x = Math.PI / 2; 
-                    
                     playerGroup.add(characterModel);
-                    
                     characterModel.traverse((node) => { if (node.isMesh) node.castShadow = true; });
 
                     mixer = new THREE.AnimationMixer(characterModel);
-
-                    updateStatus("Injicerar animationer...");
                     try {
                         const gltfIdle = await loadGLTF(IDLE_ANIM_URL);
                         if (gltfIdle.animations.length > 0) animations['idle'] = mixer.clipAction(gltfIdle.animations[0]);
@@ -308,69 +356,74 @@
                     finishLoading("Karaktär: Fallback");
                 }
             };
-
             loadCharacterSystem();
 
+            // Interaktions-lyssnare
             window.addEventListener('keydown', onKeyDown, false);
             window.addEventListener('keyup', onKeyUp, false);
-            window.addEventListener('mousemove', onMouseMove, false);
-            window.addEventListener('mousedown', onMouseDown, false); 
-            window.addEventListener('mouseup', () => isDragging = false, false);
             window.addEventListener('resize', onWindowResize, false);
             
-            document.getElementById('close-panel').addEventListener('click', closeInfoPanel);
+            const containerEL = document.getElementById('canvas-container');
+            containerEL.addEventListener('mousemove', onMouseMove, false);
+            containerEL.addEventListener('mousedown', onMouseDown, false); 
+            containerEL.addEventListener('mouseup', () => isDragging = false, false);
             
+            // DUBBELKLICK FÖR AUTO-MOVE
+            containerEL.addEventListener('dblclick', onDoubleClick, false);
+
+            // MOBIL-TOUCH LOGIK
+            let lastTap = 0;
+            containerEL.addEventListener('touchstart', (e) => {
+                if (e.target.closest('#mobile-controls') || e.target.closest('header')) return;
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                    mouse.x = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(e.touches[0].clientY / window.innerHeight) * 2 + 1;
+                    
+                    // Dubbeltryck logik
+                    const now = Date.now();
+                    if(now - lastTap < 300) { onDoubleClick(e.touches[0]); }
+                    lastTap = now;
+                }
+            }, {passive: false});
+
+            containerEL.addEventListener('touchmove', (e) => {
+                if (!isDragging || isFocused) return;
+                if (e.target.closest('#mobile-controls')) return;
+                e.preventDefault();
+                const currentX = e.touches[0].clientX;
+                const currentY = e.touches[0].clientY;
+                cameraAngleX -= (currentX - previousMousePosition.x) * 0.005;
+                cameraAngleY -= (currentY - previousMousePosition.y) * 0.005;
+                cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2.2, cameraAngleY));
+                previousMousePosition = { x: currentX, y: currentY };
+            }, {passive: false});
+
+            containerEL.addEventListener('touchend', (e) => {
+                isDragging = false;
+                if (Date.now() - lastTap < 250) onMouseDown(); // Enkel-tap för att inspektera konst
+            });
+
+            // Länka mobilknappar till WASD (Visuellt och logiskt)
+            const handleTouchBtn = (id, key) => {
+                const btn = document.getElementById(id);
+                if(btn) {
+                    btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+                    btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+                }
+            };
+            handleTouchBtn('btn-w', 'w'); handleTouchBtn('btn-a', 'a');
+            handleTouchBtn('btn-s', 's'); handleTouchBtn('btn-d', 'd');
+
+            // UI Listeners
+            document.getElementById('close-panel').addEventListener('click', closeInfoPanel);
             document.getElementById('close-lightbox').addEventListener('click', () => {
                 const lb = document.getElementById('lightbox');
                 lb.classList.add('opacity-0');
                 setTimeout(() => lb.classList.add('hidden'), 300);
             });
-
-            document.getElementById('system-btn').addEventListener('click', () => {
-                document.getElementById('admin-panel').classList.toggle('hidden');
-            });
-            
-            document.getElementById('save-info').addEventListener('click', () => {
-                if (focusedArtwork) {
-                    focusedArtwork.userData.info.title = document.getElementById('edit-title').value;
-                    focusedArtwork.userData.info.desc = document.getElementById('edit-desc').value;
-                    showGuideText("Uppdatering sparad i RAM-minnet.");
-                }
-            });
-
-            document.getElementById('export-btn').addEventListener('click', () => {
-                const exportData = artworks.map(a => a.userData.info);
-                const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: "application/json"});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; 
-                a.download = "gallery_ops_data.json"; 
-                a.click();
-                showGuideText("Data exporterad till lokal enhet.");
-            });
-
-            document.getElementById('import-file').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        data.forEach(imp => {
-                            const art = artworks.find(a => a.userData.info.id === imp.id);
-                            if (art) {
-                                art.userData.info.title = imp.title;
-                                art.userData.info.desc = imp.desc;
-                            }
-                        });
-                        showGuideText("System återställt från JSON.");
-                    } catch (err) {
-                        showGuideText("Fel vid import av databas.");
-                    }
-                };
-                reader.readAsText(file);
-                document.getElementById('admin-panel').classList.add('hidden'); 
-            });
+            document.getElementById('system-btn').addEventListener('click', () => document.getElementById('admin-panel').classList.toggle('hidden'));
 
             animate();
         };
@@ -381,8 +434,7 @@
 
             const createNoiseTexture = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = 512;
-                canvas.height = 512;
+                canvas.width = 512; canvas.height = 512;
                 const ctx = canvas.getContext('2d');
                 const imgData = ctx.createImageData(512, 512);
                 for (let i = 0; i < imgData.data.length; i += 4) {
@@ -395,546 +447,335 @@
                 return texture;
             };
 
-            const floorNoiseTex = createNoiseTexture();
-            floorNoiseTex.repeat.set(25, 25); 
-
-            const wallNoiseTex = createNoiseTexture();
-            wallNoiseTex.repeat.set(10, 3); 
-
             const floorMat = new THREE.MeshStandardMaterial({ 
-                color: 0x05080f, roughness: 0.6, metalness: 0.4, bumpMap: floorNoiseTex, bumpScale: 0.015 
+                color: 0x05080f, roughness: 0.6, metalness: 0.4, bumpMap: createNoiseTexture(), bumpScale: 0.015 
             });
             
+            // Skapa golv och lägg till dem i `floors` arrayen för Teleportering
             const floorMain = new THREE.Mesh(new THREE.PlaneGeometry(roomSize, roomSize), floorMat);
-            floorMain.rotation.x = -Math.PI / 2;
-            floorMain.receiveShadow = true;
-            scene.add(floorMain);
+            floorMain.rotation.x = -Math.PI / 2; floorMain.receiveShadow = true;
+            scene.add(floorMain); floors.push(floorMain);
 
             const floorCorridor = new THREE.Mesh(new THREE.PlaneGeometry(10, 20), floorMat);
-            floorCorridor.rotation.x = -Math.PI / 2;
-            floorCorridor.position.set(0, 0, 30); 
-            floorCorridor.receiveShadow = true;
-            scene.add(floorCorridor);
+            floorCorridor.rotation.x = -Math.PI / 2; floorCorridor.position.set(0, 0, 30); floorCorridor.receiveShadow = true;
+            scene.add(floorCorridor); floors.push(floorCorridor);
 
             const floorHallB = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorMat);
-            floorHallB.rotation.x = -Math.PI / 2;
-            floorHallB.position.set(0, 0, 70); 
-            floorHallB.receiveShadow = true;
-            scene.add(floorHallB);
+            floorHallB.rotation.x = -Math.PI / 2; floorHallB.position.set(0, 0, 70); floorHallB.receiveShadow = true;
+            scene.add(floorHallB); floors.push(floorHallB);
 
-            const wallMat = new THREE.MeshStandardMaterial({ 
-                color: 0x0f172a, roughness: 0.9, bumpMap: wallNoiseTex, bumpScale: 0.02
-            });
-            
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9, bumpMap: createNoiseTexture(), bumpScale: 0.02 });
             const createWall = (width, x, z, rotY) => {
                 const wall = new THREE.Mesh(new THREE.PlaneGeometry(width, wallHeight), wallMat);
-                wall.position.set(x, wallHeight / 2, z);
-                wall.rotation.y = rotY;
-                wall.receiveShadow = true;
+                wall.position.set(x, wallHeight / 2, z); wall.rotation.y = rotY; wall.receiveShadow = true;
                 scene.add(wall);
             };
 
-            createWall(40, 0, -20, 0); 
-            createWall(40, -20, 0, Math.PI / 2); 
-            createWall(40, 20, 0, -Math.PI / 2); 
-            createWall(15, -12.5, 20, Math.PI); 
-            createWall(15, 12.5, 20, Math.PI);  
-            
-            createWall(20, -5, 30, Math.PI / 2); 
-            createWall(20, 5, 30, -Math.PI / 2); 
-
-            createWall(60, -30, 70, Math.PI / 2); 
-            createWall(60, 30, 70, -Math.PI / 2); 
-            createWall(60, 0, 100, Math.PI);      
-            
-            createWall(25, -17.5, 40, 0); 
-            createWall(25, 17.5, 40, 0);  
-
-            const addDownlight = (zPos) => {
-                const light = new THREE.SpotLight(0xfff0dd, 2.0);
-                light.position.set(0, 7, zPos);
-                const target = new THREE.Object3D();
-                target.position.set(0, 0, zPos);
-                scene.add(target);
-                light.target = target;
-                light.angle = Math.PI / 4;
-                light.penumbra = 0.5;
-                scene.add(light);
-            };
-            addDownlight(25);
-            addDownlight(35);
-
-            const hallBLight = new THREE.PointLight(0x00e5ff, 1.5, 50);
-            hallBLight.position.set(0, 8, 70);
-            scene.add(hallBLight);
+            // Bygg väggar
+            createWall(40, 0, -20, 0); createWall(40, -20, 0, Math.PI / 2); createWall(40, 20, 0, -Math.PI / 2); 
+            createWall(15, -12.5, 20, Math.PI); createWall(15, 12.5, 20, Math.PI);  
+            createWall(20, -5, 30, Math.PI / 2); createWall(20, 5, 30, -Math.PI / 2); 
+            createWall(60, -30, 70, Math.PI / 2); createWall(60, 30, 70, -Math.PI / 2); createWall(60, 0, 100, Math.PI);      
+            createWall(25, -17.5, 40, 0); createWall(25, 17.5, 40, 0);  
 
             addWallSign("HALL A: FYSISK KONST", 0, 6, -19.9, 0, '#e58e26'); 
             addWallSign("AURA CORRIDOR", 0, 6, 20.1, Math.PI, '#a855f7'); 
-            addWallSign("HALL B: AI VISIONER", 0, 6, 40.1, 0, '#00e5ff');
+            addWallSign("HALL B: BIO & AI", 0, 6, 40.1, 0, '#00e5ff');
 
+            // --- HALL A KONST ---
             addArtworkPlaceholder(-12, 3, -19.9, 0, 'https://i.imgur.com/M31eTpz.png', { id: "art_1", title: "Original 01", desc: "Handgjort originalverk från Bloms kollektion." });
             addArtworkPlaceholder(0, 3, -19.9, 0, 'https://i.imgur.com/Wm8YjcI.png', { id: "art_2", title: "Original 02", desc: "Ett stämningsfullt hantverk." });
             addArtworkPlaceholder(12, 3, -19.9, 0, 'https://i.imgur.com/Di7y4yW.png', { id: "art_3", title: "Original 03", desc: "Detaljerad studie i form och textur." });
 
-            addArtworkPlaceholder(-19.9, 3, -10, Math.PI / 2, 'https://i.imgur.com/oNP8qmG.png', { id: "art_4", title: "Original 04", desc: "Mörker och ljus i symbios." });
-            addArtworkPlaceholder(-19.9, 3, 2, Math.PI / 2, 'https://i.imgur.com/dV7mcum.png', { id: "art_5", title: "Original 05", desc: "En djupare inblick i skapandet." });
-            addArtworkPlaceholder(-19.9, 3, 14, Math.PI / 2, 'https://i.imgur.com/u44Drpo.png', { id: "art_6", title: "Original 06", desc: "Taktilt och expressivt." });
+            addHandicraftDisplay(6, 0, -6, { title: "Stenhuvud (Bobba)", desc: "En massiv och detaljerad skulptur." }, HANDICRAFT_URL_1, 0xe58e26, 0xfff0dd, 1.0);
+            addHandicraftDisplay(-6, 0, -6, { title: "Betongbyst med kedja", desc: "Rå betong möter kall metall." }, HANDICRAFT_URL_2, 0xe58e26, 0xfff0dd, 1.0);
 
-            addArtworkPlaceholder(19.9, 3, -10, -Math.PI / 2, 'https://i.imgur.com/iKBksWZ.png', { id: "art_7", title: "Original 07", desc: "Konceptuell utforskning." });
-            addArtworkPlaceholder(19.9, 3, 2, -Math.PI / 2, 'https://i.imgur.com/M31eTpz.png', { id: "art_8", title: "Original 08", desc: "Det avslutande verket i serien." });
+            // --- AURA KORRIDOR ---
+            const tPurple = 0xa855f7, lPurple = 0xf3e8ff;
+            addArtworkPlaceholder(-4.9, 3, 30, Math.PI / 2, 'https://i.imgur.com/FRKCQdP.png', { title: "AURA", desc: "En storslagen närvaro i lila och blå toner." }, tPurple, lPurple);
 
-            addHandicraftDisplay(6, 0, -6, {
-                id: "craft_1", title: "Stenhuvud (Bobba)", desc: "En massiv och detaljerad skulptur."
-            }, HANDICRAFT_URL_1, 0xe58e26, 0xfff0dd, 1.0, 0.8);
+            // --- HALL B (AI, Bio & Props) ---
+            const tCyan = 0x00e5ff, lCyan = 0xd0ffff;
+            addArtworkPlaceholder(-29.9, 3, 60, Math.PI / 2, 'https://i.imgur.com/vwCYbFE.jpg', { title: "Vision 01", desc: "AI-genererat verk." }, tCyan, lCyan);
             
-            addHandicraftDisplay(-6, 0, -6, {
-                id: "craft_2", title: "Betongbyst med kedja", desc: "Rå betong möter kall metall i detta uttrycksfulla verk."
-            }, HANDICRAFT_URL_2, 0xe58e26, 0xfff0dd, 1.0, 0.8);
+            // BIO-SKÄRM PÅ BAKRE VÄGGEN (Ersätter de 4 gamla tavlorna)
+            addVideoDisplay(0, 4, 99.9, Math.PI, 'DIN_MP4_LANK_HAR.mp4', { title: "Huvudvisning", desc: "Exklusiv visning av den senaste processen." }, tCyan, lCyan);
 
-            const themePurple = 0xa855f7; 
-            const lightPurple = 0xf3e8ff;
-            addArtworkPlaceholder(-4.9, 3, 30, Math.PI / 2, null, { id: "aura_1", title: "Aura 01", desc: "Studie av AI-karaktären Aura." }, themePurple, lightPurple);
-            addArtworkPlaceholder(4.9, 3, 30, -Math.PI / 2, null, { id: "aura_2", title: "Aura 02", desc: "Aura i miljö." }, themePurple, lightPurple);
+            // POPCORNMASKIN / PROPS (Placeras bredvid biografen)
+            addPropDisplay(-10, 0, 95, POPCORN_GLB, 1.5); // Ändra storleken (1.5) så den passar din popcornmaskin
 
-            // EXEMPEL PÅ VIDEO PÅ VÄGGEN 
-            // addVideoDisplay(0, 3, 20.1, Math.PI, 'DIN_VIDEO_LÄNK_HÄR.mp4', { id: "video_1", title: "Process-film", desc: "Video av skapandet." });
-
-
-            const themeCyan = 0x00e5ff;
-            const lightCyan = 0xd0ffff;
-
-            addArtworkPlaceholder(-29.9, 3, 50, Math.PI / 2, 'https://i.imgur.com/vwCYbFE.jpg', { id: "hallb_1", title: "Vision 01", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-            addArtworkPlaceholder(-29.9, 3, 65, Math.PI / 2, 'https://i.imgur.com/mBOc9zN.jpg', { id: "hallb_2", title: "Vision 02", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-            addArtworkPlaceholder(-29.9, 3, 80, Math.PI / 2, 'https://i.imgur.com/3TgqgyM.jpg', { id: "hallb_3", title: "Vision 03", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-            addArtworkPlaceholder(-29.9, 3, 90, Math.PI / 2, 'https://i.imgur.com/ZEFtWlR.jpg', { id: "hallb_4", title: "Vision 04", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-
-            addArtworkPlaceholder(29.9, 3, 50, -Math.PI / 2, 'https://i.imgur.com/tFnltep.jpg', { id: "hallb_5", title: "Vision 05", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-            addArtworkPlaceholder(29.9, 3, 65, -Math.PI / 2, 'https://i.imgur.com/zrdLjUk.jpg', { id: "hallb_6", title: "Vision 06", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-            addArtworkPlaceholder(29.9, 3, 80, -Math.PI / 2, 'https://i.imgur.com/QO96lNK.jpg', { id: "hallb_7", title: "Vision 07", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-            addArtworkPlaceholder(29.9, 3, 90, -Math.PI / 2, 'https://i.imgur.com/5irYQJf.jpg', { id: "hallb_8", title: "Vision 08", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-
-            addArtworkPlaceholder(-20, 3, 99.9, Math.PI, 'https://i.imgur.com/hGTttUo.jpg', { id: "hallb_9", title: "Vision 09", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-            addArtworkPlaceholder(-7, 3, 99.9, Math.PI, 'https://i.imgur.com/hF8uU5p.jpg', { id: "hallb_10", title: "Vision 10", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-            addArtworkPlaceholder(7, 3, 99.9, Math.PI, 'https://i.imgur.com/Za3w5uH.jpg', { id: "hallb_11", title: "Vision 11", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-            addArtworkPlaceholder(20, 3, 99.9, Math.PI, 'https://i.imgur.com/PvdSNWn.jpg', { id: "hallb_12", title: "Vision 12", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-
-            addArtworkPlaceholder(-17.5, 3, 40.1, 0, 'https://i.imgur.com/fbVwI5D.jpg', { id: "hallb_13", title: "Vision 13", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-            addArtworkPlaceholder(17.5, 3, 40.1, 0, 'https://i.imgur.com/jRLWVGE.jpg', { id: "hallb_14", title: "Vision 14", desc: "AI-genererat verk." }, themeCyan, lightCyan);
-            
-            addHandicraftDisplay(0, 0, 70, {
-                id: "craft_3", title: "Vit Betongbyst", desc: "Den centrala pelaren i Hall B. Ett ljust verk i den mörka hallen."
-            }, HANDICRAFT_URL_3, themeCyan, lightCyan, 1.0, 0.8);
+            addHandicraftDisplay(0, 0, 70, { title: "Vit Betongbyst", desc: "Den centrala pelaren i Hall B." }, HANDICRAFT_URL_3, tCyan, lCyan, 1.0);
         };
 
         const addWallSign = (text, x, y, z, rotY, colorHex) => {
             const canvas = document.createElement('canvas');
-            canvas.width = 1024;
-            canvas.height = 128;
+            canvas.width = 1024; canvas.height = 128;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = colorHex;
-            ctx.font = '900 64px "Inter", sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.letterSpacing = "8px"; 
+            ctx.fillStyle = colorHex; ctx.font = '900 64px "Inter", sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.letterSpacing = "8px"; 
             ctx.fillText(text, 512, 64);
-
-            const texture = new THREE.CanvasTexture(canvas);
-            const material = new THREE.MeshBasicMaterial({ 
-                map: texture, 
-                transparent: true,
-                blending: THREE.AdditiveBlending 
-            });
-            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.25), material);
-            mesh.position.set(x, y, z);
-            mesh.rotation.y = rotY;
-            scene.add(mesh);
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.25), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, blending: THREE.AdditiveBlending }));
+            mesh.position.set(x, y, z); mesh.rotation.y = rotY; scene.add(mesh);
         };
 
-        const addVideoDisplay = (x, y, z, rotY, videoUrl, info, themeColor = 0xe58e26, lightColor = 0xfff0dd) => {
-            const baseW = 4;
-            const baseH = 3;
-            const framePadding = 0.2;
+        const addArtworkPlaceholder = (x, y, z, rotY, imageUrl, info, themeColor = currentThemeHex, lightColor = 0xfff0dd) => {
+            const baseW = 4, baseH = 3, framePadding = 0.2;
+            const frame = new THREE.Mesh(new THREE.PlaneGeometry(baseW + framePadding, baseH + framePadding), new THREE.MeshStandardMaterial({ color: 0x161d2b, emissive: themeColor, emissiveIntensity: 0.5, side: THREE.DoubleSide }));
+            frame.position.set(x, y, z); frame.rotation.y = rotY; scene.add(frame);
 
-            const frameMat = new THREE.MeshStandardMaterial({ color: 0x161d2b, emissive: themeColor, emissiveIntensity: 0.5, side: THREE.DoubleSide });
-            const frame = new THREE.Mesh(new THREE.PlaneGeometry(baseW + framePadding, baseH + framePadding), frameMat);
-            frame.position.set(x, y, z);
-            frame.rotation.y = rotY;
-            scene.add(frame);
-
-            const video = document.createElement('video');
-            video.src = videoUrl;
-            video.crossOrigin = 'anonymous';
-            video.loop = true;
-            video.muted = true; 
-            video.play();
-
-            const videoTexture = new THREE.VideoTexture(video);
-            videoTexture.encoding = THREE.sRGBEncoding;
-
-            const canvasMat = new THREE.MeshStandardMaterial({ map: videoTexture, roughness: 0.3, metalness: 0.1 });
-            const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(baseW, baseH), canvasMat);
-            canvasMesh.position.set(x, y, z + 0.05);
-            canvasMesh.rotation.y = rotY;
-
-            info.isVideo = true; 
-            canvasMesh.userData = { isArtwork: true, highlightMesh: frame, info: info };
-            artworks.push(canvasMesh);
-            scene.add(canvasMesh);
-
-            const spotLight = new THREE.SpotLight(lightColor, 3.0);
-            spotLight.position.set(x + Math.sin(rotY) * 5, y + 4, z + Math.cos(rotY) * 5);
-            spotLight.target = canvasMesh;
-            spotLight.angle = Math.PI / 7;
-            spotLight.penumbra = 0.8;
-            scene.add(spotLight);
-        };
-
-        const addArtworkPlaceholder = (x, y, z, rotY, imageUrl, info, themeColor = 0xe58e26, lightColor = 0xfff0dd) => {
-            const baseW = 4;
-            const baseH = 3;
-            const framePadding = 0.2;
-
-            const frameMat = new THREE.MeshStandardMaterial({ color: 0x161d2b, emissive: themeColor, emissiveIntensity: 0.5, side: THREE.DoubleSide });
-            const frame = new THREE.Mesh(new THREE.PlaneGeometry(baseW + framePadding, baseH + framePadding), frameMat);
-            frame.position.set(x, y, z);
-            frame.rotation.y = rotY;
-            scene.add(frame);
-
-            let canvasMat = new THREE.MeshStandardMaterial({ color: 0x0a0f1a });
-            const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(baseW, baseH), canvasMat);
-            canvasMesh.position.set(x, y, z + 0.05);
-            canvasMesh.rotation.y = rotY;
+            const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(baseW, baseH), new THREE.MeshStandardMaterial({ color: 0x0a0f1a }));
+            canvasMesh.position.set(x, y, z + 0.05); canvasMesh.rotation.y = rotY;
             
-            if (imageUrl && imageUrl !== 'min_tavla.jpg') {
-                const textureLoader = new THREE.TextureLoader();
-                textureLoader.setCrossOrigin('anonymous'); 
-                textureLoader.load(imageUrl, (tex) => { 
-                    tex.encoding = THREE.sRGBEncoding; 
-                    canvasMesh.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.3, metalness: 0.1 });
-                    
+            if (imageUrl) {
+                const texLoader = new THREE.TextureLoader(); texLoader.setCrossOrigin('anonymous'); 
+                texLoader.load(imageUrl, (tex) => { 
+                    tex.encoding = THREE.sRGBEncoding; canvasMesh.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.3, metalness: 0.1 });
                     const aspect = tex.image.width / tex.image.height;
-                    let targetWidth, targetHeight;
-
-                    if (aspect > 1) { 
-                        targetWidth = baseW;
-                        targetHeight = baseW / aspect;
-                    } else { 
-                        targetHeight = baseH + 0.5; 
-                        targetWidth = targetHeight * aspect;
-                    }
-
-                    canvasMesh.scale.set(targetWidth / baseW, targetHeight / baseH, 1);
-                    frame.scale.set((targetWidth + framePadding) / (baseW + framePadding), (targetHeight + framePadding) / (baseH + framePadding), 1);
+                    const tW = aspect > 1 ? baseW : (baseH + 0.5) * aspect;
+                    const tH = aspect > 1 ? baseW / aspect : baseH + 0.5;
+                    canvasMesh.scale.set(tW / baseW, tH / baseH, 1);
+                    frame.scale.set((tW + framePadding) / (baseW + framePadding), (tH + framePadding) / (baseH + framePadding), 1);
                 });
             }
             
             info.imageUrl = imageUrl;
-            canvasMesh.userData = { isArtwork: true, highlightMesh: frame, info: info };
-            artworks.push(canvasMesh);
-            scene.add(canvasMesh);
-
-            const spotLight = new THREE.SpotLight(lightColor, 3.0);
-            spotLight.position.set(x + Math.sin(rotY) * 5, y + 4, z + Math.cos(rotY) * 5);
-            spotLight.target = canvasMesh;
-            spotLight.angle = Math.PI / 7;
-            spotLight.penumbra = 0.8;
-            scene.add(spotLight);
+            canvasMesh.userData = { isArtwork: true, highlightMesh: frame, info: info }; artworks.push(canvasMesh); scene.add(canvasMesh);
         };
 
-        const addHandicraftDisplay = (x, y, z, info, modelUrl, themeColor = 0xe58e26, lightColor = 0xfff0dd, modelScale = 1, yOffset = 0) => {
-            const baseMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
-            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 1.5, 32), baseMat);
-            base.position.set(x, y + 0.75, z);
-            base.receiveShadow = true;
-            scene.add(base);
+        // NYTT: BIO / VIDEO DISPLAY
+        const addVideoDisplay = (x, y, z, rotY, videoUrl, info, themeColor = currentThemeHex, lightColor = 0xfff0dd) => {
+            const baseW = 16, baseH = 9, framePadding = 0.5; // Större format 16:9
+            const frame = new THREE.Mesh(new THREE.PlaneGeometry(baseW + framePadding, baseH + framePadding), new THREE.MeshStandardMaterial({ color: 0x161d2b, emissive: themeColor, emissiveIntensity: 0.5, side: THREE.DoubleSide }));
+            frame.position.set(x, y, z); frame.rotation.y = rotY; scene.add(frame);
 
-            const glassMat = new THREE.MeshPhysicalMaterial({
-                color: 0x0f172a, metalness: 0.1, roughness: 0.05, transmission: 0.9, transparent: true, thickness: 0.5
-            });
-            const glassDome = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 2, 32), glassMat);
-            glassDome.position.set(x, y + 2.5, z);
-            scene.add(glassDome);
+            // Skapa en svart tavla först, vi laddar videon om URL:en fungerar
+            const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(baseW, baseH), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+            canvasMesh.position.set(x, y, z + 0.1); canvasMesh.rotation.y = rotY;
+
+            // Avkommentera och kör om du har en länk
+            /* 
+            const video = document.createElement('video'); video.src = videoUrl; video.crossOrigin = 'anonymous'; video.loop = true; video.muted = true; video.play();
+            const videoTexture = new THREE.VideoTexture(video); videoTexture.encoding = THREE.sRGBEncoding;
+            canvasMesh.material = new THREE.MeshStandardMaterial({ map: videoTexture, roughness: 0.3, metalness: 0.1 });
+            */
+
+            info.isVideo = true; canvasMesh.userData = { isArtwork: true, highlightMesh: frame, info: info };
+            artworks.push(canvasMesh); scene.add(canvasMesh);
+        };
+
+        const addHandicraftDisplay = (x, y, z, info, modelUrl, themeColor = currentThemeHex, lightColor = 0xfff0dd, modelScale = 1) => {
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 1.5, 32), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 }));
+            base.position.set(x, y + 0.75, z); base.receiveShadow = true; scene.add(base);
+
+            const glassDome = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 2, 32), new THREE.MeshPhysicalMaterial({ color: 0x0f172a, metalness: 0.1, roughness: 0.05, transmission: 0.9, transparent: true, thickness: 0.5 }));
+            glassDome.position.set(x, y + 2.5, z); scene.add(glassDome);
 
             const hitBox = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 2), new THREE.MeshBasicMaterial({ visible: false }));
-            hitBox.position.set(x, y + 2.0, z);
-            scene.add(hitBox);
+            hitBox.position.set(x, y + 2.0, z); scene.add(hitBox);
 
             const ring = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.03, 16, 64), new THREE.MeshStandardMaterial({ color: themeColor, emissive: themeColor, emissiveIntensity: 0.0 }));
-            ring.position.set(x, y + 1.55, z);
-            ring.rotation.x = Math.PI / 2;
-            scene.add(ring);
+            ring.position.set(x, y + 1.55, z); ring.rotation.x = Math.PI / 2; scene.add(ring);
 
-            hitBox.userData = { isArtwork: true, highlightMesh: ring, info: info, is3D: true };
-            artworks.push(hitBox);
+            hitBox.userData = { isArtwork: true, highlightMesh: ring, info: info, is3D: true }; artworks.push(hitBox);
 
             if (modelUrl) {
                 mainGltfLoader.load(modelUrl, (gltf) => {
-                    const artMesh = gltf.scene;
-                    artMesh.scale.set(modelScale, modelScale, modelScale); 
-                    artMesh.position.set(x, y + 1.5 + yOffset, z); 
-                    artMesh.traverse((node) => { if (node.isMesh) { /* node.castShadow = true; */ } });
-                    scene.add(artMesh);
-                    hitBox.userData.modelMesh = artMesh;
+                    const artMesh = gltf.scene; artMesh.scale.set(modelScale, modelScale, modelScale); artMesh.position.set(x, y + 1.5, z); 
+                    scene.add(artMesh); hitBox.userData.modelMesh = artMesh;
                 });
-            } else {
-                const artGeo = new THREE.TorusKnotGeometry(0.3, 0.1, 100, 16);
-                const artMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.6, roughness: 0.4 });
-                const artMesh = new THREE.Mesh(artGeo, artMat);
-                artMesh.position.set(x, y + 2.2, z);
-                hitBox.userData.modelMesh = artMesh; 
-                scene.add(artMesh);
             }
+        };
 
-            const spotLight = new THREE.SpotLight(lightColor, 4.0);
-            spotLight.position.set(x, y + 6, z);
-            spotLight.target = hitBox; 
-            spotLight.angle = Math.PI / 6;
-            spotLight.penumbra = 0.5;
-            scene.add(spotLight);
+        // NYTT: Funktion för att placera ut fristående 3D Props (som popcornmaskinen)
+        const addPropDisplay = (x, y, z, modelUrl, scale = 1.0) => {
+            if (modelUrl) {
+                mainGltfLoader.load(modelUrl, (gltf) => {
+                    const prop = gltf.scene;
+                    prop.position.set(x, y, z);
+                    prop.scale.set(scale, scale, scale);
+                    scene.add(prop);
+                });
+            }
         };
 
         const openInfoPanel = (info, is3D) => {
             const isEditMode = document.getElementById('edit-mode-toggle').checked;
-
             if (isEditMode) {
-                document.getElementById('info-title').classList.add('hidden');
-                document.getElementById('info-desc').classList.add('hidden');
-                document.getElementById('edit-title').classList.remove('hidden');
-                document.getElementById('edit-desc').classList.remove('hidden');
-                document.getElementById('save-info').classList.remove('hidden');
-
-                document.getElementById('edit-title').value = info.title;
-                document.getElementById('edit-desc').value = info.desc;
+                document.getElementById('info-title').classList.add('hidden'); document.getElementById('info-desc').classList.add('hidden');
+                document.getElementById('edit-title').classList.remove('hidden'); document.getElementById('edit-desc').classList.remove('hidden'); document.getElementById('save-info').classList.remove('hidden');
+                document.getElementById('edit-title').value = info.title; document.getElementById('edit-desc').value = info.desc;
             } else {
-                document.getElementById('info-title').classList.remove('hidden');
-                document.getElementById('info-desc').classList.remove('hidden');
-                document.getElementById('edit-title').classList.add('hidden');
-                document.getElementById('edit-desc').classList.add('hidden');
-                document.getElementById('save-info').classList.add('hidden');
-
-                document.getElementById('info-title').innerText = info.title;
-                document.getElementById('info-desc').innerText = info.desc;
-
-                if (!is3D && info.imageUrl && info.imageUrl !== 'min_tavla.jpg') {
-                    document.getElementById('lightbox-img').src = info.imageUrl;
-                    const lb = document.getElementById('lightbox');
-                    lb.classList.remove('hidden');
-                    setTimeout(() => lb.classList.remove('opacity-0'), 10);
+                document.getElementById('info-title').classList.remove('hidden'); document.getElementById('info-desc').classList.remove('hidden');
+                document.getElementById('edit-title').classList.add('hidden'); document.getElementById('edit-desc').classList.add('hidden'); document.getElementById('save-info').classList.add('hidden');
+                document.getElementById('info-title').innerText = info.title; document.getElementById('info-desc').innerText = info.desc;
+                if (!is3D && info.imageUrl) {
+                    document.getElementById('lightbox-img').src = info.imageUrl; const lb = document.getElementById('lightbox');
+                    lb.classList.remove('hidden'); setTimeout(() => lb.classList.remove('opacity-0'), 10);
                 }
             }
-
-            document.getElementById('info-panel').classList.remove('panel-closed');
-            document.getElementById('info-panel').classList.add('panel-open');
+            document.getElementById('info-panel').classList.remove('panel-closed'); document.getElementById('info-panel').classList.add('panel-open');
         };
 
         const closeInfoPanel = () => {
-            isFocused = false; 
-            focusedArtwork = null; 
-            document.getElementById('info-panel').classList.remove('panel-open');
-            document.getElementById('info-panel').classList.add('panel-closed');
+            isFocused = false; focusedArtwork = null; 
+            document.getElementById('info-panel').classList.remove('panel-open'); document.getElementById('info-panel').classList.add('panel-closed');
             showGuideText("Fortsätter skanning..."); 
-            
-            const lb = document.getElementById('lightbox');
-            lb.classList.add('opacity-0');
-            setTimeout(() => lb.classList.add('hidden'), 300);
+            const lb = document.getElementById('lightbox'); lb.classList.add('opacity-0'); setTimeout(() => lb.classList.add('hidden'), 300);
         };
 
         const showGuideText = (text) => {
-            const dialog = document.getElementById('guide-dialog');
-            document.getElementById('guide-text').innerText = text;
-            dialog.classList.remove('opacity-0');
-            
-            clearTimeout(window.guideTimeout);
-            window.guideTimeout = setTimeout(() => {
-                dialog.classList.add('opacity-0');
-            }, 5000);
+            const dialog = document.getElementById('guide-dialog'); document.getElementById('guide-text').innerText = text; dialog.classList.remove('opacity-0');
+            clearTimeout(window.guideTimeout); window.guideTimeout = setTimeout(() => { dialog.classList.add('opacity-0'); }, 5000);
         };
 
         const playAnimation = (name) => {
-            const action = animations[name];
-            if (!action || currentAction === action) return;
+            const action = animations[name]; if (!action || currentAction === action) return;
             if (currentAction) currentAction.fadeOut(0.3);
-            action.reset().fadeIn(0.3).play();
-            currentAction = action;
+            action.reset().fadeIn(0.3).play(); currentAction = action;
         };
 
         const createFallbackCharacter = () => {
-            const mat = new THREE.MeshStandardMaterial({ color: 0x0f172a, wireframe: true, emissive: 0xe58e26, emissiveIntensity: 0.2 });
-            characterModel = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), mat);
-            characterModel.position.y = 1;
-            characterModel.castShadow = true;
-            playerGroup.add(characterModel);
+            characterModel = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({ color: 0x0f172a, wireframe: true, emissive: 0xe58e26, emissiveIntensity: 0.2 }));
+            characterModel.position.y = 1; characterModel.castShadow = true; playerGroup.add(characterModel);
         };
 
-        const finishLoading = (statusText) => {
-            document.getElementById('loader').classList.add('fade-out');
-            document.getElementById('system-status').innerText = statusText;
-        };
-
-        const onWindowResize = () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight); 
-        };
+        const finishLoading = (statusText) => { document.getElementById('loader').classList.add('fade-out'); document.getElementById('system-status').innerText = statusText; };
+        const onWindowResize = () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); };
 
         const onMouseMove = (event) => {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1; mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
             if (isDragging) { 
-                const deltaX = event.clientX - previousMousePosition.x;
-                const deltaY = event.clientY - previousMousePosition.y;
-                
-                if (isFocused && focusedArtwork && focusedArtwork.userData.is3D) {
-                    focusedArtwork.userData.modelMesh.rotation.y += deltaX * 0.01;
-                } else if (!isFocused) {
-                    cameraAngleX -= deltaX * 0.005;
-                    cameraAngleY -= deltaY * 0.005;
-                    cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2.2, cameraAngleY));
-                }
+                const deltaX = event.clientX - previousMousePosition.x; const deltaY = event.clientY - previousMousePosition.y;
+                if (isFocused && focusedArtwork && focusedArtwork.userData.is3D) focusedArtwork.userData.modelMesh.rotation.y += deltaX * 0.01;
+                else if (!isFocused) { cameraAngleX -= deltaX * 0.005; cameraAngleY -= deltaY * 0.005; cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2.2, cameraAngleY)); }
             }
             previousMousePosition = { x: event.clientX, y: event.clientY };
         };
 
         const onMouseDown = () => {
             isDragging = true;
-            
             if (hoveredArtwork && hoveredArtwork.userData.info && !isFocused) {
-                isFocused = true;
-                focusedArtwork = hoveredArtwork; 
-                openInfoPanel(hoveredArtwork.userData.info, hoveredArtwork.userData.is3D);
-                
+                isFocused = true; focusedArtwork = hoveredArtwork; openInfoPanel(hoveredArtwork.userData.info, hoveredArtwork.userData.is3D);
                 showGuideText(`Analyserar: ${hoveredArtwork.userData.info.title}`);
-
-                const objPos = hoveredArtwork.position;
-                const is3D = hoveredArtwork.userData.is3D;
+                autoMoveTarget = null; pingMarker.material.opacity = 0; // Avbryt automove om vi klickar konst
+                const objPos = hoveredArtwork.position; const is3D = hoveredArtwork.userData.is3D;
                 const focusDist = isFirstPerson ? 2.5 : 4.5; 
-
                 if (is3D) {
-                    let dirToChar = new THREE.Vector3().subVectors(playerGroup.position, objPos);
-                    dirToChar.y = 0; 
-                    dirToChar.normalize();
-                    
-                    focusCameraTarget.copy(objPos).add(dirToChar.multiplyScalar(focusDist));
-                    focusCameraTarget.y = objPos.y + 1.5; 
-                    
-                    focusLookAtTarget.copy(objPos);
-                    focusLookAtTarget.y += 0.5; 
+                    let dirToChar = new THREE.Vector3().subVectors(playerGroup.position, objPos); dirToChar.y = 0; dirToChar.normalize();
+                    focusCameraTarget.copy(objPos).add(dirToChar.multiplyScalar(focusDist)); focusCameraTarget.y = objPos.y + 1.5; focusLookAtTarget.copy(objPos); focusLookAtTarget.y += 0.5; 
                 } else {
-                    const rotY = hoveredArtwork.rotation.y;
-                    focusCameraTarget.set(
-                        objPos.x + Math.sin(rotY) * focusDist,
-                        objPos.y, 
-                        objPos.z + Math.cos(rotY) * focusDist
-                    );
-                    focusLookAtTarget.copy(objPos);
+                    const rotY = hoveredArtwork.rotation.y; focusCameraTarget.set(objPos.x + Math.sin(rotY) * focusDist, objPos.y, objPos.z + Math.cos(rotY) * focusDist); focusLookAtTarget.copy(objPos);
                 }
+            }
+        };
+
+        // NYTT: Dubbelklick för Teleportering/Auto-Move
+        const onDoubleClick = (event) => {
+            let clientX, clientY;
+            if (event.touches) { clientX = event.touches[0].clientX; clientY = event.touches[0].clientY; } 
+            else { clientX = event.clientX; clientY = event.clientY; }
+
+            const tapMouse = new THREE.Vector2((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1);
+            raycaster.setFromCamera(tapMouse, camera);
+            
+            const floorIntersects = raycaster.intersectObjects(floors);
+            if (floorIntersects.length > 0 && !isFocused) {
+                autoMoveTarget = floorIntersects[0].point;
+                // Animerar ping-markören
+                pingMarker.position.set(autoMoveTarget.x, 0.05, autoMoveTarget.z);
+                pingMarker.material.opacity = 1.0;
+                pingMarker.scale.set(0.1, 0.1, 0.1);
+                showGuideText("Navigerar till waypoint...");
             }
         };
 
         const onKeyDown = (event) => { 
-            const key = event.key.toLowerCase();
-            if (keys.hasOwnProperty(key)) keys[key] = true; 
-            
-            if (key === 'v') {
-                isFirstPerson = !isFirstPerson;
-                if (characterModel) characterModel.visible = !isFirstPerson;
-                showGuideText(isFirstPerson ? "First-Person Mode: ONLINE" : "Third-Person Mode: ONLINE");
-            }
+            const key = event.key.toLowerCase(); if (keys.hasOwnProperty(key)) keys[key] = true; 
+            if (key === 'v') { isFirstPerson = !isFirstPerson; if (characterModel) characterModel.visible = !isFirstPerson; showGuideText(isFirstPerson ? "First-Person Mode: ONLINE" : "Third-Person Mode: ONLINE"); }
         };
         const onKeyUp = (event) => { if (keys.hasOwnProperty(event.key.toLowerCase())) keys[event.key.toLowerCase()] = false; };
 
-        // --- RENDER LOOP ---
         const animate = () => {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
 
-            artworks.forEach(item => {
-                if (item.userData.modelMesh && item !== focusedArtwork) {
-                    item.userData.modelMesh.rotation.y += delta * 0.5;
-                }
-            });
+            // Animera Ping-markör
+            if (pingMarker.material.opacity > 0) {
+                pingMarker.scale.addScalar(delta * 2);
+                pingMarker.material.opacity -= delta * 1.5;
+            }
+
+            artworks.forEach(item => { if (item.userData.modelMesh && item !== focusedArtwork) item.userData.modelMesh.rotation.y += delta * 0.5; });
 
             if (playerGroup) {
                 let moveX = 0, moveZ = 0;
-                if (keys.w) moveZ -= 1;
-                if (keys.s) moveZ += 1;
-                if (keys.a) moveX -= 1;
-                if (keys.d) moveX += 1;
+                let manualOverride = keys.w || keys.a || keys.s || keys.d;
 
-                const isMoving = moveX !== 0 || moveZ !== 0;
+                // Bryt AutoMove om användaren rör WASD
+                if (manualOverride) autoMoveTarget = null;
 
-                if (isMoving) {
+                if (autoMoveTarget) {
+                    const dx = autoMoveTarget.x - playerGroup.position.x;
+                    const dz = autoMoveTarget.z - playerGroup.position.z;
+                    const dist = Math.sqrt(dx*dx + dz*dz);
+                    
+                    if (dist < 0.5) {
+                        autoMoveTarget = null; // Mål nått!
+                        showGuideText("Waypoint nådd.");
+                    } else {
+                        // Gå rakt mot målet (Förbikopplar kamerariktning för automove)
+                        const nextX = playerGroup.position.x + (dx/dist) * moveSpeed * delta;
+                        const nextZ = playerGroup.position.z + (dz/dist) * moveSpeed * delta;
+                        playerGroup.position.x = nextX; playerGroup.position.z = nextZ;
+                        
+                        const targetAngle = Math.atan2(dx/dist, dz/dist);
+                        let diff = targetAngle - playerGroup.rotation.y;
+                        while (diff < -Math.PI) diff += Math.PI * 2;
+                        while (diff > Math.PI) diff -= Math.PI * 2;
+                        playerGroup.rotation.y += diff * 12 * delta; 
+                        
+                        playAnimation('walk');
+                    }
+                } 
+                else if (manualOverride) {
+                    if (keys.w) moveZ -= 1; if (keys.s) moveZ += 1; if (keys.a) moveX -= 1; if (keys.d) moveX += 1;
                     const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
                     const dirX = moveX / length, dirZ = moveZ / length;
-                    
                     const s = Math.sin(cameraAngleX), c = Math.cos(cameraAngleX);
                     const worldDirX = dirX * c - dirZ * s, worldDirZ = dirX * s + dirZ * c;
 
-                    const nextX = playerGroup.position.x + worldDirX * moveSpeed * delta;
-                    const nextZ = playerGroup.position.z + worldDirZ * moveSpeed * delta;
-
-                    let clampX = nextX;
-                    let clampZ = nextZ;
-
-                    let inMain = clampZ <= 19.5;
-                    let inCorridor = clampZ > 19.5 && clampZ <= 40.5;
-                    let inHallB = clampZ > 40.5;
-
-                    if (playerGroup.position.z <= 19.5 && clampZ > 19.5 && (clampX < -4.5 || clampX > 4.5)) {
-                        clampZ = 19.5; inMain = true; inCorridor = false;
-                    }
-                    if (playerGroup.position.z >= 40.5 && clampZ < 40.5 && (clampX < -4.5 || clampX > 4.5)) {
-                        clampZ = 40.5; inHallB = true; inCorridor = false;
-                    }
-
-                    if (inMain) {
-                        if (clampX < -19.5) clampX = -19.5;
-                        if (clampX > 19.5) clampX = 19.5;
-                        if (clampZ < -19.5) clampZ = -19.5;
-                    } else if (inCorridor) {
-                        if (clampX < -4.5) clampX = -4.5;
-                        if (clampX > 4.5) clampX = 4.5;
-                    } else if (inHallB) {
-                        if (clampX < -29.5) clampX = -29.5;
-                        if (clampX > 29.5) clampX = 29.5;
-                        if (clampZ > 99.5) clampZ = 99.5;
-                    }
-
-                    playerGroup.position.x = clampX;
-                    playerGroup.position.z = clampZ;
+                    playerGroup.position.x += worldDirX * moveSpeed * delta;
+                    playerGroup.position.z += worldDirZ * moveSpeed * delta;
 
                     const targetAngle = Math.atan2(worldDirX, worldDirZ);
                     let diff = targetAngle - playerGroup.rotation.y;
                     while (diff < -Math.PI) diff += Math.PI * 2;
                     while (diff > Math.PI) diff -= Math.PI * 2;
                     playerGroup.rotation.y += diff * 12 * delta; 
-
                     playAnimation('walk'); 
-                    
-                    if (isFocused) {
-                        closeInfoPanel();
-                    }
+                    if (isFocused) closeInfoPanel();
                 } else {
                     playAnimation('idle'); 
                 }
 
-                let targetCameraPos = new THREE.Vector3();
-                let targetLookAt = new THREE.Vector3();
+                // KOLLISION
+                let clampX = playerGroup.position.x;
+                let clampZ = playerGroup.position.z;
+                let inMain = clampZ <= 19.5; let inCorridor = clampZ > 19.5 && clampZ <= 40.5; let inHallB = clampZ > 40.5;
+                if (playerGroup.position.z <= 19.5 && clampZ > 19.5 && (clampX < -4.5 || clampX > 4.5)) { clampZ = 19.5; inMain = true; inCorridor = false; }
+                if (playerGroup.position.z >= 40.5 && clampZ < 40.5 && (clampX < -4.5 || clampX > 4.5)) { clampZ = 40.5; inHallB = true; inCorridor = false; }
 
-                if (isFocused) {
-                    targetCameraPos.copy(focusCameraTarget);
-                    targetLookAt.copy(focusLookAtTarget);
-                } else if (isFirstPerson) {
+                if (inMain) { if (clampX < -19.5) clampX = -19.5; if (clampX > 19.5) clampX = 19.5; if (clampZ < -19.5) clampZ = -19.5; } 
+                else if (inCorridor) { if (clampX < -4.5) clampX = -4.5; if (clampX > 4.5) clampX = 4.5; } 
+                else if (inHallB) { if (clampX < -29.5) clampX = -29.5; if (clampX > 29.5) clampX = 29.5; if (clampZ > 99.5) clampZ = 99.5; }
+                playerGroup.position.x = clampX; playerGroup.position.z = clampZ;
+
+                // KAMERA
+                let targetCameraPos = new THREE.Vector3(); let targetLookAt = new THREE.Vector3();
+                if (isFocused) { targetCameraPos.copy(focusCameraTarget); targetLookAt.copy(focusLookAtTarget); } 
+                else if (isFirstPerson) {
                     targetCameraPos.copy(playerGroup.position).add(new THREE.Vector3(0, 2.5, 0)); 
-                    
-                    const lookDir = new THREE.Vector3(
-                        -Math.sin(cameraAngleY) * Math.sin(cameraAngleX),
-                        -Math.cos(cameraAngleY) + 0.5,
-                        -Math.sin(cameraAngleY) * Math.cos(cameraAngleX)
-                    ).normalize();
-                    
+                    const lookDir = new THREE.Vector3(-Math.sin(cameraAngleY) * Math.sin(cameraAngleX), -Math.cos(cameraAngleY) + 0.5, -Math.sin(cameraAngleY) * Math.cos(cameraAngleX)).normalize();
                     targetLookAt.copy(targetCameraPos).add(lookDir);
                 } else {
                     const offsetX = cameraDistance * Math.sin(cameraAngleY) * Math.sin(cameraAngleX);
@@ -943,66 +784,40 @@
                     targetCameraPos.copy(playerGroup.position).add(new THREE.Vector3(offsetX, offsetY, offsetZ));
                     targetLookAt.copy(playerGroup.position).add(new THREE.Vector3(0, 1.5, 0));
                 }
-
                 camera.position.lerp(targetCameraPos, 0.08);
-
                 if (currentLookAt.length() === 0) currentLookAt.copy(targetLookAt); 
-                currentLookAt.lerp(targetLookAt, 0.08);
-                camera.lookAt(currentLookAt);
+                currentLookAt.lerp(targetLookAt, 0.08); camera.lookAt(currentLookAt);
                 
                 const targetFOV = isFocused ? 45 : 75;
-                if (Math.abs(camera.fov - targetFOV) > 0.1) {
-                    camera.fov += (targetFOV - camera.fov) * 0.1;
-                    camera.updateProjectionMatrix();
-                }
+                if (Math.abs(camera.fov - targetFOV) > 0.1) { camera.fov += (targetFOV - camera.fov) * 0.1; camera.updateProjectionMatrix(); }
 
                 if (guideBot) {
                     const time = clock.getElapsedTime();
                     const botOffset = new THREE.Vector3(-1.5, 2.0 + Math.sin(time * 2) * 0.1, -1.0);
                     botOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerGroup.rotation.y);
-                    const botTarget = playerGroup.position.clone().add(botOffset);
-                    guideBot.position.lerp(botTarget, 0.05);
+                    guideBot.position.lerp(playerGroup.position.clone().add(botOffset), 0.05);
                 }
             }
 
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(artworks);
-
             const holoUI = document.getElementById('hologram-ui');
 
             if (intersects.length > 0) {
                 document.body.style.cursor = 'crosshair';
-                
                 if (hoveredArtwork !== intersects[0].object) {
                     if (hoveredArtwork) hoveredArtwork.userData.highlightMesh.material.emissiveIntensity = hoveredArtwork.userData.is3D ? 0.0 : 0.5;
-                    
                     hoveredArtwork = intersects[0].object;
                     hoveredArtwork.userData.highlightMesh.material.emissiveIntensity = hoveredArtwork.userData.is3D ? 2.5 : 2.5; 
                 }
-
                 if (!isFocused && hoveredArtwork) {
-                    const vector = hoveredArtwork.position.clone();
-                    vector.y += hoveredArtwork.userData.is3D ? 1.5 : 1.0; 
-                    vector.project(camera);
-
-                    const x = (vector.x * .5 + .5) * window.innerWidth;
-                    const y = (vector.y * -.5 + .5) * window.innerHeight;
-
-                    holoUI.style.left = `${x}px`;
-                    holoUI.style.top = `${y}px`;
-                    holoUI.classList.remove('opacity-0');
-                    document.getElementById('hologram-title').innerText = hoveredArtwork.userData.info.title;
-                } else {
-                    holoUI.classList.add('opacity-0');
-                }
-
+                    const vector = hoveredArtwork.position.clone(); vector.y += hoveredArtwork.userData.is3D ? 1.5 : 1.0; vector.project(camera);
+                    holoUI.style.left = `${(vector.x * .5 + .5) * window.innerWidth}px`; holoUI.style.top = `${(vector.y * -.5 + .5) * window.innerHeight}px`;
+                    holoUI.classList.remove('opacity-0'); document.getElementById('hologram-title').innerText = hoveredArtwork.userData.info.title;
+                } else holoUI.classList.add('opacity-0');
             } else {
-                document.body.style.cursor = 'default';
-                holoUI.classList.add('opacity-0'); 
-                if (hoveredArtwork) {
-                    hoveredArtwork.userData.highlightMesh.material.emissiveIntensity = hoveredArtwork.userData.is3D ? 0.0 : 0.5;
-                    hoveredArtwork = null;
-                }
+                document.body.style.cursor = 'default'; holoUI.classList.add('opacity-0'); 
+                if (hoveredArtwork) { hoveredArtwork.userData.highlightMesh.material.emissiveIntensity = hoveredArtwork.userData.is3D ? 0.0 : 0.5; hoveredArtwork = null; }
             }
 
             if (mixer) mixer.update(delta);
