@@ -11,7 +11,6 @@
   <style>
     body { margin: 0; overflow: hidden; background-color: black; color: white; user-select: none; }
     
-    /* Göm scrollbars men behåll scroll-funktion */
     ::-webkit-scrollbar { display: none; }
     * { scrollbar-width: none; }
     
@@ -40,8 +39,14 @@
       stroke: #10b981;
     }
 
+    .animate-data-flow-purple {
+      stroke-dasharray: 10 40;
+      animation: flowData 1.5s linear infinite;
+      stroke: #a855f7;
+    }
+
     .modal-fade-in {
-      animation: modalFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @keyframes modalFadeIn {
@@ -63,21 +68,19 @@
   <!-- Huvudkarta (Panoreringsbar) -->
   <main id="container" class="h-screen w-full overflow-auto relative z-10 cursor-grab">
     <div class="w-[3000px] h-[3000px] relative flex items-center justify-center" id="map-area">
-      
       <!-- SVG Linjer ritas här -->
       <svg class="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-0" id="svg-layer"></svg>
-      
       <!-- Noder ritas här via JS -->
     </div>
   </main>
 
   <!-- Modal för bilder -->
-  <div id="modal" class="fixed inset-0 z-50 items-center justify-center p-4 md:p-8 hidden flex">
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onclick="closeModal()"></div>
+  <div id="modal" class="fixed inset-0 z-50 items-center justify-center p-4 md:p-8 hidden">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeModal()"></div>
     
     <div class="relative inline-flex flex-col items-center justify-center max-w-full max-h-[90vh] modal-fade-in">
       <img id="modal-img" src="" class="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-[0_0_100px_rgba(0,0,0,0.9)] pointer-events-auto" />
-      <button onclick="closeModal()" class="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-black/50 hover:bg-neutral-800 border border-neutral-700 hover:border-white rounded-full text-neutral-400 hover:text-white transition-all backdrop-blur-xl z-50">
+      <button onclick="closeModal()" class="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-black/50 hover:bg-neutral-800 border border-neutral-700 hover:border-white rounded-full text-neutral-400 hover:text-white transition-all backdrop-blur-xl z-50 pointer-events-auto">
         <i data-lucide="x"></i>
       </button>
     </div>
@@ -89,17 +92,24 @@
       // Core Node
       { id: 'core', type: 'core', category: 'core', x: 0, y: 0, title: 'Jonas Blomquist', buttonImageUrl: 'https://i.imgur.com/e15bk2d.png', modal: { imageUrl: 'https://i.imgur.com/jBnpApX.jpeg' } },
       
-      // TIGHTARE Zick-Zack layout för DNA
+      // HÖGER GREN: DNA (App-Valv)
       { id: 'dna_1', type: 'info', category: 'dna', x: 150, y: -90, title: 'DNA-Arkivarien', buttonImageUrl: 'https://i.imgur.com/PFAdjgu.png', modal: { imageUrl: 'https://i.imgur.com/Ne2QW0P.jpeg' } },
       { id: 'dna_2', type: 'info', category: 'dna', x: 260, y: 70, title: 'Fragmenteraren', buttonImageUrl: 'https://i.imgur.com/ca2F98e.png', modal: { imageUrl: 'https://i.imgur.com/WbiHLes.png' } },
       { id: 'dna_3', type: 'info', category: 'dna', x: 370, y: -100, title: 'Analysatorn', buttonImageUrl: 'https://i.imgur.com/aR5GMF8.png', modal: { imageUrl: 'https://i.imgur.com/ChpOXSG.png' } },
       { id: 'dna_link', type: 'link', category: 'dna', x: 480, y: 50, title: 'Öppna App-Valv', url: 'appvalvet.html', buttonImageUrl: 'https://i.imgur.com/6CFcYkI.png' },
       
-      // TIGHTARE Zick-Zack layout för Prompt
+      // VÄNSTER GREN: PROMPT (Kreationer)
       { id: 'prompt_1', type: 'info', category: 'prompt', x: -150, y: -90, title: 'Prompt Scout Flow', buttonImageUrl: 'https://i.imgur.com/zJhIYWA.png', modal: { imageUrl: 'https://i.imgur.com/oMUYiaZ.png' } },
       { id: 'prompt_2', type: 'info', category: 'prompt', x: -260, y: 70, title: 'Ad Scout Flow', buttonImageUrl: 'https://i.imgur.com/akeUclH.png', modal: { imageUrl: 'https://i.imgur.com/zf6dqoA.png' } },
       { id: 'prompt_3', type: 'info', category: 'prompt', x: -370, y: -100, title: 'Prompt Scout Motion', buttonImageUrl: 'https://i.imgur.com/X3hHys6.png', modal: { imageUrl: 'https://i.imgur.com/RvTLUrJ.png' } },
-      { id: 'prompt_link', type: 'link', category: 'prompt', x: -480, y: 50, title: 'Öppna Kreationer', url: 'promptvalvet.html', buttonImageUrl: 'https://i.imgur.com/QffWYdp.png' }
+      { id: 'prompt_link', type: 'link', category: 'prompt', x: -480, y: 50, title: 'Öppna Kreationer', url: 'promptvalvet.html', buttonImageUrl: 'https://i.imgur.com/QffWYdp.png' },
+
+      // NY GREN UPPÅT: KONSTHALL (Art Vault)
+      { id: 'art_1', type: 'info', category: 'art', x: -80, y: -160, title: 'Trä', buttonImageUrl: 'https://i.imgur.com/5XWTlKx.png', modal: { imageUrl: 'https://i.imgur.com/tAgt65c.png' } },
+      { id: 'art_2', type: 'info', category: 'art', x: 80, y: -270, title: 'Sten', buttonImageUrl: 'https://i.imgur.com/XFaUeAZ.png', modal: { imageUrl: 'https://i.imgur.com/sSRCbRk.png' } },
+      { id: 'art_3', type: 'info', category: 'art', x: -80, y: -380, title: 'Glas', buttonImageUrl: 'https://i.imgur.com/JCMZdfK.png', modal: { imageUrl: 'https://i.imgur.com/c0u8FZS.png' } },
+      { id: 'art_4', type: 'info', category: 'art', x: 80, y: -490, title: 'Betong', buttonImageUrl: 'https://i.imgur.com/OvZ5usY.png', modal: { imageUrl: 'https://i.imgur.com/SWmCH98.png' } },
+      { id: 'art_link', type: 'link', category: 'art', x: 0, y: -600, title: 'Art Vault', url: 'konsthall.html', buttonImageUrl: 'https://i.imgur.com/ON1QUaC.png' }
     ];
 
     const mapEdges = [
@@ -107,10 +117,17 @@
       { from: 'dna_1', to: 'dna_2', branch: 'dna' },
       { from: 'dna_2', to: 'dna_3', branch: 'dna' },
       { from: 'dna_3', to: 'dna_link', branch: 'dna' },
+      
       { from: 'core', to: 'prompt_1', branch: 'prompt' },
       { from: 'prompt_1', to: 'prompt_2', branch: 'prompt' },
       { from: 'prompt_2', to: 'prompt_3', branch: 'prompt' },
-      { from: 'prompt_3', to: 'prompt_link', branch: 'prompt' }
+      { from: 'prompt_3', to: 'prompt_link', branch: 'prompt' },
+
+      { from: 'core', to: 'art_1', branch: 'art' },
+      { from: 'art_1', to: 'art_2', branch: 'art' },
+      { from: 'art_2', to: 'art_3', branch: 'art' },
+      { from: 'art_3', to: 'art_4', branch: 'art' },
+      { from: 'art_4', to: 'art_link', branch: 'art' }
     ];
 
     // --- DOM ELEMENT ---
@@ -122,26 +139,34 @@
 
     // --- INITIERING OCH RITNING AV KARTAN ---
     window.onload = () => {
-      // Centrera kartan på skärmen
       container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
       container.scrollTop = (container.scrollHeight - container.clientHeight) / 2;
       
       renderEdges();
       renderNodes();
-      lucide.createIcons();
+      
+      try { lucide.createIcons(); } catch (e) { }
     };
 
     function renderEdges() {
-      let svgHTML = '<g transform="translate(1500, 1500)">'; // Centrum
-      
+      let svgHTML = '<g transform="translate(1500, 1500)">';
       mapEdges.forEach(edge => {
         const from = mapNodes.find(n => n.id === edge.from);
         const to = mapNodes.find(n => n.id === edge.to);
-        
         if (from && to) {
-          const midX = (from.x + to.x) / 2;
-          const path = `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`;
-          const pulseClass = edge.branch === 'dna' ? 'animate-data-flow-amber' : 'animate-data-flow-emerald';
+          const isVertical = Math.abs(from.y - to.y) > Math.abs(from.x - to.x);
+          let path = '';
+          if (isVertical) {
+            const midY = (from.y + to.y) / 2;
+            path = `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`;
+          } else {
+            const midX = (from.x + to.x) / 2;
+            path = `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`;
+          }
+
+          let pulseClass = 'animate-data-flow-emerald'; 
+          if (edge.branch === 'dna') pulseClass = 'animate-data-flow-amber';
+          else if (edge.branch === 'art') pulseClass = 'animate-data-flow-purple';
           
           svgHTML += `
             <g>
@@ -151,56 +176,66 @@
           `;
         }
       });
-      
       svgHTML += '</g>';
       svgLayer.innerHTML = svgHTML;
     }
 
     function renderNodes() {
       mapNodes.forEach(node => {
-        const btn = document.createElement('button');
+        const isLink = !!node.url;
+        // Vi skapar en äkta a-tagg för länkar, div för bilderna.
+        const el = document.createElement(isLink ? 'a' : 'div');
+        
+        if (isLink) {
+            // Tvingar fram en relativ sökväg i samma mapp
+            el.href = './' + node.url;
+            // Valfritt: Om det fortfarnade strular i din editor-vy, prova att lägga in el.target = "_blank"; här
+        }
+
         const isCore = node.type === 'core';
         
-        btn.className = `absolute transition-all duration-500 hover:scale-110 flex items-center justify-center group outline-none ${isCore ? 'w-40 h-40 z-30' : 'w-40 h-16 z-20'}`;
-        btn.style.left = `calc(50% + ${node.x}px)`;
-        btn.style.top = `calc(50% + ${node.y}px)`;
-        btn.style.transform = 'translate(-50%, -50%)';
+        el.className = `absolute transition-all duration-500 hover:scale-110 flex items-center justify-center group outline-none cursor-pointer ${isCore ? 'w-40 h-40 z-30' : 'w-40 h-16 z-20'}`;
+        el.style.left = `calc(50% + ${node.x}px)`;
+        el.style.top = `calc(50% + ${node.y}px)`;
+        el.style.transform = 'translate(-50%, -50%)';
         
         let pulseHTML = '';
         if (isCore) {
           pulseHTML = `<div class="absolute inset-0 bg-[#e58e26] rounded-full blur-2xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 animate-[pulse_4s_ease-in-out_infinite] pointer-events-none"></div>`;
         } else {
-          const pulseColor = node.category === 'dna' ? 'bg-amber-500' : 'bg-emerald-500';
-          const pulseAnim = node.category === 'dna' ? 'animate-[pulse_4s_ease-in-out_infinite]' : 'animate-[pulse_3s_ease-in-out_infinite]';
+          let pulseColor = 'bg-emerald-500';
+          let pulseAnim = 'animate-[pulse_3s_ease-in-out_infinite]';
+          if (node.category === 'dna') { pulseColor = 'bg-amber-500'; pulseAnim = 'animate-[pulse_4s_ease-in-out_infinite]'; }
+          else if (node.category === 'art') { pulseColor = 'bg-purple-500'; }
           pulseHTML = `<div class="absolute inset-2 blur-xl opacity-40 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none rounded-full ${pulseColor} ${pulseAnim}"></div>`;
         }
 
         const imgShadow = isCore ? 'drop-shadow-[0_0_25px_rgba(229,142,38,0.3)] group-hover:drop-shadow-[0_0_35px_rgba(229,142,38,0.6)]' : 'drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]';
 
-        btn.innerHTML = `
+        // Lösningen: pointer-events-none på alla inre element så att klicket ALLTID träffar el (a-taggen)
+        el.innerHTML = `
           ${pulseHTML}
-          <img src="${node.buttonImageUrl}" alt="${node.title}" draggable="false" class="w-full h-full object-contain transition-transform duration-500 group-hover:rotate-2 relative z-10 ${imgShadow}">
+          <img src="${node.buttonImageUrl}" alt="${node.title}" draggable="false" class="w-full h-full object-contain transition-transform duration-500 group-hover:rotate-2 relative z-10 ${imgShadow} pointer-events-none">
         `;
 
-        // Förhindra att drag-logiken triggas när vi klickar på en nod
-        btn.addEventListener('mousedown', (e) => e.stopPropagation());
+        // Isolera mousedown så inte kartan börjar dras
+        el.addEventListener('mousedown', (e) => e.stopPropagation());
+        el.addEventListener('touchstart', (e) => e.stopPropagation(), {passive: true});
         
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (isDragging) return; // Klicka inte om vi håller på att panorera
-          
-          if (node.url) {
-            window.location.href = node.url;
-          } else if (node.modal) {
-            openModal(node.modal.imageUrl);
-          }
-        });
+        // För modal-bilderna:
+        if (!isLink) {
+            el.addEventListener('click', (e) => {
+              e.stopPropagation();
+              if (node.modal) { openModal(node.modal.imageUrl); }
+            });
+        }
+        // För länkar lägger vi INGEN click-eventlistener alls. Webbläsaren sköter det själv nu.
 
-        mapArea.appendChild(btn);
+        mapArea.appendChild(el);
       });
     }
 
-    // --- PANORERINGS-LOGIK (Drag & Drop) ---
+    // --- PANORERINGS-LOGIK ---
     let isDragging = false;
     let dragStart = { x: 0, y: 0 };
     let scrollStart = { left: 0, top: 0 };
@@ -213,13 +248,7 @@
       scrollStart = { left: container.scrollLeft, top: container.scrollTop };
     });
 
-    container.addEventListener('mouseleave', () => {
-      isDragging = false;
-      container.classList.add('cursor-grab');
-      container.classList.remove('cursor-grabbing');
-    });
-
-    container.addEventListener('mouseup', () => {
+    window.addEventListener('mouseup', () => {
       isDragging = false;
       container.classList.add('cursor-grab');
       container.classList.remove('cursor-grabbing');
@@ -230,24 +259,44 @@
       e.preventDefault();
       const x = e.pageX - container.offsetLeft;
       const y = e.pageY - container.offsetTop;
-      const walkX = (x - dragStart.x) * 1.5; // Scroll-hastighet X
-      const walkY = (y - dragStart.y) * 1.5; // Scroll-hastighet Y
+      const walkX = (x - dragStart.x) * 1.5;
+      const walkY = (y - dragStart.y) * 1.5;
       
       container.scrollLeft = scrollStart.left - walkX;
       container.scrollTop = scrollStart.top - walkY;
     });
 
+    // Touch-stöd
+    container.addEventListener('touchstart', (e) => {
+      isDragging = true;
+      dragStart = { x: e.touches[0].pageX - container.offsetLeft, y: e.touches[0].pageY - container.offsetTop };
+      scrollStart = { left: container.scrollLeft, top: container.scrollTop };
+    }, {passive: true});
+
+    window.addEventListener('touchend', () => { isDragging = false; });
+
+    container.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      const x = e.touches[0].pageX - container.offsetLeft;
+      const y = e.touches[0].pageY - container.offsetTop;
+      const walkX = (x - dragStart.x) * 1.5;
+      const walkY = (y - dragStart.y) * 1.5;
+      container.scrollLeft = scrollStart.left - walkX;
+      container.scrollTop = scrollStart.top - walkY;
+    }, {passive: true});
+
     // --- MODAL LOGIK ---
     function openModal(imgUrl) {
       modalImg.src = imgUrl;
       modal.classList.remove('hidden');
+      modal.classList.add('flex'); 
     }
 
     function closeModal() {
       modal.classList.add('hidden');
+      modal.classList.remove('flex');
       modalImg.src = '';
     }
-
   </script>
 </body>
 </html>
