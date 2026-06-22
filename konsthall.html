@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blom | Ateljé & Arkiv</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Inter:wght@300;400;600;900&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        main: '#ffffff',
+                        header: 'rgba(255, 255, 255, 0.9)',
+                        card: '#ffffff',
+                        accent: '#000000',
+                        border_subtle: '#e5e7eb',
+                        text_main: '#0f172a',
+                        text_muted: '#64748b'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        serif: ['Lora', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Libraries -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <style>
+        body { background-color: #ffffff; color: #0f172a; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #000000; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px;}
+
+        @keyframes revealText {
+            0% { opacity: 0; transform: translateY(15px); filter: blur(5px); }
+            100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        @keyframes decodeLine {
+            0% { width: 0; opacity: 0; }
+            100% { width: 100%; opacity: 1; }
+        }
+
+        .animate-reveal { opacity: 0; animation: revealText 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .animate-line { width: 0; animation: decodeLine 1s ease-out forwards; }
+
+        .lazy-item { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease-out, transform 0.7s ease-out; break-inside: avoid; margin-bottom: 2rem; display: block; }
+        .lazy-item.is-visible { opacity: 1; transform: translateY(0); }
+
+        .art-card { transform-style: preserve-3d; transform: perspective(1000px); }
+        .art-card-inner { transition: transform 0.3s ease; }
+        .art-card:hover .art-overlay { opacity: 1; }
+        .art-card img { transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
+        .art-card:hover img { transform: scale(1.05); }
+        
+        .filter-btn.active { background-color: #000000; border-color: #000000; color: #ffffff; }
+        .sortable-ghost { opacity: 0.4; }
+        .sortable-drag { cursor: grabbing !important; }
+        
+        #slides-container, #modal-img-container { touch-action: pan-y pinch-zoom; }
+
+        :fullscreen #hero-slideshow-container { background-color: #ffffff; width: 100vw; height: 100vh; border-radius: 0; border: none;}
+        :-webkit-full-screen #hero-slideshow-container { background-color: #ffffff; width: 100vw; height: 100vh; border-radius: 0; border: none;}
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-accent selection:text-white relative overflow-x-hidden">
+    
+    <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <img id="parallax-bg" src="https://i.imgur.com/1pR9Dus.jpeg" alt="Ateljé Background" class="absolute -top-[10vh] left-0 w-full h-[120vh] object-cover opacity-[0.15] filter grayscale transition-transform duration-75 ease-out">
+        <div class="absolute inset-0 bg-gradient-to-b from-white/40 via-white/80 to-white"></div>
+    </div>
+
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="p-2 hover:bg-gray-100 rounded-lg transition-colors group" title="Återvänd till N.E.X.U.S">
+                    <i data-lucide="arrow-left" class="w-5 h-5 text-gray-500 group-hover:text-black"></i>
+                </a>
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-black"></div>
+                    <h1 class="font-mono font-bold text-sm tracking-[0.2em] uppercase cursor-pointer hover:underline" onclick="showIntro()">Blom / Analoga Arkivet</h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow z-10 p-4 sm:p-8 max-w-7xl mx-auto w-full relative">
+        
+        <!-- NY TOPP-LAYOUT (Profil + Info/Bildspel) -->
+        <section class="mb-12 mt-4 animate-reveal" id="hero-section">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch min-h-[400px]">
+                
+                <!-- VÄNSTER: Profilbilden -->
+                <div class="col-span-1 bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden shadow-sm relative min-h-[350px] lg:min-h-[500px] flex items-center justify-center">
+                    <div class="absolute inset-0 w-full h-full bg-white" id="profile-container">
+                        <!-- Enbart en bild som vi fadar in och ut med JS -->
+                        <img id="profile-img" src="https://i.imgur.com/i8QsmNi.png" alt="Jonas Blomquist" class="absolute w-full h-full object-cover object-top transition-opacity duration-1000 opacity-100">
+                    </div>
+                    <!-- Namnskylt under bilden -->
+                    <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur text-black font-mono text-[10px] py-1 px-3 rounded border border-gray-200 shadow-sm font-bold tracking-widest z-10">
+                        JONAS BLOMQUIST
+                    </div>
+                </div>
+
+                <!-- HÖGER: Info-Rutan & Bildspelet -->
+                <div class="col-span-1 lg:col-span-3 relative rounded-2xl overflow-hidden shadow-lg border border-gray-200 bg-white flex flex-col">
+                    
+                    <!-- TEXTLÄGE (Visas som standard och vid kategorival) -->
+                    <div id="hero-text-mode" class="absolute inset-0 w-full h-full flex transition-opacity duration-300 z-10 bg-white">
+                        <div class="relative w-full p-8 md:p-12 flex flex-col justify-center h-full">
+                            <div class="flex flex-wrap items-center gap-4 mb-6">
+                                <h2 class="text-4xl md:text-6xl font-serif font-black tracking-tight text-black capitalize" id="hero-title">Laddar...</h2>
+                                <span class="text-[10px] font-mono text-black bg-gray-100 px-2 py-1 rounded border border-gray-200 flex items-center gap-1 shadow-sm" id="hero-id-tag">
+                                    <i data-lucide="fingerprint" class="w-3 h-3"></i> ID_...
+                                </span>
+                            </div>
+                            <div class="relative">
+                                <!-- Text-container med overflow om texten blir jättelång -->
+                                <div class="max-h-[280px] overflow-y-auto custom-scrollbar pr-4">
+                                    <p id="hero-desc" class="font-serif text-black font-semibold leading-relaxed text-lg md:text-xl text-justify"></p>
+                                </div>
+                                <div class="h-[1px] bg-black/10 mt-6 animate-line"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BILDSPELET (Dolt som standard) -->
+                    <div id="hero-slideshow-container" class="absolute inset-0 w-full h-full bg-white opacity-0 pointer-events-none transition-opacity duration-300 z-20 flex flex-col">
+                        <div id="slides-container" class="w-full h-full relative flex justify-center items-center cursor-grab active:cursor-grabbing bg-gray-50">
+                            <img id="slide-image" src="" alt="Presentation Sida" class="w-full h-full object-contain transition-opacity duration-500 select-none drop-shadow-xl">
+                        </div>
+
+                        <!-- Fullskärms Knapp -->
+                        <button onclick="toggleFullscreen()" class="absolute left-4 top-4 bg-white/90 hover:bg-black hover:text-white text-black p-2 rounded backdrop-blur-sm transition-all border border-gray-200 shadow-sm z-30 group" title="Helskärm">
+                            <i data-lucide="expand" class="w-4 h-4" id="fullscreen-icon"></i>
+                        </button>
+
+                        <button id="prev-btn" class="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-black hover:text-white text-black p-2 sm:p-3 rounded-full backdrop-blur-sm transition-all border border-gray-200 shadow-md z-30 opacity-70 hover:opacity-100">
+                            <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                        </button>
+                        <button id="next-btn" class="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-black hover:text-white text-black p-2 sm:p-3 rounded-full backdrop-blur-sm transition-all border border-gray-200 shadow-md z-30 opacity-70 hover:opacity-100">
+                            <i data-lucide="chevron-right" class="w-6 h-6"></i>
+                        </button>
+
+                        <div class="absolute top-4 right-4 bg-white/90 backdrop-blur text-black font-mono text-[10px] py-1 px-3 rounded border border-gray-200 shadow-sm font-bold tracking-widest z-30">
+                            SIDA <span id="current-slide-num">1</span> / <span id="total-slides-num">0</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- BYGG-LÄGE FÖR BILDSPELET -->
+        <div id="slideshow-builder" class="mb-12 hidden animate-reveal bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                <div class="flex items-center gap-2 text-gray-500">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span class="text-[10px] font-mono font-bold tracking-widest uppercase">Redigera Presentationen</span>
+                </div>
+                <button onclick="copySlideshowArray()" class="text-[10px] font-mono bg-black hover:bg-gray-800 text-white px-3 py-2 rounded flex items-center gap-2 transition-colors">
+                    <i data-lucide="copy" class="w-3 h-3"></i> KOPIERA BILDSPELS-KOD
+                </button>
+            </div>
+            
+            <textarea id="slideshow-urls-input" class="w-full border border-gray-300 rounded p-2 text-xs font-mono h-16 focus:outline-none focus:border-black transition-colors custom-scrollbar mb-2" placeholder="Klistra in länk och klicka 'Lägg Till'"></textarea>
+            <button onclick="addSlideshowImages()" class="mb-4 bg-white border border-gray-300 hover:border-black text-black px-4 py-2 rounded text-xs font-mono font-bold tracking-widest transition-colors shadow-sm flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> LÄGG TILL NYA BILDER
+            </button>
+
+            <span class="text-[10px] font-mono text-gray-500 uppercase tracking-widest font-bold block mb-2">Dra miniatyrerna för att sortera</span>
+            <div id="thumbnail-strip" class="flex gap-3 overflow-x-auto pb-4 pt-2 px-2 custom-scrollbar cursor-grab active:cursor-grabbing min-h-[100px] border border-gray-200 rounded bg-white shadow-inner"></div>
+        </div>
+
+        <!-- NAVIGERING (Kategorier / Material) -->
+        <section class="mb-20 animate-reveal" style="animation-delay: 0.2s;">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-1.5 h-6 bg-black"></div>
+                <h3 class="font-mono text-lg font-bold tracking-widest uppercase">Navigera i Arkivet</h3>
+            </div>
+            
+            <div class="grid grid-cols-2 lg:grid-cols-7 gap-4 md:gap-4">
+                
+                <!-- PORTAL: 3D UTSTÄLLNING (Leder till ny fil) -->
+                <div onclick="window.location.href='3d-utstallning.html'" class="group cursor-pointer bg-black border border-black rounded-2xl p-6 flex flex-col items-center justify-center hover:bg-gray-900 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1">
+                    <i data-lucide="box" class="w-12 h-12 text-white transition-transform duration-500 group-hover:scale-110 mb-2"></i>
+                    <span class="mt-2 font-mono text-xs font-bold tracking-widest uppercase text-white text-center">3D GALLERI<br><span class="text-[9px] text-gray-400">Interaktivt</span></span>
+                </div>
+
+                <!-- PORTAL: BILDSPELET -->
+                <div onclick="showSlideshow()" class="group cursor-pointer bg-white border border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center hover:border-black hover:shadow-2xl transition-all duration-500">
+                    <i data-lucide="monitor-play" class="w-12 h-12 text-gray-400 group-hover:text-black transition-colors mb-2"></i>
+                    <span class="mt-2 font-mono text-xs font-bold tracking-widest uppercase text-gray-400 group-hover:text-black transition-colors text-center">PRESENTATION</span>
+                </div>
+
+                <div onclick="selectMaterial('Övrigt')" class="group cursor-pointer bg-white border border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center hover:border-black hover:shadow-2xl transition-all duration-500">
+                    <i data-lucide="archive" class="w-12 h-12 text-gray-300 group-hover:text-black transition-colors mb-2"></i>
+                    <span class="mt-2 font-mono text-xs font-bold tracking-widest uppercase text-gray-400 group-hover:text-black transition-colors">ÖVRIGT</span>
+                </div>
+                <div onclick="selectMaterial('Trä')" class="group cursor-pointer bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center hover:border-black hover:shadow-2xl transition-all duration-500">
+                    <img src="https://i.imgur.com/fHegZiT.png" alt="Trä" class="h-20 object-contain transition-transform duration-500 group-hover:scale-110 drop-shadow-xl">
+                    <span class="mt-4 font-mono text-[10px] font-bold tracking-widest uppercase text-gray-400 group-hover:text-black transition-colors">TRÄ</span>
+                </div>
+                <div onclick="selectMaterial('Sten')" class="group cursor-pointer bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center hover:border-black hover:shadow-2xl transition-all duration-500">
+                    <img src="https://i.imgur.com/frdesMY.png" alt="Sten" class="h-20 object-contain transition-transform duration-500 group-hover:scale-110 drop-shadow-xl">
+                    <span class="mt-4 font-mono text-[10px] font-bold tracking-widest uppercase text-gray-400 group-hover:text-black transition-colors">STEN</span>
+                </div>
+                <div onclick="selectMaterial('Glas')" class="group cursor-pointer bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center hover:border-black hover:shadow-2xl transition-all duration-500">
+                    <img src="https://i.imgur.com/llR2hhb.png" alt="Glas" class="h-20 object-contain transition-transform duration-500 group-hover:scale-110 drop-shadow-xl">
+                    <span class="mt-4 font-mono text-[10px] font-bold tracking-widest uppercase text-gray-400 group-hover:text-black transition-colors">GLAS</span>
+                </div>
+                <div onclick="selectMaterial('Betong')" class="group cursor-pointer bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center hover:border-black hover:shadow-2xl transition-all duration-500">
+                    <img src="https://i.imgur.com/kFIjkJo.png" alt="Betong" class="h-20 object-contain transition-transform duration-500 group-hover:scale-110 drop-shadow-xl">
+                    <span class="mt-4 font-mono text-[10px] font-bold tracking-widest uppercase text-gray-400 group-hover:text-black transition-colors">BETONG</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- GALLERI -->
+        <div id="gallery-header" class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 border-t border-gray-200 pt-8 animate-reveal" style="animation-delay: 0.3s;">
+            <div class="flex items-center gap-3 mb-4 sm:mb-0">
+                <div class="p-2 bg-black text-white rounded">
+                    <i data-lucide="layers" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-mono text-sm font-bold tracking-widest uppercase">Gallerivy</h3>
+                    <span class="text-[10px] font-mono text-gray-500 block" id="total-works">0 VERK</span>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2" id="filters">
+                <button onclick="filterGallery('Alla')" class="filter-btn active px-4 py-2 rounded border border-gray-300 bg-white text-xs font-mono font-bold tracking-widest text-gray-500 hover:text-black hover:border-black transition-all">ALLA</button>
+                <button onclick="filterGallery('Övrigt')" class="filter-btn px-4 py-2 rounded border border-gray-300 bg-white text-xs font-mono font-bold tracking-widest text-gray-500 hover:text-black hover:border-black transition-all">ÖVRIGT</button>
+                <button onclick="filterGallery('Trä')" class="filter-btn px-4 py-2 rounded border border-gray-300 bg-white text-xs font-mono font-bold tracking-widest text-gray-500 hover:text-black hover:border-black transition-all">TRÄ</button>
+                <button onclick="filterGallery('Sten')" class="filter-btn px-4 py-2 rounded border border-gray-300 bg-white text-xs font-mono font-bold tracking-widest text-gray-500 hover:text-black hover:border-black transition-all">STEN</button>
+                <button onclick="filterGallery('Glas')" class="filter-btn px-4 py-2 rounded border border-gray-300 bg-white text-xs font-mono font-bold tracking-widest text-gray-500 hover:text-black hover:border-black transition-all">GLAS</button>
+                <button onclick="filterGallery('Betong')" class="filter-btn px-4 py-2 rounded border border-gray-300 bg-white text-xs font-mono font-bold tracking-widest text-gray-500 hover:text-black hover:border-black transition-all">BETONG</button>
+            </div>
+        </div>
+
+        <div class="columns-1 sm:columns-2 lg:columns-3 gap-8 pb-10" id="gallery-grid"></div>
+
+        <div id="load-more-container" class="w-full flex justify-center pb-10 hidden">
+            <button onclick="loadMore()" class="group flex items-center gap-3 px-8 py-4 bg-white border border-gray-200 rounded-full hover:border-black hover:shadow-xl transition-all duration-300">
+                <span class="font-mono text-xs font-bold tracking-widest uppercase text-gray-500 group-hover:text-black transition-colors">Ladda fler verk</span>
+                <i data-lucide="arrow-down" class="w-4 h-4 text-gray-400 group-hover:text-black group-hover:translate-y-1 transition-all"></i>
+            </button>
+        </div>
+
+    </main>
+
+    <div id="toast" class="fixed bottom-4 right-4 bg-black text-white px-4 py-3 rounded font-mono text-xs font-bold tracking-widest transform translate-y-20 opacity-0 transition-all duration-300 z-50 shadow-2xl flex items-center gap-3">
+        <span id="toast-msg">KLART</span>
+    </div>
+
+    <!-- Modal för enskilda verk -->
+    <div id="art-modal" class="fixed inset-0 z-50 bg-white/95 backdrop-blur-xl hidden flex-col items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="absolute top-0 w-full p-4 flex justify-between items-center border-b border-gray-200 bg-white/80 z-50">
+            <div class="font-mono text-black font-bold text-xs flex items-center gap-2">
+                <i data-lucide="scan" class="w-4 h-4"></i>
+                <span id="modal-id">ART_ID: NULL</span>
+                <span class="text-gray-400 ml-4 hidden sm:inline" id="modal-counter">1 / 4</span>
+            </div>
+            <button onclick="closeModal()" class="p-2 bg-gray-50 border border-gray-200 rounded hover:border-black hover:text-black transition-colors text-gray-500">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <button onclick="navigateModal(-1)" class="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 bg-white/80 backdrop-blur border border-gray-200 rounded-full hover:border-black hover:text-black transition-colors z-50 text-gray-400 group shadow-lg">
+            <i data-lucide="chevron-left" class="w-6 h-6 group-hover:-translate-x-1 transition-transform"></i>
+        </button>
+        
+        <button onclick="navigateModal(1)" class="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 bg-white/80 backdrop-blur border border-gray-200 rounded-full hover:border-black hover:text-black transition-colors z-50 text-gray-400 group shadow-lg">
+            <i data-lucide="chevron-right" class="w-6 h-6 group-hover:translate-x-1 transition-transform"></i>
+        </button>
+
+        <div id="sub-image-nav" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex gap-2 hidden"></div>
+
+        <div class="w-full max-w-7xl max-h-[85vh] p-4 sm:px-20 flex flex-col lg:flex-row gap-8 items-center mt-12 overflow-y-auto lg:overflow-hidden relative z-40">
+            <div id="modal-img-container" class="w-full lg:w-3/5 h-[40vh] lg:h-[75vh] relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center p-4 shadow-inner group">
+                <img id="modal-img" src="" alt="Artwork" class="max-w-full max-h-full object-contain z-10 transition-opacity duration-300 drop-shadow-xl select-none">
+                <div id="zoom-hint" class="absolute bottom-4 right-4 bg-white/80 backdrop-blur border border-gray-200 px-2 py-1 rounded text-[9px] font-mono text-gray-500 opacity-100 group-hover:opacity-0 transition-opacity z-30 flex items-center gap-1">
+                    <i data-lucide="hand" class="w-3 h-3"></i> SVEP FÖR BILDER
+                </div>
+            </div>
+
+            <div class="w-full lg:w-2/5 flex flex-col gap-6 max-h-[75vh] overflow-y-auto custom-scrollbar pr-2">
+                <div>
+                    <h2 id="modal-title" class="text-3xl md:text-5xl font-black text-black uppercase tracking-tighter mb-4">Titel</h2>
+                    
+                    <div id="modal-data-view">
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 font-mono text-xs mb-6 shadow-sm">
+                            <h4 class="text-gray-400 mb-3 border-b border-gray-200 pb-2 font-bold tracking-widest">DATA_EXTRAKTION</h4>
+                            <ul class="space-y-3">
+                                <li class="flex justify-between items-center"><span class="text-gray-500">KATEGORI:</span><span id="modal-category" class="text-white font-bold bg-black px-2 py-0.5 rounded">Laddar...</span></li>
+                                <li class="flex justify-between items-center"><span class="text-gray-500">TEKNIK:</span><span id="modal-medium" class="text-black text-right font-semibold">Laddar...</span></li>
+                            </ul>
+                        </div>
+                        <div class="relative">
+                            <div class="absolute -left-3 top-0 bottom-0 w-[2px] bg-gray-200"></div>
+                            <div class="absolute -left-3 top-0 w-[2px] h-8 bg-black transition-all duration-500" id="desc-indicator"></div>
+                            <p id="modal-desc" class="font-serif text-gray-700 font-medium leading-relaxed text-sm md:text-base pl-4 text-justify">Laddar beskrivning...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- PROFILBILD ROTATION (Fixad transparent stacking) ---
+        const profileImages = [
+            "https://i.imgur.com/i8QsmNi.png", 
+            "https://i.imgur.com/rugZZBM.png",
+            "https://i.imgur.com/QqfJNxg.png",
+            "https://i.imgur.com/yGWVOxW.png"
+        ];
+        let currentProfileIndex = 0;
+
+        function rotateProfilePic() {
+            const img = document.getElementById('profile-img');
+            if(!img) return;
+            
+            // Tona ner till osynlig
+            img.style.opacity = '0';
+            
+            setTimeout(() => {
+                // När den är osynlig, byt bild
+                currentProfileIndex = (currentProfileIndex + 1) % profileImages.length;
+                img.src = profileImages[currentProfileIndex];
+                
+                // Tona upp igen
+                img.style.opacity = '1';
+            }, 1000); // 1 sekund matchar Tailwind's duration-1000 class
+        }
+
+        // --- BILDSPEL DATA ---
+        let presentationSlides = [
+            "https://i.imgur.com/bcQTvCq.png", "https://i.imgur.com/QV7Rf8u.png", "https://i.imgur.com/q5oAJPV.png",
+            "https://i.imgur.com/ZZsWPir.png", "https://i.imgur.com/7kjC0rP.png", "https://i.imgur.com/mURAjph.png",
+            "https://i.imgur.com/Mzrp4KS.png", "https://i.imgur.com/dYnq7Ev.png", "https://i.imgur.com/e7W2O8E.png",
+            "https://i.imgur.com/oftwEdE.png", "https://i.imgur.com/seEhThO.png", "https://i.imgur.com/flrBLC1.png",
+            "https://i.imgur.com/2hKMziy.png", "https://i.imgur.com/RJqfR3g.png", "https://i.imgur.com/hp4dYH4.png",
+            "https://i.imgur.com/x4HFqxv.png", "https://i.imgur.com/6vICQcH.png", "https://i.imgur.com/RLDgDkT.png",
+            "https://i.imgur.com/ebJZ1qQ.png", "https://i.imgur.com/GFqcgYE.png", "https://i.imgur.com/H3IZPS0.png",
+            "https://i.imgur.com/5A08LWX.png", "https://i.imgur.com/TjlLgRM.png", "https://i.imgur.com/4cB8HTr.png",
+            "https://i.imgur.com/83qqYdV.png", "https://i.imgur.com/0QaaUSe.png", "https://i.imgur.com/WfhijYL.png"
+        ];
+        
+        let slideIndex = 0;
+        let touchstartX = 0;
+        let touchendX = 0;
+        let sortableInstance;
+        let autoplayInterval; 
+        let isAutoplayPaused = false;
+
+        function toggleFullscreen() {
+            const wrapper = document.getElementById('hero-slideshow-container');
+            const icon = document.getElementById('fullscreen-icon');
+            if (!document.fullscreenElement) {
+                if (wrapper.requestFullscreen) { wrapper.requestFullscreen(); } 
+                else if (wrapper.webkitRequestFullscreen) { wrapper.webkitRequestFullscreen(); } 
+                icon.setAttribute('data-lucide', 'shrink');
+            } else {
+                if (document.exitFullscreen) { document.exitFullscreen(); } 
+                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+                icon.setAttribute('data-lucide', 'expand');
+            }
+            lucide.createIcons();
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const icon = document.getElementById('fullscreen-icon');
+            if(!document.fullscreenElement) { icon.setAttribute('data-lucide', 'expand'); lucide.createIcons(); }
+        });
+
+        function initSlideshow() {
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const slidesContainer = document.getElementById('slides-container');
+            
+            document.getElementById('total-slides-num').innerText = presentationSlides.length;
+
+            const pauseAutoplay = () => {
+                isAutoplayPaused = true;
+                clearInterval(autoplayInterval);
+            };
+
+            nextBtn.onclick = () => { pauseAutoplay(); slideIndex = (slideIndex + 1) % presentationSlides.length; updateSlide(); updateThumbnailsHighlight(); };
+            prevBtn.onclick = () => { pauseAutoplay(); slideIndex = (slideIndex - 1 + presentationSlides.length) % presentationSlides.length; updateSlide(); updateThumbnailsHighlight(); };
+            
+            slidesContainer.addEventListener('touchstart', e => { pauseAutoplay(); touchstartX = e.changedTouches[0].screenX; }, {passive: true});
+            slidesContainer.addEventListener('touchend', e => { touchendX = e.changedTouches[0].screenX; handleSwipe(); }, {passive: true});
+            slidesContainer.addEventListener('mousedown', () => { pauseAutoplay(); });
+            
+            renderThumbnails();
+            initSortable();
+            updateSlide();
+
+            if(!isAutoplayPaused) {
+                autoplayInterval = setInterval(() => {
+                    slideIndex = (slideIndex + 1) % presentationSlides.length;
+                    updateSlide();
+                    updateThumbnailsHighlight();
+                }, 4000);
+            }
+        }
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            if (touchendX < touchstartX - swipeThreshold) { slideIndex = (slideIndex + 1) % presentationSlides.length; updateSlide(); updateThumbnailsHighlight(); }
+            if (touchendX > touchstartX + swipeThreshold) { slideIndex = (slideIndex - 1 + presentationSlides.length) % presentationSlides.length; updateSlide(); updateThumbnailsHighlight(); }
+        }
+
+        function updateSlide() {
+            if(presentationSlides.length === 0) return;
+            const slideImg = document.getElementById('slide-image');
+            slideImg.style.opacity = '0';
+            setTimeout(() => {
+                slideImg.src = presentationSlides[slideIndex];
+                document.getElementById('current-slide-num').innerText = slideIndex + 1;
+                document.getElementById('total-slides-num').innerText = presentationSlides.length;
+                slideImg.style.opacity = '1';
+            }, 150); 
+        }
+
+        function addSlideshowImages() {
+            const raw = document.getElementById('slideshow-urls-input').value;
+            const urls = raw.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+            if(urls.length === 0) return;
+            presentationSlides = [...presentationSlides, ...urls];
+            document.getElementById('slideshow-urls-input').value = '';
+            renderThumbnails();
+            initSortable();
+            document.getElementById('total-slides-num').innerText = presentationSlides.length;
+            showToast('<i data-lucide="check" class="w-4 h-4"></i> BILDER TILLAGDA');
+        }
+
+        function copySlideshowArray() {
+            const jsonString = '[\n  "' + presentationSlides.join('",\n  "') + '"\n]';
+            navigator.clipboard.writeText(jsonString).then(() => {
+                showToast('<i data-lucide="copy" class="w-4 h-4"></i> KOD KOPIERAD!');
+            }).catch(err => { alert("Kopiera koden:\n\n" + jsonString); });
+        }
+
+        function renderThumbnails() {
+            const strip = document.getElementById('thumbnail-strip');
+            strip.innerHTML = '';
+            presentationSlides.forEach((src, i) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex-shrink-0 relative group';
+                const img = document.createElement('img');
+                img.src = src;
+                img.className = `h-20 w-auto object-contain bg-white border-2 rounded-md cursor-grab transition-all ${i === slideIndex ? 'border-black shadow-md scale-105' : 'border-gray-200 hover:border-gray-400 opacity-60 hover:opacity-100'}`;
+                img.draggable = false; 
+                wrapper.onclick = () => { 
+                    isAutoplayPaused = true;
+                    clearInterval(autoplayInterval);
+                    slideIndex = presentationSlides.indexOf(src); 
+                    updateSlide(); 
+                    updateThumbnailsHighlight(); 
+                };
+                wrapper.appendChild(img);
+                strip.appendChild(wrapper);
+            });
+        }
+
+        function updateThumbnailsHighlight() {
+            const strip = document.getElementById('thumbnail-strip');
+            Array.from(strip.children).forEach((wrapper, i) => {
+                const img = wrapper.querySelector('img');
+                if (i === slideIndex) img.className = 'h-20 w-auto object-contain bg-white border-2 rounded-md cursor-grab transition-all border-black shadow-md scale-105';
+                else img.className = 'h-20 w-auto object-contain bg-white border-2 rounded-md cursor-grab transition-all border-gray-200 hover:border-gray-400 opacity-60 hover:opacity-100';
+            });
+        }
+
+        function initSortable() {
+            const strip = document.getElementById('thumbnail-strip');
+            if(sortableInstance) sortableInstance.destroy();
+            sortableInstance = new Sortable(strip, {
+                animation: 150, ghostClass: 'sortable-ghost', delay: 100, delayOnTouchOnly: true,
+                onEnd: function (evt) {
+                    const movedItem = presentationSlides.splice(evt.oldIndex, 1)[0];
+                    presentationSlides.splice(evt.newIndex, 0, movedItem);
+                    if (slideIndex === evt.oldIndex) slideIndex = evt.newIndex;
+                    else if (evt.oldIndex < slideIndex && evt.newIndex >= slideIndex) slideIndex--;
+                    else if (evt.oldIndex > slideIndex && evt.newIndex <= slideIndex) slideIndex++;
+                    renderThumbnails(); updateSlide();
+                }
+            });
+        }
+
+        function showToast(htmlContent) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerHTML = htmlContent;
+            lucide.createIcons();
+            toast.style.transform = 'translateY(0)';
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.transform = 'translateY(20px)';
+                toast.style.opacity = '0';
+            }, 3000);
+        }
+
+        // --- DATABAS OCH BIBLIOTEK ---
+        const categoryInfo = {
+            "Intro": {
+                title: "Jonas Blomquist", desc: "Jag heter Jonas Blomquist, född 1983. Mina rötter finns i Blekinge, i den lilla byn Mörrum, även om jag idag funnit mitt hem i Södermanland, där jag delar livet med min underbara dotter, Lilja. En stor del av mitt skapande arv härstammar från mina älskade morföräldrar. Deras lilla gård var min barndoms tillflykt, en plats tätt förbunden med naturens puls. Morfar var uppfinnaren, mannen som byggde sina egna underverk; mormor var odlaren, hängiven trädgårdens tysta viskningar. Jag var ständigt där, och jag bär övertygelsen att fröet till min egen skaparlust såddes djupt i den myllan.",
+                bgImg: "https://i.imgur.com/rSPWwg2.png", icon: "fingerprint", id: "ID_1983"
+            },
+            "Övrigt": {
+                title: "Övrigt & Arkiv", desc: "Här samlas verk, utkast och nya inlägg som ännu inte kategoriserats in i de permanenta arkiven.",
+                bgImg: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=2000&auto=format&fit=crop", icon: "archive", id: "CAT_MISC"
+            },
+            "Trä": { title: "Drivved", desc: "Mitt skapande börjar i skogen, där jag söker efter dött trä, ofta i eller nära vattendrag.", bgImg: "https://i.imgur.com/fHegZiT.png", icon: "tree-pine", id: "CAT_WOOD" },
+            "Sten": { title: "Stenar", desc: "Mitt arbete med sten inleddes som en naturlig utveckling från mitt tidigare skapande i trä.", bgImg: "https://i.imgur.com/frdesMY.png", icon: "mountain", id: "CAT_STONE" },
+            "Glas": { title: "Glas", desc: "Bearbetning av hård sten sliter kraftigt på diamantverktygen.", bgImg: "https://i.imgur.com/llR2hhb.png", icon: "glass-water", id: "CAT_GLASS" },
+            "Betong": { title: "Betong", desc: "Min resa inom betonghantverk grundar sig i ett hållbarhetsperspektiv.", bgImg: "https://i.imgur.com/kFIjkJo.png", icon: "layers", id: "CAT_CONCRETE" }
+        };
+
+        const artworks = [
+            // TRÄ
+            { id: "SYS_ART_DRIVVED", title: "Drivved", category: "Trä", medium: "Rakblad, Slipning", desc: "Mitt skapande börjar i skogen...", images: ["https://i.imgur.com/fHegZiT.png"] },
+            // STEN
+            { id: "SYS_ART_STENAR", title: "Stenar", category: "Sten", medium: "Natursten, Maskinell bearbetning", desc: "Mitt arbete med sten inleddes...", images: ["https://i.imgur.com/frdesMY.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_1", title: "Halsband 1", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/O2HsSO5.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_2", title: "Halsband 2", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/YYlRYji.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_3", title: "Halsband 3", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/9f5dZ0m.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_4", title: "Halsband 4", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/oH2MYSW.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_5", title: "Halsband 5", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/6b4jw8m.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_6", title: "Halsband 6", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten (Fram och Bak).", images: ["https://i.imgur.com/6b4jw8m.png", "https://i.imgur.com/awbo9Uj.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_7", title: "Halsband 7", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/p3JBmu5.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_8", title: "Halsband 8", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/oH2MYSW.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_9", title: "Halsband 9", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/BU02cRb.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_10", title: "Halsband 10", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/GAbl5Nm.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_11", title: "Halsband 11", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/mMb8ADy.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_12", title: "Halsband 12", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/mxst9t9.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_13", title: "Halsband 13", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/4rdXhiE.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_14", title: "Halsband 14", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/5b18eIA.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_15", title: "Halsband 15", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/aULGeE3.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_16", title: "Halsband 16", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/0dZmXlz.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_17", title: "Halsband 17", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/FWZv9iG.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_18", title: "Halsband 18", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/0dZmXlz.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_19", title: "Halsband 19", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/FWZv9iG.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_20", title: "Halsband 20", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/LIfjjFi.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_21", title: "Halsband 21", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/g2SH3L3.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_22", title: "Halsband 22", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/YwsPsra.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_23", title: "Halsband 23", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/5i73Pp8.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_24", title: "Halsband 24", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/iw7MUTQ.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_25", title: "Halsband 25", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/XF42oTc.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_26", title: "Halsband 26", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/sZsAbnG.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_27", title: "Halsband 27", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/sckVyef.png"] },
+            { id: "SYS_ART_STEN_HALSBAND_28", title: "Halsband 28", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/f1LTvS3.jpg"] },
+            { id: "SYS_ART_STEN_HALSBAND_29", title: "Halsband 29", category: "Sten", medium: "Natursten, Silver", desc: "Halsband i slipad natursten.", images: ["https://i.imgur.com/2vul9pq.png"] },
+            // GLAS
+            { id: "SYS_ART_GLAS", title: "Glas", category: "Glas", medium: "Glasgravyr, Diamantverktyg", desc: "Bearbetning av hård sten sliter kraftigt på diamantverktygen...", images: ["https://i.imgur.com/llR2hhb.png"] },
+            { id: "SYS_ART_GLAS_1", title: "Glas 1", category: "Glas", medium: "Glasgravyr, Diamantverktyg", desc: "Bearbetning av hård sten sliter kraftigt på diamantverktygen...", images: ["https://i.imgur.com/2rwi2Fe.png"] },
+            { id: "SYS_ART_GLAS_2", title: "Glas 2", category: "Glas", medium: "Glasgravyr, Diamantverktyg", desc: "Bearbetning av hård sten sliter kraftigt på diamantverktygen...", images: ["https://i.imgur.com/EkwrJmw.png"] },
+            { id: "SYS_ART_GLAS_3", title: "Glas 3", category: "Glas", medium: "Glasgravyr, Diamantverktyg", desc: "Bearbetning av hård sten sliter kraftigt på diamantverktygen...", images: ["https://i.imgur.com/c6Kmj8j.png"] },
+            { id: "SYS_ART_GLAS_4", title: "Glas 4", category: "Glas", medium: "Glasgravyr, Diamantverktyg", desc: "Bearbetning av hård sten sliter kraftigt på diamantverktygen...", images: ["https://i.imgur.com/dssewhL.png"] },
+            { id: "SYS_ART_GLAS_5", title: "Glas 5", category: "Glas", medium: "Glasgravyr, Diamantverktyg", desc: "Bearbetning av hård sten sliter kraftigt på diamantverktygen...", images: ["https://i.imgur.com/pqBWdwz.png"] },
+            { id: "SYS_ART_GLAS_6", title: "Glas 6", category: "Glas", medium: "Glasgravyr, Diamantverktyg", desc: "Bearbetning av hård sten sliter kraftigt på diamantverktygen...", images: ["https://i.imgur.com/DygJRVZ.png"] },
+            // BETONG
+            { id: "SYS_ART_BETONG", title: "Betong", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig i ett hållbarhetsperspektiv...", images: ["https://i.imgur.com/kFIjkJo.png"] },
+            { id: "SYS_ART_BETONG_1", title: "Betong 1", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/ezXD16t.png"] },
+            { id: "SYS_ART_BETONG_2", title: "Betong 2", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/eniUsqM.png"] },
+            { id: "SYS_ART_BETONG_3", title: "Betong 3", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/cEInCEK.png"] },
+            { id: "SYS_ART_BETONG_4", title: "Betong 4", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/9Ews8Sp.png"] },
+            { id: "SYS_ART_BETONG_5", title: "Betong 5", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/2Dla7nF.png"] },
+            { id: "SYS_ART_BETONG_6", title: "Betong 6", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/HuWc7u3.png"] },
+            { id: "SYS_ART_BETONG_7", title: "Betong 7", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/Jb9tbZd.png"] },
+            { id: "SYS_ART_BETONG_8", title: "Betong 8", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/FV03z24.png"] },
+            { id: "SYS_ART_BETONG_9", title: "Betong 9", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/egexKto.png"] },
+            { id: "SYS_ART_BETONG_10", title: "Betong 10", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/0z4yFk3.png"] },
+            { id: "SYS_ART_BETONG_11", title: "Betong 11", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/bQL7Cr3.png"] },
+            { id: "SYS_ART_BETONG_12", title: "Betong 12", category: "Betong", medium: "Återbrukad betong, Gjutning", desc: "Min resa inom betonghantverk grundar sig...", images: ["https://i.imgur.com/Gtukn6k.png"] },
+            // ÖVRIGT (DE NYA 23)
+            { id: "SYS_ART_NY_1", title: "Nytt Verk 1", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/35aN0LY.png"] },
+            { id: "SYS_ART_NY_2", title: "Nytt Verk 2", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/eMcG6hL.png"] },
+            { id: "SYS_ART_NY_3", title: "Nytt Verk 3", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/eHCvj2e.png"] },
+            { id: "SYS_ART_NY_4", title: "Nytt Verk 4", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/QW8YQvw.png"] },
+            { id: "SYS_ART_NY_5", title: "Nytt Verk 5", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/dycDpVy.png"] },
+            { id: "SYS_ART_NY_6", title: "Nytt Verk 6", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/YTyVLP5.png"] },
+            { id: "SYS_ART_NY_7", title: "Nytt Verk 7", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/1MuFWpa.png"] },
+            { id: "SYS_ART_NY_8", title: "Nytt Verk 8", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/r7PUQh6.png"] },
+            { id: "SYS_ART_NY_9", title: "Nytt Verk 9", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/xI9SWjY.png"] },
+            { id: "SYS_ART_NY_10", title: "Nytt Verk 10", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/6znPKow.png"] },
+            { id: "SYS_ART_NY_11", title: "Nytt Verk 11", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/M7y8mJr.png"] },
+            { id: "SYS_ART_NY_12", title: "Nytt Verk 12", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/mwaXckA.png"] },
+            { id: "SYS_ART_NY_13", title: "Nytt Verk 13", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/W5epyHU.png"] },
+            { id: "SYS_ART_NY_14", title: "Nytt Verk 14", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/BoNbMHQ.png"] },
+            { id: "SYS_ART_NY_15", title: "Nytt Verk 15", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/zz1owPe.png"] },
+            { id: "SYS_ART_NY_16", title: "Nytt Verk 16", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/KOf2msq.png"] },
+            { id: "SYS_ART_NY_17", title: "Nytt Verk 17", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/5O4P9s7.png"] },
+            { id: "SYS_ART_NY_18", title: "Nytt Verk 18", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/cKOWH0R.png"] },
+            { id: "SYS_ART_NY_19", title: "Nytt Verk 19", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/JZivhk3.png"] },
+            { id: "SYS_ART_NY_20", title: "Nytt Verk 20", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/i4s9sAU.png"] },
+            { id: "SYS_ART_NY_21", title: "Nytt Verk 21", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/UUgs6qn.png"] },
+            { id: "SYS_ART_NY_22", title: "Nytt Verk 22", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/LqZtFxM.png"] },
+            { id: "SYS_ART_NY_23", title: "Nytt Verk 23", category: "Övrigt", medium: "Ej angivet", desc: "Information saknas.", images: ["https://i.imgur.com/BXsCi67.png"] }
+        ];
+
+        let currentFilter = 'Alla';
+        let currentFilteredArts = [...artworks];
+        let currentDisplayLimit = 12;
+        const ITEMS_PER_PAGE = 12;
+        let currentArtIndex = 0;
+        let currentSubImageIndex = 0;
+        let scrambleInterval; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            showIntro(); 
+            initSlideshow(); 
+            initModalSwipe();
+            setInterval(rotateProfilePic, 40000); 
+        });
+
+        // --- HUVUDLOGIK FÖR SIDAN ---
+        function showIntro() {
+            currentFilter = 'Alla';
+            
+            document.getElementById('hero-text-mode').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('hero-slideshow-container').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('slideshow-builder').classList.add('hidden');
+
+            updateHeroSection(categoryInfo["Intro"]);
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.filter-btn:first-child').classList.add('active'); 
+            
+            renderGallery(true);
+        }
+
+        function showSlideshow() {
+            document.getElementById('hero-text-mode').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('hero-slideshow-container').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('slideshow-builder').classList.remove('hidden');
+
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            
+            filterGallery('Alla', true); 
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateHeroSection(info) {
+            document.getElementById('hero-id-tag').innerHTML = `<i data-lucide="${info.icon}" class="w-3 h-3"></i> ${info.id}`;
+            document.getElementById('hero-desc').innerHTML = info.desc.replace(/\n/g, '<br><br>');
+            scrambleText(document.getElementById('hero-title'), info.title);
+            lucide.createIcons();
+        }
+
+        function selectMaterial(category) { 
+            document.getElementById('hero-text-mode').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('hero-slideshow-container').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('slideshow-builder').classList.add('hidden');
+            
+            filterGallery(category); 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function filterGallery(category, skipHeroUpdate = false) {
+            currentFilter = category;
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if(btn.innerText.toLowerCase() === category.toLowerCase()) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            
+            if(!skipHeroUpdate) {
+                if(category === 'Alla') {
+                    updateHeroSection(categoryInfo["Intro"]);
+                } else if(categoryInfo[category]) {
+                    updateHeroSection(categoryInfo[category]);
+                }
+            }
+            
+            renderGallery(true);
+        }
+
+        const observerOptions = { root: null, rootMargin: '50px', threshold: 0.1 };
+        const fadeObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
+            });
+        }, observerOptions);
+
+        function renderGallery(reset = true) {
+            const grid = document.getElementById('gallery-grid');
+            if (reset) { grid.innerHTML = ''; currentDisplayLimit = ITEMS_PER_PAGE; }
+            
+            let displayList = currentFilter === 'Alla' ? [...artworks].reverse() : artworks.filter(art => art.category === currentFilter).reverse();
+            currentFilteredArts = displayList; 
+            
+            const total = currentFilteredArts.length;
+            const itemsToRender = currentFilteredArts.slice(reset ? 0 : currentDisplayLimit - ITEMS_PER_PAGE, currentDisplayLimit);
+
+            document.getElementById('total-works').innerHTML = `VISAR ${Math.min(currentDisplayLimit, total)} AV ${total} VERK`;
+
+            itemsToRender.forEach(art => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'lazy-item'; 
+                const card = document.createElement('div');
+                card.className = `art-card relative rounded-xl border border-gray-200 overflow-hidden bg-white cursor-pointer group shadow-sm`;
+                card.setAttribute('data-tilt', '');
+                card.setAttribute('data-tilt-max', '3');
+                card.onclick = () => openModal(art);
+                
+                card.innerHTML = `
+                    <div class="w-full relative art-card-inner bg-white p-6 md:p-10 flex items-center justify-center min-h-[300px]">
+                        <img src="${art.images[0]}" loading="lazy" class="max-w-full max-h-[400px] object-contain filter grayscale group-hover:grayscale-0 transition-all duration-700 drop-shadow-xl opacity-0" onload="this.classList.remove('opacity-0')">
+                        <div class="art-overlay absolute inset-2 bg-white/90 backdrop-blur-[2px] opacity-0 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-6 border border-gray-200 rounded-lg">
+                            <i data-lucide="eye" class="w-8 h-8 text-black mb-4"></i>
+                            <h4 class="font-black text-xl mb-1 text-black uppercase tracking-widest">${art.title}</h4>
+                        </div>
+                    </div>`;
+                wrapper.appendChild(card);
+                grid.appendChild(wrapper);
+                fadeObserver.observe(wrapper);
+            });
+            
+            const loadMoreContainer = document.getElementById('load-more-container');
+            if (currentDisplayLimit < total) loadMoreContainer.classList.remove('hidden');
+            else loadMoreContainer.classList.add('hidden');
+            
+            VanillaTilt.init(document.querySelectorAll(".art-card"));
+            lucide.createIcons();
+        }
+
+        function loadMore() { currentDisplayLimit += ITEMS_PER_PAGE; renderGallery(false); }
+
+        // --- MODAL, SWIPE OCH EDIT ---
+        function initModalSwipe() {
+            const modalImgContainer = document.getElementById('modal-img-container');
+            modalImgContainer.addEventListener('touchstart', e => { modalTouchstartX = e.changedTouches[0].screenX; }, {passive: true});
+            modalImgContainer.addEventListener('touchend', e => { modalTouchendX = e.changedTouches[0].screenX; handleModalSwipe(); }, {passive: true});
+        }
+
+        function handleModalSwipe() {
+            const swipeThreshold = 50;
+            const currentArt = currentFilteredArts[currentArtIndex];
+            if(!currentArt) return;
+
+            if (modalTouchendX < modalTouchstartX - swipeThreshold) {
+                if (currentArt.images.length > 1 && currentSubImageIndex < currentArt.images.length - 1) { currentSubImageIndex++; updateModalImage(currentArt); } 
+                else { navigateModal(1); }
+            }
+            if (modalTouchendX > modalTouchstartX + swipeThreshold) {
+                if (currentArt.images.length > 1 && currentSubImageIndex > 0) { currentSubImageIndex--; updateModalImage(currentArt); } 
+                else { navigateModal(-1); }
+            }
+        }
+
+        function openModal(art) {
+            const modal = document.getElementById('art-modal');
+            currentArtIndex = currentFilteredArts.findIndex(a => a.id === art.id);
+            document.getElementById('modal-id').innerText = `SYS_ID: ${art.id}`;
+            document.getElementById('modal-counter').innerText = `${currentArtIndex + 1} / ${currentFilteredArts.length}`;
+            scrambleText(document.getElementById('modal-title'), art.title);
+            document.getElementById('modal-desc').innerHTML = art.desc.replace(/\n/g, '<br><br>');
+            document.getElementById('modal-medium').innerText = art.medium;
+            document.getElementById('modal-category').innerText = art.category.toUpperCase();
+
+            currentSubImageIndex = 0;
+            updateModalImage(art);
+            buildSubImageNav(art);
+
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            document.body.style.overflow = 'hidden'; 
+        }
+        
+        function updateModalImage(art) {
+            const imgEl = document.getElementById('modal-img');
+            imgEl.style.opacity = '0'; 
+            setTimeout(() => {
+                imgEl.src = art.images[currentSubImageIndex];
+                imgEl.style.opacity = '1';
+                updateSubImageDots();
+            }, 150);
+        }
+
+        function buildSubImageNav(art) {
+            const navContainer = document.getElementById('sub-image-nav');
+            navContainer.innerHTML = '';
+            if (art.images.length > 1) {
+                navContainer.classList.remove('hidden');
+                art.images.forEach((_, index) => {
+                    const dot = document.createElement('div');
+                    dot.className = `w-2 h-2 rounded-full cursor-pointer transition-all duration-300 ${index === currentSubImageIndex ? 'bg-black w-4' : 'bg-gray-300 hover:bg-gray-400'}`;
+                    dot.onclick = (e) => { e.stopPropagation(); currentSubImageIndex = index; updateModalImage(art); };
+                    navContainer.appendChild(dot);
+                });
+            } else { navContainer.classList.add('hidden'); }
+        }
+
+        function updateSubImageDots() {
+            const navContainer = document.getElementById('sub-image-nav');
+            if (navContainer.children.length > 0) {
+                Array.from(navContainer.children).forEach((dot, index) => {
+                    dot.className = `w-2 h-2 rounded-full cursor-pointer transition-all duration-300 ${index === currentSubImageIndex ? 'bg-black w-4' : 'bg-gray-300 hover:bg-gray-400'}`;
+                });
+            }
+        }
+
+        function navigateModal(direction) {
+            currentArtIndex += direction;
+            if(currentArtIndex >= currentFilteredArts.length) currentArtIndex = 0;
+            if(currentArtIndex < 0) currentArtIndex = currentFilteredArts.length - 1;
+            openModal(currentFilteredArts[currentArtIndex]);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('art-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); document.body.style.overflow = 'auto'; }, 300); 
+        }
+
+        function scrambleText(element, finalString) {
+            clearInterval(scrambleInterval); 
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            let iterations = 0;
+            scrambleInterval = setInterval(() => {
+                element.innerText = finalString.split("").map((l, idx) => {
+                    if(l === ' ') return ' ';
+                    if(idx < iterations) return finalString[idx];
+                    return letters[Math.floor(Math.random() * letters.length)];
+                }).join("");
+                if(iterations >= finalString.length) clearInterval(scrambleInterval);
+                iterations += 1/2;
+            }, 30);
+        }
+    </script>
+</body>
+</html>
