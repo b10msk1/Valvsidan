@@ -412,27 +412,125 @@
         // --- FILMDATABASEN (Kategoriserad VOD) ---
         const videoCategories = [
             { 
-                title: "Genie: The 6 Protocol", 
-                desc: "Third Person Spelet - Trailar och loggar under uppbyggnad.", 
+                title: "Genie Omega: The 6th Protocol", 
+                desc: "Third Person Spelet - Trailer och story-sekvenser under uppbyggnad.", 
                 poster: "https://i.imgur.com/zD5T4MF.jpeg",
                 videos: [
-                    { title: "Pre-Alpha Trailer", url: "https://i.imgur.com/efYuBUR.mp4" }
-                    // Här lägger du in fler The 6 Protocol-filmer sen!
+                    { title: "Reklam (Under Construction)", url: "https://i.imgur.com/vOl0Z3I.mp4" },
+                    { title: "Första steget (Laboratoriet)", url: "https://i.imgur.com/io89c9m.mp4" },
+                    { title: "Genesis-Ichor-sifonering", url: "https://i.imgur.com/8UQIDDj.mp4" },
+                    { title: "Ascension-sekvensen", url: "https://i.imgur.com/Jnx8JIe.mp4" },
+                    { title: "Ultimate-förmåga (Aegis-Zeta)", url: "https://i.imgur.com/GoquxPR.mp4" }
                 ]
             },
             { 
-                title: "Genie: Kortspelet", 
-                desc: "Ultislag, magi och animerad lore från kortspelet.", 
+                title: "Genie Heroes: Fire Element", 
+                desc: "Kejsarens Sista Låga / Solspridarens Skugga (Pyrotis).", 
                 poster: "https://i.imgur.com/NChkyqZ.jpeg",
                 videos: [
-                    { title: "Ultislag: Kod Anden", url: "https://i.imgur.com/4crzTiI.mp4" },
-                    { title: "Ultislag: Vatten Anden", url: "https://i.imgur.com/B2Rn87K.mp4" },
-                    { title: "Ultislag: Eld Anden", url: "https://i.imgur.com/Y2kR4ZC.mp4" },
-                    { title: "Eld Andarna Intro", url: "https://i.imgur.com/mhrqIcu.mp4" },
-                    { title: "Metall Intro", url: "https://i.imgur.com/JFE5NLm.mp4" },
-                    { title: "Vatten Guden", url: "https://i.imgur.com/5tDKcJ8.mp4" },
-                    { title: "Metall Guden", url: "https://i.imgur.com/FNAh4ST.mp4" },
-                    { title: "Gudariket Sagan", url: "https://i.imgur.com/lcG43Gj.mp4" }
+                    { title: "Eldens Gyllene Era (Full Story)", url: "https://i.imgur.com/mhrqIcu.mp4" },
+                    { title: "Inferno-protokollet", url: "https://i.imgur.com/1w0psqP.mp4" },
+                    { title: "Den Grå Askan", url: "https://i.imgur.com/yNX5xw4.mp4" },
+                    { title: "Härskarskapet (Male)", url: "https://i.imgur.com/lcG43Gj.mp4" },
+                    { title: "Utmaningen (Male)", url: "https://i.imgur.com/bvGJtU6.mp4" },
+                    { title: "Arenan (Male)", url: "https://i.imgur.com/tS00yxG.mp4" },
+                    { title: "Farvälet (Male)", url: "https://i.imgur.com/ppVf3wN.mp4" },
+                    { title: "Battle Video (Male)", url: "https://i.imgur.com/uNRhqF7.mp4" },
+                    { title: "Härskarskapet (Female)", url: "https://i.imgur.com/87BQc3Z.mp4" },
+                    { title: "Utmaningen (Female)", url: "https://i.imgur.com/Y8joxL7.mp4" },
+                    { title: "Arenan (Female)", url: "https://i.imgur.com/bDpfAdh.mp4" },
+                    { title: "Farvälet (Female)", url: "https://i.imgur.com/tWWN9cr.mp4" },
+                    { title: "Battle Video (Female)", url: "https://i.imgur.com/bUnPDET.mp4" }
+                ]
+            },
+            { 
+                title: "Genie Heroes: Water Element", 
+                desc: "Djupets Herre / Livets Ström (Abyssos / Aquarys).", 
+                poster: "https://i.imgur.com/NChkyqZ.jpeg",
+                videos: [
+                    { title: "Harmonins Sista Dag (Full Story)", url: "https://i.imgur.com/6i138IP.mp4" },
+                    { title: "När Himlen Brast", url: "https://i.imgur.com/65yCxFo.mp4" },
+                    { title: "Aska och Andetag", url: "https://i.imgur.com/IM9klGq.mp4" },
+                    { title: "Härskarskapet (Male)", url: "https://i.imgur.com/5tDKcJ8.mp4" },
+                    { title: "Utmaningen (Male)", url: "https://i.imgur.com/PSJkuLZ.mp4" },
+                    { title: "Arenan (Male)", url: "https://i.imgur.com/ZoSwSNC.mp4" },
+                    { title: "Farvälet (Male)", url: "https://i.imgur.com/aiukiQg.mp4" },
+                    { title: "Battle Video (Male)", url: "https://i.imgur.com/ngaDGMN.mp4" },
+                    { title: "Härskarskapet (Female)", url: "https://i.imgur.com/KInsR5g.mp4" },
+                    { title: "Utmaningen (Female)", url: "https://i.imgur.com/KgILuxP.mp4" },
+                    { title: "Arenan (Female)", url: "https://i.imgur.com/znkxHBo.mp4" },
+                    { title: "Farvälet (Female)", url: "https://i.imgur.com/dfJuEJT.mp4" },
+                    { title: "Battle Video (Female)", url: "https://i.imgur.com/p9no6pB.mp4" }
+                ]
+            },
+            { 
+                title: "Genie Heroes: Metal Element", 
+                desc: "Järn-Regenten / Sköldmön (Titan-Ferrum).", 
+                poster: "https://i.imgur.com/NChkyqZ.jpeg",
+                videos: [
+                    { title: "Kugghjulens Sång (Full Story)", url: "https://i.imgur.com/FNAh4ST.mp4" },
+                    { title: "Rostens Intåg", url: "https://i.imgur.com/wXaVgdZ.mp4" },
+                    { title: "Den Sista Maskinen", url: "https://i.imgur.com/sHZYn7V.mp4" },
+                    { title: "Härskarskapet (Male)", url: "https://i.imgur.com/FNAh4ST.mp4" },
+                    { title: "Utmaningen (Male)", url: "https://i.imgur.com/vUSITmI.mp4" },
+                    { title: "Arenan (Male)", url: "https://i.imgur.com/wXaVgdZ.mp4" },
+                    { title: "Farvälet (Male)", url: "https://i.imgur.com/sHZYn7V.mp4" },
+                    { title: "Battle Video (Male)", url: "https://i.imgur.com/u5f7ud6.mp4" },
+                    { title: "Härskarskapet (Female)", url: "https://i.imgur.com/e1sPId2.mp4" },
+                    { title: "Utmaningen (Female)", url: "https://i.imgur.com/9Hz8xOj.mp4" },
+                    { title: "Arenan (Female)", url: "https://i.imgur.com/BqNWuXE.mp4" },
+                    { title: "Farvälet (Female)", url: "https://i.imgur.com/YY1rWcR.mp4" },
+                    { title: "Battle Video (Female)", url: "https://i.imgur.com/Ea9AuWg.mp4" }
+                ]
+            },
+            { 
+                title: "Genie Heroes: Code Element", 
+                desc: "Krypteringens Kung / Systemmodern (Binary-Alpha).", 
+                poster: "https://i.imgur.com/NChkyqZ.jpeg",
+                videos: [
+                    { title: "Den Perfekta Algoritmen", url: "https://i.imgur.com/xDIjVeg.mp4" },
+                    { title: "Systemkraschen", url: "https://i.imgur.com/jjyhPfE.mp4" },
+                    { title: "Offline", url: "https://i.imgur.com/Tpdb0VT.mp4" },
+                    { title: "Härskarskapet (Male)", url: "https://i.imgur.com/xDIjVeg.mp4" },
+                    { title: "Utmaningen (Male)", url: "https://i.imgur.com/oyg78RY.mp4" },
+                    { title: "Arenan (Male)", url: "https://i.imgur.com/jjyhPfE.mp4" },
+                    { title: "Farvälet (Male)", url: "https://i.imgur.com/Tpdb0VT.mp4" },
+                    { title: "Battle Video (Male)", url: "https://i.imgur.com/Lz6ikTt.mp4" },
+                    { title: "Härskarskapet (Female)", url: "https://i.imgur.com/TsWLSEk.mp4" },
+                    { title: "Utmaningen (Female)", url: "https://i.imgur.com/Pe5h67G.mp4" },
+                    { title: "Arenan (Female)", url: "https://i.imgur.com/lECbnJO.mp4" },
+                    { title: "Farvälet (Female)", url: "https://i.imgur.com/hLnTJKk.mp4" },
+                    { title: "Battle Video (Female)", url: "https://i.imgur.com/9Bn47T2.mp4" }
+                ]
+            },
+            { 
+                title: "Genie Heroes: Void Element", 
+                desc: "Tomhetens Väktare / Nebulans Drottning (Nihil-Core).", 
+                poster: "https://i.imgur.com/NChkyqZ.jpeg",
+                videos: [
+                    { title: "Evighetens Tystnad", url: "https://i.imgur.com/RmRr2Uy.mp4" },
+                    { title: "Singulariteten", url: "https://i.imgur.com/HE2C5Bt.mp4" },
+                    { title: "Det Stora Mörkret", url: "https://i.imgur.com/Xm22yKQ.mp4" },
+                    { title: "Härskarskapet (Male)", url: "https://i.imgur.com/RmRr2Uy.mp4" },
+                    { title: "Utmaningen (Male)", url: "https://i.imgur.com/HE2C5Bt.mp4" },
+                    { title: "Arenan (Male)", url: "https://i.imgur.com/Xm22yKQ.mp4" },
+                    { title: "Farvälet (Male)", url: "https://i.imgur.com/HIwjGWw.mp4" },
+                    { title: "Battle Video (Male)", url: "https://i.imgur.com/08ciIMc.mp4" },
+                    { title: "Härskarskapet (Female)", url: "https://i.imgur.com/0BHX7mt.mp4" },
+                    { title: "Utmaningen (Female)", url: "https://i.imgur.com/kYJHWig.mp4" },
+                    { title: "Arenan (Female)", url: "https://i.imgur.com/x1jumQK.mp4" },
+                    { title: "Farvälet (Female)", url: "https://i.imgur.com/RBv4nDs.mp4" },
+                    { title: "Battle Video (Female)", url: "https://i.imgur.com/QgqSGoP.mp4" }
+                ]
+            },
+            { 
+                title: "Genie Heroes: Nature Element", 
+                desc: "Atomhjärtats Puls / Den Sista Fyrbåken (Terra-Vita).", 
+                poster: "https://i.imgur.com/NChkyqZ.jpeg",
+                videos: [
+                    { title: "Atomhjärtats Puls", url: "https://i.imgur.com/5Zg6CqY.mp4" },
+                    { title: "Ytans Paradox", url: "https://i.imgur.com/xVlrSJo.mp4" },
+                    { title: "Den Sista Fyrbåken", url: "https://i.imgur.com/VYbEP9k.mp4" }
                 ]
             },
             { 
