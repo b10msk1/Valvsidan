@@ -51,9 +51,9 @@
         .panel-open { transform: translateX(0); }
         .panel-closed { transform: translateX(100%); }
 
-        /* Custom Scrollbar for Video Playlist */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: var(--theme-accent); border-radius: 10px; }
 
         /* Styling för zoombara bilder */
@@ -108,47 +108,36 @@
         </div>
     </div>
 
-    <!-- PORTAL MODAL (Helskärm info för valven) -->
-    <div id="portal-modal" class="fixed inset-0 z-[65] bg-black/95 hidden flex-col items-center justify-center p-8 backdrop-blur-2xl opacity-0 transition-opacity duration-500">
-        <button id="close-portal-modal" class="absolute top-8 right-8 text-slate-400 hover:text-accent bg-panel p-3 rounded-2xl border border-[#1e293b] cursor-pointer transition-colors shadow-xl z-20">
-            <i data-lucide="x"></i>
-        </button>
-        <div class="max-w-3xl flex flex-col items-center text-center">
-            <img id="portal-modal-img" src="" class="w-full max-h-[40vh] object-contain mb-8 rounded-2xl drop-shadow-[0_0_30px_rgba(0,229,255,0.2)]" />
-            <h2 id="portal-modal-title" class="text-4xl md:text-5xl font-black uppercase italic tracking-tighter text-slate-100 mb-4 drop-shadow-md">Titel</h2>
-            <p id="portal-modal-desc" class="text-slate-400 text-lg leading-relaxed mb-10 max-w-xl">Beskrivning</p>
-            <button id="portal-modal-enter" class="bg-accent hover:bg-orange-400 text-dark font-black uppercase tracking-widest px-12 py-5 rounded-2xl transition-all hover:scale-105 shadow-[0_0_40px_rgba(229,142,38,0.3)] flex items-center gap-3">
-                <i data-lucide="door-open" class="w-6 h-6"></i> Gå in i Valvet
-            </button>
-        </div>
-    </div>
-
-    <!-- NY BIOGRAF MODAL (VOD UI) -->
+    <!-- NY BIOGRAF MODAL (VOD UI MED KATEGORIER) -->
     <div id="video-modal" class="fixed inset-0 z-[70] bg-black hidden flex-col opacity-0 transition-opacity duration-300">
         <!-- Meny-vyn -->
-        <div id="video-menu" class="flex-1 flex flex-col items-center justify-center w-full h-full relative">
+        <div id="video-menu" class="flex-1 flex flex-col items-center justify-start w-full h-full relative overflow-hidden">
             <button id="close-video-modal" class="absolute top-8 right-8 z-50 text-white/50 hover:text-white bg-black/50 p-3 rounded-full backdrop-blur-md transition-colors shadow-xl border border-white/10">
                 <i data-lucide="x"></i>
             </button>
 
             <!-- Bakgrund -->
             <div class="absolute inset-0 z-0">
-                <img id="cinema-backdrop" src="https://i.imgur.com/KmLEH8X.png" class="w-full h-full object-cover opacity-30 blur-lg transition-all duration-500" />
-                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0f1a] via-[#0a0f1a]/80 to-transparent"></div>
+                <img id="cinema-backdrop" src="" class="w-full h-full object-cover opacity-30 blur-lg transition-all duration-500" />
+                <div class="absolute inset-0 bg-gradient-to-b from-[#0a0f1a]/80 via-[#0a0f1a]/60 to-[#0a0f1a]"></div>
             </div>
 
-            <!-- Vald film-info -->
-            <div class="z-10 flex flex-col items-center text-center mt-auto mb-16 px-6">
-                <h2 id="cinema-title" class="text-4xl md:text-6xl font-black uppercase italic tracking-tighter text-white mb-4 drop-shadow-2xl">Välj Film</h2>
-                <p id="cinema-desc" class="text-slate-300 max-w-2xl text-lg md:text-xl mb-10 drop-shadow-md">Scrolla i menyn nedan och klicka på en film för att starta uppspelningen.</p>
-                <button id="cinema-play-btn" class="hidden bg-white text-dark hover:bg-accent font-black uppercase tracking-widest px-12 py-4 rounded-full transition-all hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.2)] flex items-center gap-3">
-                    <i data-lucide="play" class="w-6 h-6 fill-current"></i> Spela Upp
-                </button>
+            <!-- Vald Kategori Info & Fillista (Mitten) -->
+            <div class="z-10 flex flex-col w-full max-w-4xl mt-20 px-6 h-[50vh] md:h-[60vh]">
+                <div class="text-center mb-8 flex-shrink-0">
+                    <h2 id="cinema-title" class="text-4xl md:text-6xl font-black uppercase italic tracking-tighter text-white mb-4 drop-shadow-2xl">Välj Kategori</h2>
+                    <p id="cinema-desc" class="text-slate-300 text-lg drop-shadow-md">Scrolla i menyn nedan.</p>
+                </div>
+                
+                <!-- Fillista (Sub-playlist) -->
+                <div id="sub-playlist-container" class="flex-1 overflow-y-auto pr-2 space-y-3 scrollbar-hide">
+                    <!-- Fylls dynamiskt med videos från kategorin -->
+                </div>
             </div>
 
-            <!-- Karusell -->
-            <div class="z-10 w-full bg-[#0a0f1a]/80 backdrop-blur-xl border-t border-white/5 pb-8 pt-6 px-6">
-                <h3 class="text-accent font-black uppercase tracking-widest text-xs mb-4 ml-4"><i data-lucide="film" class="w-4 h-4 inline pb-0.5"></i> Biograf Databas</h3>
+            <!-- Karusell (Botten) -->
+            <div class="z-10 w-full mt-auto bg-[#0a0f1a]/80 backdrop-blur-xl border-t border-white/5 pb-8 pt-6 px-6 flex-shrink-0">
+                <h3 class="text-accent font-black uppercase tracking-widest text-xs mb-4 ml-4"><i data-lucide="film" class="w-4 h-4 inline pb-0.5"></i> Biograf Databas - Kategorier</h3>
                 <div id="playlist-container" class="w-full flex gap-4 overflow-x-auto pb-4 px-4 scrollbar-hide snap-x">
                     <!-- Fylls dynamiskt -->
                 </div>
@@ -266,7 +255,7 @@
             Gå Till Länk
         </button>
 
-        <!-- NY: BILD-KNAPP FÖR PORTALER -->
+        <!-- BILD-KNAPP FÖR PORTALER -->
         <button id="portal-action-btn" class="hidden w-full transition-transform hover:scale-105 mb-6 group cursor-pointer">
             <img id="portal-action-img" src="" class="w-full rounded-xl border-2 border-accent shadow-[0_0_30px_rgba(229,142,38,0.3)] group-hover:border-white transition-colors" />
         </button>
@@ -420,46 +409,88 @@
             }
         };
 
-        // --- FILMDATABASEN (Biograf Spellista) ---
-        const videoPlaylist = [
-            // DINA NYA FILMER
-            { title: "Genie: The 6 Protocol", desc: "Third Person Spelet - Trailer under uppbyggnad.", url: "https://i.imgur.com/efYuBUR.mp4", poster: "https://i.imgur.com/zD5T4MF.jpeg" },
-            { title: "Aura Partner Intro", desc: "Introduktionsvideo till AI-partnern Aura.", url: "https://i.imgur.com/uU9WkKw.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
-            { title: "Aura Variant A", desc: "En mer vågad och abstrakt variant skapad av Gemini.", url: "https://i.imgur.com/drses7g.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
-            { title: "Aura Variant B", desc: "Mindre vågad presentation av Aura.", url: "https://i.imgur.com/JXf6xYv.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
-            { title: "Genie: Kod Anden", desc: "Ultislag för Kod-anden.", url: "https://i.imgur.com/4crzTiI.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
-            { title: "Genie: Vatten Anden", desc: "Ultislag för Vatten-anden.", url: "https://i.imgur.com/B2Rn87K.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
-            { title: "Genie: Eld Anden", desc: "Ultislag för Eld-anden.", url: "https://i.imgur.com/Y2kR4ZC.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
-            { title: "Eld Andarna Intro", desc: "Presentation av Eld Andarna.", url: "https://i.imgur.com/mhrqIcu.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
-            { title: "Metall Intro", desc: "Presentation av Metall.", url: "https://i.imgur.com/JFE5NLm.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
-            { title: "Gudariket Sagan", desc: "Bakgrundshistorien om Gudariket.", url: "https://i.imgur.com/lcG43Gj.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
-            { title: "Vatten Guden", desc: "Lore kring Vattenguden.", url: "https://i.imgur.com/5tDKcJ8.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
-            { title: "Metall Guden", desc: "Lore kring Metallguden.", url: "https://i.imgur.com/FNAh4ST.mp4", poster: "https://i.imgur.com/KmLEH8X.png" }
+        // --- FILMDATABASEN (Kategoriserad VOD) ---
+        const videoCategories = [
+            { 
+                title: "Genie: The 6 Protocol", 
+                desc: "Third Person Spelet - Trailar och loggar under uppbyggnad.", 
+                poster: "https://i.imgur.com/zD5T4MF.jpeg",
+                videos: [
+                    { title: "Pre-Alpha Trailer", url: "https://i.imgur.com/efYuBUR.mp4" }
+                    // Här lägger du in fler The 6 Protocol-filmer sen!
+                ]
+            },
+            { 
+                title: "Genie: Kortspelet", 
+                desc: "Ultislag, magi och animerad lore från kortspelet.", 
+                poster: "https://i.imgur.com/NChkyqZ.jpeg",
+                videos: [
+                    { title: "Ultislag: Kod Anden", url: "https://i.imgur.com/4crzTiI.mp4" },
+                    { title: "Ultislag: Vatten Anden", url: "https://i.imgur.com/B2Rn87K.mp4" },
+                    { title: "Ultislag: Eld Anden", url: "https://i.imgur.com/Y2kR4ZC.mp4" },
+                    { title: "Eld Andarna Intro", url: "https://i.imgur.com/mhrqIcu.mp4" },
+                    { title: "Metall Intro", url: "https://i.imgur.com/JFE5NLm.mp4" },
+                    { title: "Vatten Guden", url: "https://i.imgur.com/5tDKcJ8.mp4" },
+                    { title: "Metall Guden", url: "https://i.imgur.com/FNAh4ST.mp4" },
+                    { title: "Gudariket Sagan", url: "https://i.imgur.com/lcG43Gj.mp4" }
+                ]
+            },
+            { 
+                title: "Aura System", 
+                desc: "Din AI-partner och guide. Presentation och testvarianter.", 
+                poster: "https://i.imgur.com/QKKMs5d.jpeg",
+                videos: [
+                    { title: "Aura Partner Intro", url: "https://i.imgur.com/uU9WkKw.mp4" },
+                    { title: "Aura Variant A", url: "https://i.imgur.com/drses7g.mp4" },
+                    { title: "Aura Variant B", url: "https://i.imgur.com/JXf6xYv.mp4" }
+                ]
+            }
         ];
 
-        let currentVideoIndex = 0;
+        let currentCategoryIndex = 0;
         const playlistContainer = document.getElementById('playlist-container');
 
-        videoPlaylist.forEach((vid, index) => {
+        // Generera Huvudkategorierna i Karusellen längst ner
+        videoCategories.forEach((cat, index) => {
             const btn = document.createElement('button');
-            btn.className = `movie-thumb shrink-0 w-48 h-32 rounded-xl bg-card border-2 border-[#1e293b] hover:border-accent transition-all overflow-hidden relative group snap-center`;
+            btn.className = `movie-thumb shrink-0 w-56 h-36 rounded-xl bg-card border-2 border-[#1e293b] hover:border-accent transition-all overflow-hidden relative group snap-center`;
             btn.innerHTML = `
-                <img src="${vid.poster}" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                <img src="${cat.poster}" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
                 <div class="absolute inset-0 flex flex-col justify-end p-3 bg-gradient-to-t from-black via-black/50 to-transparent">
-                    <span class="font-bold text-xs text-left truncate text-white drop-shadow-md">${vid.title}</span>
+                    <span class="font-black text-sm text-left truncate text-white drop-shadow-md">${cat.title}</span>
                 </div>
             `;
-            btn.onclick = () => selectMovie(index);
+            btn.onclick = () => selectCategory(index);
             playlistContainer.appendChild(btn);
         });
 
-        const selectMovie = (index) => {
-            currentVideoIndex = index;
-            const vid = videoPlaylist[index];
-            document.getElementById('cinema-backdrop').src = vid.poster;
-            document.getElementById('cinema-title').innerText = vid.title;
-            document.getElementById('cinema-desc').innerText = vid.desc;
-            document.getElementById('cinema-play-btn').classList.remove('hidden');
+        // När en kategori väljs laddas filmerna fram
+        const selectCategory = (index) => {
+            currentCategoryIndex = index;
+            const cat = videoCategories[index];
+            document.getElementById('cinema-backdrop').src = cat.poster;
+            document.getElementById('cinema-title').innerText = cat.title;
+            document.getElementById('cinema-desc').innerText = cat.desc;
+
+            const subContainer = document.getElementById('sub-playlist-container');
+            subContainer.innerHTML = ''; // Töm gamla listan
+
+            cat.videos.forEach((vid, vIndex) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full bg-[#0f172a]/60 hover:bg-accent border border-white/10 hover:border-accent hover:text-dark text-slate-200 backdrop-blur-md px-6 py-4 rounded-xl flex items-center justify-between transition-all group shadow-lg";
+                btn.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-black/40 flex items-center justify-center border border-white/20 group-hover:border-dark/30 group-hover:bg-dark/20 transition-all">
+                            <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                        </div>
+                        <span class="font-black tracking-widest text-xs md:text-sm uppercase text-left">${vid.title}</span>
+                    </div>
+                    <span class="text-[10px] uppercase font-bold opacity-50 group-hover:text-dark group-hover:opacity-100 hidden sm:block transition-all">Spela Film</span>
+                `;
+                btn.onclick = () => startMovie(index, vIndex);
+                subContainer.appendChild(btn);
+            });
+            lucide.createIcons(); // Ladda om ikoner för listan
 
             document.querySelectorAll('.movie-thumb').forEach((el, i) => {
                 if(i === index) el.classList.add('border-accent', 'scale-105');
@@ -475,11 +506,7 @@
             
             document.getElementById('video-menu').classList.remove('hidden');
             document.getElementById('video-player-container').classList.add('hidden');
-            if (!document.getElementById('cinema-play-btn').classList.contains('hidden')) {
-                // Keep the current selection
-            } else {
-                selectMovie(0); // Välj första filmen automatiskt (Vilket nu är Genie: The 6 Protocol)
-            }
+            selectCategory(currentCategoryIndex); // Ladda vald kategori som standard
         };
 
         const closeVideoModal = () => {
@@ -491,9 +518,10 @@
             if (typeof showGuideText === 'function') showGuideText("Återgår till navigation.");
         };
 
-        const startMovie = () => {
+        // Startar en specifik film från vald kategori
+        const startMovie = (catIndex, vidIndex) => {
             const player = document.getElementById('main-video-player');
-            player.src = videoPlaylist[currentVideoIndex].url;
+            player.src = videoCategories[catIndex].videos[vidIndex].url;
             document.getElementById('video-menu').classList.add('hidden');
             document.getElementById('video-player-container').classList.remove('hidden');
             player.play();
@@ -507,36 +535,10 @@
             document.getElementById('video-menu').classList.remove('hidden');
         };
 
-        document.getElementById('cinema-play-btn').addEventListener('click', startMovie);
         document.getElementById('main-video-player').addEventListener('ended', endMovie);
         document.getElementById('close-player-btn').addEventListener('click', endMovie);
         document.getElementById('close-video-modal').addEventListener('click', closeVideoModal);
         document.getElementById('close-lightbox').addEventListener('click', closeLightbox);
-
-
-        // --- PORTAL MODAL LOGIK ---
-        const openPortalModal = (info) => {
-            isFocused = true;
-            document.getElementById('portal-modal-img').src = info.imageUrl || 'https://i.imgur.com/Fz6iDRc.png';
-            document.getElementById('portal-modal-title').innerText = info.title;
-            document.getElementById('portal-modal-desc').innerText = info.desc;
-            document.getElementById('portal-modal-enter').onclick = () => {
-                if (typeof showGuideText === 'function') showGuideText("Teleportering initierad...");
-                setTimeout(() => window.location.href = info.actionUrl, 1000); 
-            };
-            const modal = document.getElementById('portal-modal');
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.classList.remove('opacity-0'), 10);
-        };
-
-        document.getElementById('close-portal-modal').addEventListener('click', () => {
-            isFocused = false;
-            const modal = document.getElementById('portal-modal');
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-            if (typeof showGuideText === 'function') showGuideText("Återgår till navigation.");
-        });
-
 
         // --- DINA TILLGÅNGAR ---
         const MODEL_URL = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/character_base.glb';
@@ -693,7 +695,7 @@
 
             let lastTap = 0;
             containerEL.addEventListener('touchstart', (e) => {
-                if (e.target.closest('#mobile-controls') || e.target.closest('header') || e.target.closest('#video-modal') || e.target.closest('#lightbox') || e.target.closest('#left-image-panel') || e.target.closest('#info-panel') || e.target.closest('#portal-modal')) return;
+                if (e.target.closest('#mobile-controls') || e.target.closest('header') || e.target.closest('#video-modal') || e.target.closest('#lightbox') || e.target.closest('#left-image-panel') || e.target.closest('#info-panel')) return;
                 if (e.touches.length === 1) {
                     isDragging = true;
                     previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -706,7 +708,7 @@
             }, {passive: false});
 
             containerEL.addEventListener('touchmove', (e) => {
-                if (!isDragging || isFocused || e.target.closest('#mobile-controls') || e.target.closest('#video-modal') || e.target.closest('#lightbox') || e.target.closest('#left-image-panel') || e.target.closest('#info-panel') || e.target.closest('#portal-modal')) return;
+                if (!isDragging || isFocused || e.target.closest('#mobile-controls') || e.target.closest('#video-modal') || e.target.closest('#lightbox') || e.target.closest('#left-image-panel') || e.target.closest('#info-panel')) return;
                 e.preventDefault();
                 const currentX = e.touches[0].clientX; const currentY = e.touches[0].clientY;
                 cameraAngleX -= (currentX - previousMousePosition.x) * 0.005;
@@ -822,6 +824,7 @@
             
             createWall(35, -22.5, 40, 0); createWall(35, 22.5, 40, 0);  
 
+            // Neonskyltar korridoren
             const createChevron = (x, z, rotY) => {
                 const shape = new THREE.Shape();
                 shape.moveTo(0, 0); shape.lineTo(1, 1); shape.lineTo(0.5, 1); shape.lineTo(-0.5, 0); shape.lineTo(0.5, -1); shape.lineTo(1, -1); shape.lineTo(0, 0);
@@ -834,21 +837,22 @@
             };
             createChevron(0, -40, Math.PI / 2); createChevron(0, -20, Math.PI / 2); createChevron(0, 0, Math.PI / 2);
 
-            // ==========================================
-            // HALL A: DIN PERSONLIGA PRESENTATION
-            // ==========================================
 
+            // ==========================================
+            // JSON INDEX 0-36: RÖR EJ ORDNINGEN HÄR!
+            // ==========================================
+            
+            // 0: Välkomstskylt
             addArtworkPlaceholder(0, 6.5, -59.9, 0, 'https://i.imgur.com/Fz6iDRc.png', { title: "Välkommen till 3D Hallen", desc: "Mitt digitala hantverksgalleri." }, 0xe58e26, 0xfff0dd, 4, 1.5);
 
-            // NY TAVLA: Träning med karaktären (Under skylten i Hall A)
-            addArtworkPlaceholder(0, 3, -59.9, 0, 'https://i.imgur.com/U5sAKOJ.jpeg', { title: "Mästaren och Lärlingen", desc: "Jag sitter och lär mig slåss av min egen karaktär." }, 0xe58e26, 0xfff0dd, 5, 3);
-
+            // 1: Blom
             addHandicraftDisplay(-8, 0, -50, { 
                 title: "Arkitekten (Blom)",
                 desc: "Jag har utvecklat detta galleri. Gå längs väggarna för att ta del av mitt hantverk och min historia.",
                 originalImage: 'https://i.imgur.com/e33gjYl.jpeg' 
             }, BLOMSKI_URL, 0xe58e26, 0xfff0dd, 1.5, 0.0);
 
+            // 2-22: Presentation Slides
             let startZ = -50;
             addArtworkPlaceholder(-19.9, 3, startZ, Math.PI / 2, 'https://i.imgur.com/bcQTvCq.png', { title: "Del 1: Material" }, currentThemeHex);
             addArtworkPlaceholder(-19.9, 3, startZ + 6, Math.PI / 2, 'https://i.imgur.com/oftwEdE.png', { title: "Del 2: Presentation" }, currentThemeHex);
@@ -873,64 +877,84 @@
             addArtworkPlaceholder(19.9, 3, startZ + 48, -Math.PI / 2, 'https://i.imgur.com/2hKMziy.png', { title: "Del 20" }, currentThemeHex);
             addArtworkPlaceholder(19.9, 3, startZ + 54, -Math.PI / 2, 'https://i.imgur.com/RJqfR3g.png', { title: "Del 21" }, currentThemeHex);
 
+            // 23: Byst
             addHandicraftDisplay(-6, 0, -2, { 
                 title: "Betongbyst med kedja", desc: "Skapad i betong med en integrerad stålkedja.", originalImage: "https://i.imgur.com/0z4yFk3.png" 
             }, HANDICRAFT_URL_2, 0xe58e26, 0xfff0dd, 1.0, 0.8);
             
+            // 24: Bobba
             addHandicraftDisplay(6, 0, -2, { 
                 title: "Stenhuvud (Bobba)", desc: "En monolitisk skulptur.", originalImage: "https://i.imgur.com/3BVMann.png"
             }, HANDICRAFT_URL_1, 0xe58e26, 0xfff0dd, 1.0, 0.8);
 
-            // ==========================================
-            // KORRIDOREN: Monster/Dinosaurie
-            // ==========================================
+            // 25: T-Rex
             addHandicraftDisplay(0, 0, 30, { title: "T-Rex", desc: "Väktare av portalerna." }, 'https://raw.githubusercontent.com/b10msk1/liljasv-rld223/main/T-rex.glb', 0xa855f7, 0xf3e8ff, 0.5, 0);
 
-            // ==========================================
-            // HALL B (OMORGANISERAD PORTAL HUB)
-            // ==========================================
             const tCyan = 0x00e5ff, lCyan = 0xd0ffff;
             const hallBLight = new THREE.PointLight(tCyan, 1.5, 50);
             hallBLight.position.set(0, 8, 70); scene.add(hallBLight);
 
-            // NYA TAVLOR: Korta väggarna vid entrén till Hall B
-            addArtworkPlaceholder(-20, 4, 40.1, 0, 'https://i.imgur.com/9gvydyp.jpeg', { title: "3D Karaktärer i Krig", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
-            addArtworkPlaceholder(20, 4, 40.1, 0, 'https://i.imgur.com/Bg2NInS.jpeg', { title: "Konflikt", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
-
-            // --- MITTEN: ZETA & AVATARER ---
+            // 26: Zeta
             addHandicraftDisplay(0, 0, 48, { title: "Aegis Zeta", desc: "Krigare från spelet 'Genie'.", originalImage: "https://i.imgur.com/naYb9j5.jpg" }, ZETA_URL, tCyan, lCyan, 1.0, 0.0);
             
+            // 27-36: 10 Avatars
             blomAvatars.forEach((avatar, index) => {
                 let xPos = (index < 5) ? -12 : 12;
                 let zPos = 55 + ((index % 5) * 8); 
-                addHandicraftDisplay(xPos, 0, zPos, { title: avatar.name, desc: "Samling: Blom Avatarer" }, avatar.url, tCyan, lCyan, 1.0, 0.0);
+                addHandicraftDisplay(xPos, 0, zPos, { title: avatar.name, desc: "Samling: Blom Avatarer" }, avatar.url, tCyan, lCyan, 1.8, 1.9);
             });
 
+            // ==========================================
+            // EFTER INDEX 36: NYA SAKER / OMMÖBLERINGAR
+            // ==========================================
+
+            addArtworkPlaceholder(0, 3, -59.9, 0, 'https://i.imgur.com/U5sAKOJ.jpeg', { title: "Mästaren och Lärlingen", desc: "Jag sitter och lär mig slåss av min egen karaktär." }, 0xe58e26, 0xfff0dd, 5, 3);
+            addArtworkPlaceholder(-20, 4, 40.1, 0, 'https://i.imgur.com/9gvydyp.jpeg', { title: "3D Karaktärer i Krig", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
+            addArtworkPlaceholder(20, 4, 40.1, 0, 'https://i.imgur.com/Bg2NInS.jpeg', { title: "Konflikt", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
+
             // --- VÄNSTER VÄGG: App Valvet & Prompt Valvet ---
+            
+            // APP VALVET (Z: 60)
             addPortal(-39, 0, 60, Math.PI / 2, 'vault_apps.html', { 
                 title: "APP VALVET", desc: "Över 150 applikationer och systemets digitala evolution.", 
                 imageUrl: "https://i.imgur.com/KHL8nfs.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
             }, tCyan);
+            addArtworkPlaceholder(-39.9, 3, 46, Math.PI / 2, 'https://i.imgur.com/Ne2QW0P.jpg', { title: "App Valv 1" }, tCyan, lCyan);
+            addArtworkPlaceholder(-39.9, 3, 51, Math.PI / 2, 'https://i.imgur.com/WbiHLes.png', { title: "App Valv 2" }, tCyan, lCyan);
+            addArtworkPlaceholder(-39.9, 3, 69, Math.PI / 2, 'https://i.imgur.com/ChpOXSG.png', { title: "App Valv 3" }, tCyan, lCyan);
+            addArtworkPlaceholder(-39.9, 3, 74, Math.PI / 2, 'https://i.imgur.com/Ne2QW0P.jpg', { title: "App Valv 4" }, tCyan, lCyan);
 
-            // De nya affischerna (Konkelbärsjakten & Herr Banan)
-            addArtworkPlaceholder(-39.9, 4, 46, Math.PI / 2, 'https://i.imgur.com/DG1ZDfG.jpeg', { title: "Konkelbärsjakten" }, tCyan, lCyan, 4, 6);
-            addArtworkPlaceholder(-39.9, 4, 74, Math.PI / 2, 'https://i.imgur.com/8AKFLUT.jpeg', { title: "Herr Banan" }, tCyan, lCyan, 4, 6);
-
+            // PROMPT VALVET (Z: 95)
             addPortal(-39, 0, 95, Math.PI / 2, 'promptvalvet.html', { 
                 title: "PROMPTVALVET", desc: "Över 500 AI-visioner med tillhörande krypterad master-data.", 
                 imageUrl: "https://i.imgur.com/IJm4njJ.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
             }, tCyan);
+            addArtworkPlaceholder(-39.9, 3, 81, Math.PI / 2, 'https://i.imgur.com/oMUYiaZ.png', { title: "Verktyg 1" }, tCyan, lCyan);
+            addArtworkPlaceholder(-39.9, 3, 86, Math.PI / 2, 'https://i.imgur.com/RvTLUrJ.png', { title: "Verktyg 2" }, tCyan, lCyan);
+            addArtworkPlaceholder(-39.9, 3, 104, Math.PI / 2, 'https://i.imgur.com/zf6dqoA.png', { title: "Verktyg 3" }, tCyan, lCyan);
+            addArtworkPlaceholder(-39.9, 3, 109, Math.PI / 2, 'https://i.imgur.com/oMUYiaZ.png', { title: "Verktyg 4" }, tCyan, lCyan);
 
             // --- HÖGER VÄGG: Konsthallen & Sagor/Manus ---
+            
+            // KONSTHALLEN (Z: 60)
             addPortal(39, 0, 60, -Math.PI / 2, 'vault_art.html', { 
                 title: "KONSTHALLEN", desc: "Ingång till de utvalda konst-utställningarna.", 
                 imageUrl: "https://i.imgur.com/qJWccGp.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
             }, tCyan);
+            addArtworkPlaceholder(39.9, 3, 46, -Math.PI / 2, 'https://i.imgur.com/SWmCH98.png', { title: "Konst 1" }, tCyan, lCyan);
+            addArtworkPlaceholder(39.9, 3, 51, -Math.PI / 2, 'https://i.imgur.com/c0u8FZS.png', { title: "Konst 2" }, tCyan, lCyan);
+            addArtworkPlaceholder(39.9, 3, 69, -Math.PI / 2, 'https://i.imgur.com/tAgt65c.png', { title: "Konst 3" }, tCyan, lCyan);
+            addArtworkPlaceholder(39.9, 3, 74, -Math.PI / 2, 'https://i.imgur.com/sSRCbRk.png', { title: "Konst 4" }, tCyan, lCyan);
 
+            // SAGOR & MANUS (Z: 95)
             addPortal(39, 0, 95, -Math.PI / 2, 'vault_sagor.html', { 
                 title: "SAGOR & MANUS", desc: "Din självbiografi och ditt arkiv för manus och berättelser.", 
                 imageUrl: "https://i.imgur.com/YO1ZSZN.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
             }, tCyan);
+            addArtworkPlaceholder(39.9, 3, 81, -Math.PI / 2, 'https://i.imgur.com/SWmCH98.png', { title: "Saga 1" }, tCyan, lCyan);
+            addArtworkPlaceholder(39.9, 3, 86, -Math.PI / 2, 'https://i.imgur.com/c0u8FZS.png', { title: "Saga 2" }, tCyan, lCyan);
+            addArtworkPlaceholder(39.9, 3, 104, -Math.PI / 2, 'https://i.imgur.com/tAgt65c.png', { title: "Saga 3" }, tCyan, lCyan);
+            addArtworkPlaceholder(39.9, 3, 109, -Math.PI / 2, 'https://i.imgur.com/sSRCbRk.png', { title: "Saga 4" }, tCyan, lCyan);
 
             // --- RAKT FRAM (LÄNGST BAK): Biografen & Nya Affischer ---
             const baseW = 16, baseH = 9; 
@@ -945,14 +969,15 @@
                 new THREE.TextureLoader().load(img, (tex) => { tex.encoding = THREE.sRGBEncoding; mesh.material.map = tex; mesh.material.needsUpdate = true; });
                 scene.add(mesh);
             };
-            decorativeDisplay(0, 16, 9, 'https://i.imgur.com/KmLEH8X.png'); // Center Skärm
+            decorativeDisplay(0, 16, 9, 'https://i.imgur.com/KmLEH8X.png'); 
 
-            // Nya Genie-affischer istället för sidopaneler!
-            addArtworkPlaceholder(-12, 4, 119.9, Math.PI, 'https://i.imgur.com/zD5T4MF.jpeg', { title: "Genie: The 6 Protocol" }, tCyan, lCyan, 4, 6); // Vänster
-            addArtworkPlaceholder(12, 4, 119.9, Math.PI, 'https://i.imgur.com/NChkyqZ.jpeg', { title: "Genie Heroes" }, tCyan, lCyan, 4, 6); // Höger
-            addArtworkPlaceholder(-20, 4, 119.9, Math.PI, 'https://i.imgur.com/QKKMs5d.jpeg', { title: "Aura Partner" }, tCyan, lCyan, 4, 6); // Extra Vänster
+            addArtworkPlaceholder(-14, 4, 119.9, Math.PI, 'https://i.imgur.com/zD5T4MF.jpeg', { title: "Genie: The 6 Protocol" }, tCyan, lCyan, 5, 7.5);
+            addArtworkPlaceholder(-22, 4, 119.9, Math.PI, 'https://i.imgur.com/QKKMs5d.jpeg', { title: "Aura Partner" }, tCyan, lCyan, 5, 7.5);
+            addArtworkPlaceholder(-30, 4, 119.9, Math.PI, 'https://i.imgur.com/DG1ZDfG.jpeg', { title: "Konkelbärsjakten" }, tCyan, lCyan, 5, 7.5);
             
-            // Bio-bänkar
+            addArtworkPlaceholder(14, 4, 119.9, Math.PI, 'https://i.imgur.com/NChkyqZ.jpeg', { title: "Genie Heroes" }, tCyan, lCyan, 5, 7.5);
+            addArtworkPlaceholder(22, 4, 119.9, Math.PI, 'https://i.imgur.com/8AKFLUT.jpeg', { title: "Herr Banan" }, tCyan, lCyan, 5, 7.5);
+            
             const benchMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
             const createBenchRow = (z) => {
                 [-12, -6, 0, 6, 12].forEach(x => {
@@ -1061,7 +1086,7 @@
                 document.getElementById('portal-action-img').src = info.portalEnterImage;
                 portalActionBtn.onclick = () => {
                     if (typeof showGuideText === 'function') showGuideText("Teleportering initierad...");
-                    setTimeout(() => window.location.href = info.actionUrl, 1000); 
+                    setTimeout(() => { if(info.actionUrl && info.actionUrl !== "") window.location.href = info.actionUrl; }, 1000); 
                 };
             } else if (info.actionUrl && !isEditMode) {
                 portalActionBtn.classList.add('hidden');
@@ -1069,7 +1094,7 @@
                 actionBtn.innerText = info.actionText || "ÖPPNA LÄNK";
                 actionBtn.onclick = () => {
                     if (typeof showGuideText === 'function') showGuideText("Teleportering initierad...");
-                    setTimeout(() => window.location.href = info.actionUrl, 1000); 
+                    setTimeout(() => { if(info.actionUrl && info.actionUrl !== "") window.location.href = info.actionUrl; }, 1000); 
                 };
             } else {
                 actionBtn.classList.add('hidden');
@@ -1133,10 +1158,19 @@
                 }
 
                 if (hoveredArtwork.userData.info.isPortal) {
-                    openPortalModal(hoveredArtwork.userData.info);
+                    isFocused = true; 
+                    focusedArtwork = hoveredArtwork;
+                    populateInfoPanel(hoveredArtwork.userData.info, false);
+                    document.getElementById('info-panel').classList.add('panel-closed');
+                    document.getElementById('info-panel').classList.remove('panel-open');
+                    
+                    isLightboxFromThumbnail = false;
+                    openLightbox(hoveredArtwork.userData.info.imageUrl);
+
                     const objPos = hoveredArtwork.position; const focusDist = 4.5;
-                    let dirToChar = new THREE.Vector3().subVectors(playerGroup.position, objPos); dirToChar.y = 0; dirToChar.normalize();
-                    focusCameraTarget.copy(objPos).add(dirToChar.multiplyScalar(focusDist)); focusCameraTarget.y = objPos.y + 1.5; focusLookAtTarget.copy(objPos); focusLookAtTarget.y += 0.5; 
+                    const rotY = hoveredArtwork.rotation.y; 
+                    focusCameraTarget.set(objPos.x + Math.sin(rotY) * focusDist, objPos.y, objPos.z + Math.cos(rotY) * focusDist); 
+                    focusLookAtTarget.copy(objPos);
                     return;
                 }
 
