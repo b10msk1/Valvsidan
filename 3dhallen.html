@@ -35,9 +35,6 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
     
-    <!-- Reflector för Våtgolv-effekten -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js"></script>
-
     <!-- POST-PROCESSING -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
@@ -62,6 +59,9 @@
         /* Styling för zoombara bilder */
         #lightbox-img { cursor: grab; transition: transform 0.1s ease-out; }
         #lightbox-img:active { cursor: grabbing; transition: none; }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="text-slate-100 font-sans selection:bg-accent/30">
@@ -72,44 +72,95 @@
         <p id="loading-text" class="text-accent text-xs font-black uppercase tracking-widest">Initierar 3D-motor...</p>
     </div>
 
-    <!-- LIGHTBOX -->
-    <div id="lightbox" class="fixed inset-0 z-[60] bg-black/90 hidden flex-col items-center justify-center p-8 backdrop-blur-md opacity-0 transition-opacity duration-300">
-        <button id="close-lightbox" class="absolute top-8 right-8 text-slate-400 hover:text-accent bg-panel p-3 rounded-2xl border border-[#1e293b] cursor-pointer transition-colors shadow-xl z-10">
+    <!-- VÄNSTER BILDPANEL FÖR 2D-TAVLOR OCH PORTALER (DELAD SKÄRM) -->
+    <div id="left-image-panel" class="absolute left-0 top-0 bottom-0 w-full md:w-[calc(100%-24rem)] hidden flex-col items-center justify-center p-4 md:p-12 z-30 pointer-events-none transition-opacity duration-300">
+        <button id="left-panel-prev" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-accent bg-panel p-4 rounded-full border border-[#1e293b] cursor-pointer transition-all shadow-2xl hover:scale-110 pointer-events-auto">
+            <i data-lucide="chevron-left" class="w-8 h-8"></i>
+        </button>
+        <button id="left-panel-next" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-accent bg-panel p-4 rounded-full border border-[#1e293b] cursor-pointer transition-all shadow-2xl hover:scale-110 pointer-events-auto">
+            <i data-lucide="chevron-right" class="w-8 h-8"></i>
+        </button>
+        
+        <div class="relative max-w-full max-h-full pointer-events-auto group cursor-zoom-in" onclick="isLightboxFromThumbnail = false; openLightbox(document.getElementById('left-image-element').src)">
+            <img id="left-image-element" src="" class="max-w-full max-h-[85vh] rounded-2xl border-2 border-[#1e293b] shadow-[0_0_50px_rgba(0,0,0,0.5)] object-contain transition-colors group-hover:border-accent" draggable="false" />
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 text-[10px] font-black text-white uppercase tracking-widest pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 shadow-xl">
+                <i data-lucide="maximize-2" class="w-4 h-4 text-accent"></i> Helskärm
+            </div>
+        </div>
+    </div>
+
+    <!-- LIGHTBOX (Helskärm) -->
+    <div id="lightbox" class="fixed inset-0 z-[60] bg-black/95 hidden flex-col items-center justify-center p-4 md:p-8 backdrop-blur-xl opacity-0 transition-opacity duration-300">
+        <button id="close-lightbox" class="absolute top-8 right-8 text-slate-400 hover:text-accent bg-panel p-3 rounded-2xl border border-[#1e293b] cursor-pointer transition-colors shadow-xl z-20">
             <i data-lucide="x"></i>
         </button>
+
+        <!-- Bildspels-navigering -->
+        <button id="lightbox-prev" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-accent bg-panel p-4 rounded-full border border-[#1e293b] cursor-pointer transition-colors shadow-2xl z-20 hidden hover:scale-110">
+            <i data-lucide="chevron-left" class="w-8 h-8"></i>
+        </button>
+        <button id="lightbox-next" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-accent bg-panel p-4 rounded-full border border-[#1e293b] cursor-pointer transition-colors shadow-2xl z-20 hidden hover:scale-110">
+            <i data-lucide="chevron-right" class="w-8 h-8"></i>
+        </button>
+
         <div class="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img id="lightbox-img" class="max-w-full max-h-[85vh] rounded-xl border border-accent shadow-[0_0_50px_rgba(229,142,38,0.15)] object-contain select-none" src="" draggable="false" />
         </div>
     </div>
 
-    <!-- VIDEO MODAL MED SPELLISTA -->
-    <div id="video-modal" class="fixed inset-0 z-[70] bg-black/95 hidden flex-col md:flex-row items-center justify-center backdrop-blur-xl opacity-0 transition-opacity duration-300">
-        <button id="close-video-modal" class="absolute top-6 right-6 z-50 text-slate-400 hover:text-accent bg-panel p-3 rounded-2xl border border-[#1e293b] cursor-pointer transition-colors shadow-xl">
+    <!-- PORTAL MODAL (Helskärm info för valven) -->
+    <div id="portal-modal" class="fixed inset-0 z-[65] bg-black/95 hidden flex-col items-center justify-center p-8 backdrop-blur-2xl opacity-0 transition-opacity duration-500">
+        <button id="close-portal-modal" class="absolute top-8 right-8 text-slate-400 hover:text-accent bg-panel p-3 rounded-2xl border border-[#1e293b] cursor-pointer transition-colors shadow-xl z-20">
             <i data-lucide="x"></i>
         </button>
-        
-        <!-- Video Spelare -->
-        <div class="w-full md:w-3/4 h-1/2 md:h-full flex flex-col items-center justify-center p-4 md:p-12 relative">
-            <div class="w-full max-w-5xl bg-black rounded-2xl border border-accent overflow-hidden shadow-[0_0_80px_rgba(229,142,38,0.15)] relative">
-                <video id="main-video-player" class="w-full h-full object-contain aspect-video" controls autoplay>
-                    Din webbläsare stöder inte video.
-                </video>
+        <div class="max-w-3xl flex flex-col items-center text-center">
+            <img id="portal-modal-img" src="" class="w-full max-h-[40vh] object-contain mb-8 rounded-2xl drop-shadow-[0_0_30px_rgba(0,229,255,0.2)]" />
+            <h2 id="portal-modal-title" class="text-4xl md:text-5xl font-black uppercase italic tracking-tighter text-slate-100 mb-4 drop-shadow-md">Titel</h2>
+            <p id="portal-modal-desc" class="text-slate-400 text-lg leading-relaxed mb-10 max-w-xl">Beskrivning</p>
+            <button id="portal-modal-enter" class="bg-accent hover:bg-orange-400 text-dark font-black uppercase tracking-widest px-12 py-5 rounded-2xl transition-all hover:scale-105 shadow-[0_0_40px_rgba(229,142,38,0.3)] flex items-center gap-3">
+                <i data-lucide="door-open" class="w-6 h-6"></i> Gå in i Valvet
+            </button>
+        </div>
+    </div>
+
+    <!-- NY BIOGRAF MODAL (VOD UI) -->
+    <div id="video-modal" class="fixed inset-0 z-[70] bg-black hidden flex-col opacity-0 transition-opacity duration-300">
+        <!-- Meny-vyn -->
+        <div id="video-menu" class="flex-1 flex flex-col items-center justify-center w-full h-full relative">
+            <button id="close-video-modal" class="absolute top-8 right-8 z-50 text-white/50 hover:text-white bg-black/50 p-3 rounded-full backdrop-blur-md transition-colors shadow-xl border border-white/10">
+                <i data-lucide="x"></i>
+            </button>
+
+            <!-- Bakgrund -->
+            <div class="absolute inset-0 z-0">
+                <img id="cinema-backdrop" src="https://i.imgur.com/KmLEH8X.png" class="w-full h-full object-cover opacity-30 blur-lg transition-all duration-500" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0f1a] via-[#0a0f1a]/80 to-transparent"></div>
             </div>
-            <h2 id="video-title" class="text-accent font-black uppercase tracking-widest text-xl mt-6">Laddar Film...</h2>
+
+            <!-- Vald film-info -->
+            <div class="z-10 flex flex-col items-center text-center mt-auto mb-16 px-6">
+                <h2 id="cinema-title" class="text-4xl md:text-6xl font-black uppercase italic tracking-tighter text-white mb-4 drop-shadow-2xl">Välj Film</h2>
+                <p id="cinema-desc" class="text-slate-300 max-w-2xl text-lg md:text-xl mb-10 drop-shadow-md">Scrolla i menyn nedan och klicka på en film för att starta uppspelningen.</p>
+                <button id="cinema-play-btn" class="hidden bg-white text-dark hover:bg-accent font-black uppercase tracking-widest px-12 py-4 rounded-full transition-all hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.2)] flex items-center gap-3">
+                    <i data-lucide="play" class="w-6 h-6 fill-current"></i> Spela Upp
+                </button>
+            </div>
+
+            <!-- Karusell -->
+            <div class="z-10 w-full bg-[#0a0f1a]/80 backdrop-blur-xl border-t border-white/5 pb-8 pt-6 px-6">
+                <h3 class="text-accent font-black uppercase tracking-widest text-xs mb-4 ml-4"><i data-lucide="film" class="w-4 h-4 inline pb-0.5"></i> Biograf Databas</h3>
+                <div id="playlist-container" class="w-full flex gap-4 overflow-x-auto pb-4 px-4 scrollbar-hide snap-x">
+                    <!-- Fylls dynamiskt -->
+                </div>
+            </div>
         </div>
 
-        <!-- Spellista Sidopanel -->
-        <div class="w-full md:w-1/4 h-1/2 md:h-full bg-panel/80 border-l border-[#1e293b] flex flex-col pt-12 md:pt-6">
-            <div class="p-6 border-b border-[#1e293b]">
-                <div class="flex items-center gap-2 mb-1">
-                    <i data-lucide="film" class="w-5 h-5 text-accent"></i>
-                    <h3 class="text-slate-100 font-black uppercase tracking-widest text-lg">Biograf Databas</h3>
-                </div>
-                <p class="text-slate-400 text-xs">Välj fil för att initiera uppspelning.</p>
-            </div>
-            <div id="playlist-container" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-                <!-- Genereras dynamiskt via JS -->
-            </div>
+        <!-- Själva Videospelaren (Dold initialt) -->
+        <div id="video-player-container" class="hidden absolute inset-0 z-40 bg-black flex flex-col items-center justify-center">
+            <video id="main-video-player" class="w-full h-full object-contain" controls></video>
+            <button id="close-player-btn" class="absolute top-8 left-8 text-white hover:text-accent bg-black/50 px-6 py-3 rounded-full backdrop-blur-md border border-white/10 font-bold uppercase tracking-widest text-xs flex items-center gap-2 transition-colors z-50">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Tillbaka till menyn
+            </button>
         </div>
     </div>
 
@@ -190,7 +241,7 @@
     </div>
 
     <!-- Taktisk Informations-Panel -->
-    <div id="info-panel" class="absolute right-0 top-0 bottom-0 w-80 sm:w-96 bg-panel/95 backdrop-blur-xl border-l border-[#1e293b] panel-closed transition-transform duration-500 ease-in-out z-40 p-8 flex flex-col shadow-2xl overflow-y-auto">
+    <div id="info-panel" class="absolute right-0 top-0 bottom-0 w-80 md:w-96 bg-panel/95 backdrop-blur-xl border-l border-[#1e293b] panel-closed transition-transform duration-500 ease-in-out z-40 p-8 flex flex-col shadow-2xl overflow-y-auto">
         <div class="flex justify-between items-center mb-8">
             <div class="flex items-center gap-2">
                 <i data-lucide="database" class="w-4 h-4 text-accent"></i>
@@ -202,12 +253,25 @@
         </div>
         
         <h3 id="info-title" class="text-2xl font-black uppercase italic tracking-tighter text-slate-100 mb-4">Laddar...</h3>
-        <p id="info-desc" class="text-slate-400 text-sm leading-relaxed mb-6">...</p>
+        <p id="info-desc" class="text-slate-400 text-sm leading-relaxed mb-6 whitespace-pre-wrap">...</p>
         
+        <!-- VISAR ORIGINALFOTOT FÖR 3D-OBJEKT HÄR -->
+        <div id="info-original-img-container" class="hidden mb-6 bg-black/40 p-4 rounded-2xl border border-white/5">
+            <span class="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-3"><i data-lucide="image" class="w-3 h-3 inline pb-0.5"></i> Originalverk</span>
+            <img id="info-original-img" src="" class="w-full rounded-xl border border-[#1e293b] cursor-pointer hover:border-accent transition-colors shadow-lg" />
+            <span class="text-[8px] text-slate-500 uppercase mt-2 block text-center italic">Klicka för att förstora</span>
+        </div>
+
         <button id="action-btn" class="hidden w-full bg-accent hover:bg-orange-400 text-dark font-black uppercase tracking-widest py-4 rounded-xl transition-colors mb-6 shadow-[0_0_20px_rgba(229,142,38,0.3)] hover:scale-105">
-            Gå Till Valv
+            Gå Till Länk
         </button>
 
+        <!-- NY: BILD-KNAPP FÖR PORTALER -->
+        <button id="portal-action-btn" class="hidden w-full transition-transform hover:scale-105 mb-6 group cursor-pointer">
+            <img id="portal-action-img" src="" class="w-full rounded-xl border-2 border-accent shadow-[0_0_30px_rgba(229,142,38,0.3)] group-hover:border-white transition-colors" />
+        </button>
+
+        <!-- Redigerings-läge -->
         <input type="text" id="edit-title" class="hidden bg-dark text-slate-100 font-black uppercase italic tracking-tighter text-lg border border-[#1e293b] focus:border-accent focus:outline-none rounded-xl p-3 mb-4 w-full transition-colors" placeholder="Titel..." />
         <textarea id="edit-desc" class="hidden bg-dark text-slate-400 text-sm border border-[#1e293b] focus:border-accent focus:outline-none rounded-xl p-3 mb-6 w-full h-32 resize-none transition-colors" placeholder="Beskrivning..."></textarea>
         <button id="save-info" class="hidden w-full bg-accent hover:bg-orange-400 text-dark font-black uppercase tracking-widest py-3 rounded-xl transition-colors mb-4">Spara Ändringar</button>
@@ -232,24 +296,26 @@
     <script>
         lucide.createIcons();
 
-        // --- LIGHTBOX ZOOM & PAN LOGIK ---
-        let zoomLevel = 1;
-        let isPanningImg = false;
-        let startPanX = 0, startPanY = 0;
-        let currentPanX = 0, currentPanY = 0;
+        // --- BILDSPEL & LIGHTBOX ZOOM/PAN LOGIK ---
+        let isLightboxFromThumbnail = false;
+        
+        const slideshowUrls = [
+            'https://i.imgur.com/bcQTvCq.png', 'https://i.imgur.com/oftwEdE.png', 'https://i.imgur.com/GFqcgYE.png',
+            'https://i.imgur.com/0QaaUSe.png', 'https://i.imgur.com/H3IZPS0.png', 'https://i.imgur.com/WfhijYL.png',
+            'https://i.imgur.com/83qqYdV.png', 'https://i.imgur.com/4cB8HTr.png', 'https://i.imgur.com/NJamoLG.png',
+            'https://i.imgur.com/QV7Rf8u.png', 'https://i.imgur.com/q5oAJPV.png', 'https://i.imgur.com/ZZsWPir.png',
+            'https://i.imgur.com/7kjC0rP.png', 'https://i.imgur.com/mURAjph.png', 'https://i.imgur.com/Mzrp4KS.png',
+            'https://i.imgur.com/dYnq7Ev.png', 'https://i.imgur.com/e7W2O8E.png', 'https://i.imgur.com/seEhThO.png',
+            'https://i.imgur.com/flrBLC1.png', 'https://i.imgur.com/2hKMziy.png', 'https://i.imgur.com/RJqfR3g.png'
+        ];
+
+        let zoomLevel = 1, isPanningImg = false, startPanX = 0, startPanY = 0, currentPanX = 0, currentPanY = 0;
         const lightboxImgEl = document.getElementById('lightbox-img');
         const lightboxContainerEl = document.getElementById('lightbox');
 
-        const updateImageTransform = () => {
-            lightboxImgEl.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${zoomLevel})`;
-        };
+        const updateImageTransform = () => { lightboxImgEl.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${zoomLevel})`; };
+        const resetImageTransform = () => { zoomLevel = 1; currentPanX = 0; currentPanY = 0; updateImageTransform(); };
 
-        const resetImageTransform = () => {
-            zoomLevel = 1; currentPanX = 0; currentPanY = 0;
-            updateImageTransform();
-        };
-
-        // Desktop Zoom (Scroll)
         lightboxContainerEl.addEventListener('wheel', (e) => {
             if (lightboxContainerEl.classList.contains('hidden')) return;
             e.preventDefault();
@@ -258,32 +324,22 @@
             updateImageTransform();
         }, { passive: false });
 
-        // Desktop Pan (Dra med musen)
         lightboxImgEl.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            isPanningImg = true;
-            startPanX = e.clientX - currentPanX;
-            startPanY = e.clientY - currentPanY;
+            e.preventDefault(); isPanningImg = true; startPanX = e.clientX - currentPanX; startPanY = e.clientY - currentPanY;
         });
 
         window.addEventListener('mousemove', (e) => {
             if (!isPanningImg) return;
-            currentPanX = e.clientX - startPanX;
-            currentPanY = e.clientY - startPanY;
-            updateImageTransform();
+            currentPanX = e.clientX - startPanX; currentPanY = e.clientY - startPanY; updateImageTransform();
         });
 
         window.addEventListener('mouseup', () => isPanningImg = false);
 
-        // Mobil Touch Zoom & Pan (Pinch to zoom)
-        let initialDistance = null;
-        let initialScale = 1;
-
+        // Touch Zoom/Pan
+        let initialDistance = null, initialScale = 1;
         lightboxImgEl.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
-                isPanningImg = true;
-                startPanX = e.touches[0].clientX - currentPanX;
-                startPanY = e.touches[0].clientY - currentPanY;
+                isPanningImg = true; startPanX = e.touches[0].clientX - currentPanX; startPanY = e.touches[0].clientY - currentPanY;
             } else if (e.touches.length === 2) {
                 isPanningImg = false;
                 initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -295,49 +351,135 @@
             if(lightboxContainerEl.classList.contains('hidden')) return;
             e.preventDefault();
             if (isPanningImg && e.touches.length === 1) {
-                currentPanX = e.touches[0].clientX - startPanX;
-                currentPanY = e.touches[0].clientY - startPanY;
-                updateImageTransform();
+                currentPanX = e.touches[0].clientX - startPanX; currentPanY = e.touches[0].clientY - startPanY; updateImageTransform();
             } else if (e.touches.length === 2 && initialDistance) {
                 const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
                 zoomLevel = initialScale * (currentDistance / initialDistance);
-                zoomLevel = Math.max(0.5, Math.min(zoomLevel, 5));
-                updateImageTransform();
+                zoomLevel = Math.max(0.5, Math.min(zoomLevel, 5)); updateImageTransform();
             }
         }, {passive: false});
 
         lightboxImgEl.addEventListener('touchend', () => { isPanningImg = false; initialDistance = null; });
 
+        const navigateSlideshow = (newIndex) => {
+            if (newIndex < 0) newIndex = slideshowUrls.length - 1;
+            if (newIndex >= slideshowUrls.length) newIndex = 0;
+
+            const nextUrl = slideshowUrls[newIndex];
+            const nextArtwork = artworks.find(art => art.userData.info && art.userData.info.imageUrl === nextUrl);
+
+            if (nextArtwork) {
+                isFocused = true; focusedArtwork = nextArtwork;
+                populateInfoPanel(nextArtwork.userData.info, false);
+                document.getElementById('lightbox-img').src = nextUrl;
+                document.getElementById('left-image-element').src = nextUrl;
+
+                const objPos = nextArtwork.position; const focusDist = isFirstPerson ? 2.5 : 4.5; const rotY = nextArtwork.rotation.y;
+                focusCameraTarget.set(objPos.x + Math.sin(rotY) * focusDist, objPos.y, objPos.z + Math.cos(rotY) * focusDist);
+                focusLookAtTarget.copy(objPos);
+            }
+        };
+
+        const openLightbox = (url) => {
+            resetImageTransform(); document.getElementById('lightbox-img').src = url;
+            const slideIndex = slideshowUrls.indexOf(url);
+            if (slideIndex !== -1 && !isLightboxFromThumbnail) {
+                document.getElementById('lightbox-prev').classList.remove('hidden'); document.getElementById('lightbox-next').classList.remove('hidden');
+                document.getElementById('lightbox-prev').onclick = () => navigateSlideshow(slideIndex - 1);
+                document.getElementById('lightbox-next').onclick = () => navigateSlideshow(slideIndex + 1);
+            } else {
+                document.getElementById('lightbox-prev').classList.add('hidden'); document.getElementById('lightbox-next').classList.add('hidden');
+            }
+            const lb = document.getElementById('lightbox'); lb.classList.remove('hidden'); setTimeout(() => lb.classList.remove('opacity-0'), 10);
+        };
+
+        const closeLightbox = () => {
+            const lb = document.getElementById('lightbox');
+            lb.classList.add('opacity-0'); 
+            setTimeout(() => lb.classList.add('hidden'), 300);
+            setTimeout(resetImageTransform, 300);
+
+            // Öppna panelen om vi granskar en tavla ELLER en portal
+            if (!isLightboxFromThumbnail && focusedArtwork && !focusedArtwork.userData.is3D && !focusedArtwork.userData.info.isVideoModal) {
+                document.getElementById('info-panel').classList.remove('panel-closed');
+                document.getElementById('info-panel').classList.add('panel-open');
+                
+                document.getElementById('left-image-panel').classList.remove('hidden');
+                document.getElementById('left-image-element').src = focusedArtwork.userData.info.imageUrl;
+
+                const slideIndex = slideshowUrls.indexOf(focusedArtwork.userData.info.imageUrl);
+                if (slideIndex !== -1) {
+                    document.getElementById('left-panel-prev').classList.remove('hidden');
+                    document.getElementById('left-panel-next').classList.remove('hidden');
+                    document.getElementById('left-panel-prev').onclick = () => navigateSlideshow(slideIndex - 1);
+                    document.getElementById('left-panel-next').onclick = () => navigateSlideshow(slideIndex + 1);
+                } else {
+                    document.getElementById('left-panel-prev').classList.add('hidden');
+                    document.getElementById('left-panel-next').classList.add('hidden');
+                }
+            }
+        };
+
         // --- FILMDATABASEN (Biograf Spellista) ---
         const videoPlaylist = [
-            { title: "Aura Partner Intro", url: "https://i.imgur.com/uU9WkKw.mp4" },
-            { title: "Aura Variant A", url: "https://i.imgur.com/drses7g.mp4" },
-            { title: "Aura Variant B", url: "https://i.imgur.com/JXf6xYv.mp4" },
-            { title: "Genie: Kod Anden", url: "https://i.imgur.com/4crzTiI.mp4" },
-            { title: "Genie: Vatten Anden", url: "https://i.imgur.com/B2Rn87K.mp4" },
-            { title: "Genie: Eld Anden", url: "https://i.imgur.com/Y2kR4ZC.mp4" },
-            { title: "Eld Andarna Intro", url: "https://i.imgur.com/mhrqIcu.mp4" },
-            { title: "Metall Intro", url: "https://i.imgur.com/JFE5NLm.mp4" },
-            { title: "Gudariket Sagan", url: "https://i.imgur.com/lcG43Gj.mp4" },
-            { title: "Vatten Guden", url: "https://i.imgur.com/5tDKcJ8.mp4" },
-            { title: "Metall Guden", url: "https://i.imgur.com/FNAh4ST.mp4" }
+            // DINA NYA FILMER
+            { title: "Genie: The 6 Protocol", desc: "Third Person Spelet - Trailer under uppbyggnad.", url: "https://i.imgur.com/efYuBUR.mp4", poster: "https://i.imgur.com/zD5T4MF.jpeg" },
+            { title: "Aura Partner Intro", desc: "Introduktionsvideo till AI-partnern Aura.", url: "https://i.imgur.com/uU9WkKw.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
+            { title: "Aura Variant A", desc: "En mer vågad och abstrakt variant skapad av Gemini.", url: "https://i.imgur.com/drses7g.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
+            { title: "Aura Variant B", desc: "Mindre vågad presentation av Aura.", url: "https://i.imgur.com/JXf6xYv.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
+            { title: "Genie: Kod Anden", desc: "Ultislag för Kod-anden.", url: "https://i.imgur.com/4crzTiI.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
+            { title: "Genie: Vatten Anden", desc: "Ultislag för Vatten-anden.", url: "https://i.imgur.com/B2Rn87K.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
+            { title: "Genie: Eld Anden", desc: "Ultislag för Eld-anden.", url: "https://i.imgur.com/Y2kR4ZC.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
+            { title: "Eld Andarna Intro", desc: "Presentation av Eld Andarna.", url: "https://i.imgur.com/mhrqIcu.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
+            { title: "Metall Intro", desc: "Presentation av Metall.", url: "https://i.imgur.com/JFE5NLm.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
+            { title: "Gudariket Sagan", desc: "Bakgrundshistorien om Gudariket.", url: "https://i.imgur.com/lcG43Gj.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
+            { title: "Vatten Guden", desc: "Lore kring Vattenguden.", url: "https://i.imgur.com/5tDKcJ8.mp4", poster: "https://i.imgur.com/KmLEH8X.png" },
+            { title: "Metall Guden", desc: "Lore kring Metallguden.", url: "https://i.imgur.com/FNAh4ST.mp4", poster: "https://i.imgur.com/KmLEH8X.png" }
         ];
 
+        let currentVideoIndex = 0;
         const playlistContainer = document.getElementById('playlist-container');
+
         videoPlaylist.forEach((vid, index) => {
             const btn = document.createElement('button');
-            btn.className = "w-full text-left p-3 rounded-xl bg-card border border-[#1e293b] hover:border-accent hover:bg-[#1e293b] transition-colors text-sm text-slate-300 group flex items-center gap-3";
-            btn.innerHTML = `<div class="w-8 h-8 rounded-full bg-dark flex items-center justify-center border border-[#1e293b] group-hover:border-accent transition-colors"><i data-lucide="play" class="w-3 h-3 text-accent"></i></div> <span class="font-bold truncate">${vid.title}</span>`;
-            btn.onclick = () => playVideoInModal(index);
+            btn.className = `movie-thumb shrink-0 w-48 h-32 rounded-xl bg-card border-2 border-[#1e293b] hover:border-accent transition-all overflow-hidden relative group snap-center`;
+            btn.innerHTML = `
+                <img src="${vid.poster}" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                <div class="absolute inset-0 flex flex-col justify-end p-3 bg-gradient-to-t from-black via-black/50 to-transparent">
+                    <span class="font-bold text-xs text-left truncate text-white drop-shadow-md">${vid.title}</span>
+                </div>
+            `;
+            btn.onclick = () => selectMovie(index);
             playlistContainer.appendChild(btn);
         });
+
+        const selectMovie = (index) => {
+            currentVideoIndex = index;
+            const vid = videoPlaylist[index];
+            document.getElementById('cinema-backdrop').src = vid.poster;
+            document.getElementById('cinema-title').innerText = vid.title;
+            document.getElementById('cinema-desc').innerText = vid.desc;
+            document.getElementById('cinema-play-btn').classList.remove('hidden');
+
+            document.querySelectorAll('.movie-thumb').forEach((el, i) => {
+                if(i === index) el.classList.add('border-accent', 'scale-105');
+                else el.classList.remove('border-accent', 'scale-105');
+            });
+        };
 
         const openVideoModal = () => {
             isFocused = true;
             const modal = document.getElementById('video-modal');
             modal.classList.remove('hidden');
             setTimeout(() => modal.classList.remove('opacity-0'), 10);
-            playVideoInModal(0);
+            
+            document.getElementById('video-menu').classList.remove('hidden');
+            document.getElementById('video-player-container').classList.add('hidden');
+            if (!document.getElementById('cinema-play-btn').classList.contains('hidden')) {
+                // Keep the current selection
+            } else {
+                selectMovie(0); // Välj första filmen automatiskt (Vilket nu är Genie: The 6 Protocol)
+            }
         };
 
         const closeVideoModal = () => {
@@ -346,18 +488,55 @@
             modal.classList.add('opacity-0');
             setTimeout(() => modal.classList.add('hidden'), 300);
             document.getElementById('main-video-player').pause();
-            showGuideText("Återgår till navigation.");
+            if (typeof showGuideText === 'function') showGuideText("Återgår till navigation.");
         };
 
-        const playVideoInModal = (index) => {
+        const startMovie = () => {
             const player = document.getElementById('main-video-player');
-            const titleEl = document.getElementById('video-title');
-            player.src = videoPlaylist[index].url;
-            titleEl.innerText = videoPlaylist[index].title;
+            player.src = videoPlaylist[currentVideoIndex].url;
+            document.getElementById('video-menu').classList.add('hidden');
+            document.getElementById('video-player-container').classList.remove('hidden');
             player.play();
         };
 
+        const endMovie = () => {
+            const player = document.getElementById('main-video-player');
+            player.pause();
+            if (document.fullscreenElement) { document.exitFullscreen().catch(err => console.log(err)); }
+            document.getElementById('video-player-container').classList.add('hidden');
+            document.getElementById('video-menu').classList.remove('hidden');
+        };
+
+        document.getElementById('cinema-play-btn').addEventListener('click', startMovie);
+        document.getElementById('main-video-player').addEventListener('ended', endMovie);
+        document.getElementById('close-player-btn').addEventListener('click', endMovie);
         document.getElementById('close-video-modal').addEventListener('click', closeVideoModal);
+        document.getElementById('close-lightbox').addEventListener('click', closeLightbox);
+
+
+        // --- PORTAL MODAL LOGIK ---
+        const openPortalModal = (info) => {
+            isFocused = true;
+            document.getElementById('portal-modal-img').src = info.imageUrl || 'https://i.imgur.com/Fz6iDRc.png';
+            document.getElementById('portal-modal-title').innerText = info.title;
+            document.getElementById('portal-modal-desc').innerText = info.desc;
+            document.getElementById('portal-modal-enter').onclick = () => {
+                if (typeof showGuideText === 'function') showGuideText("Teleportering initierad...");
+                setTimeout(() => window.location.href = info.actionUrl, 1000); 
+            };
+            const modal = document.getElementById('portal-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        };
+
+        document.getElementById('close-portal-modal').addEventListener('click', () => {
+            isFocused = false;
+            const modal = document.getElementById('portal-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+            if (typeof showGuideText === 'function') showGuideText("Återgår till navigation.");
+        });
+
 
         // --- DINA TILLGÅNGAR ---
         const MODEL_URL = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/character_base.glb';
@@ -369,18 +548,28 @@
         const BLOMSKI_URL = 'https://raw.githubusercontent.com/b10msk1/valvglb/main/blomski.glb';
         const ZETA_URL = 'https://raw.githubusercontent.com/b10msk1/3dhalle/main/aegis_zeta.glb';
 
-        // 3D System Variabler
+        const blomAvatars = [
+            { name: "Ailien Blom", url: "https://raw.githubusercontent.com/b10msk1/3dkarakt-rblom/main/ailienblom-v1.glb" },
+            { name: "Arg Blom", url: "https://raw.githubusercontent.com/b10msk1/3dkarakt-rblom/main/argblom-v1.glb" },
+            { name: "Clown Blom", url: "https://raw.githubusercontent.com/b10msk1/3dkarakt-rblom/main/clownblom-v1.glb" },
+            { name: "Devil Blom", url: "https://raw.githubusercontent.com/b10msk1/3dkarakt-rblom/main/devilblom-v1.glb" },
+            { name: "Halvan Blom", url: "https://raw.githubusercontent.com/b10msk1/3dkarakt-rblom/main/halvan-v1.glb" },
+            { name: "Jeans Blom", url: "https://raw.githubusercontent.com/b10msk1/3dkarakt-rblom/main/jeansblom-v1.glb" },
+            { name: "Minihorn Blom", url: "https://raw.githubusercontent.com/b10msk1/3dkarakt-rblom/main/minihornblom-v1.glb" },
+            { name: "Satans Blom", url: "https://raw.githubusercontent.com/b10msk1/3dkarakt-rblom/main/satansblom-v1.glb" },
+            { name: "Spik Blom", url: "https://raw.githubusercontent.com/b10msk1/3dkarakt-rblom/main/spikblom-v1.glb" },
+            { name: "Tjur Blom", url: "https://raw.githubusercontent.com/b10msk1/3dkarakt-rblom/main/tjurblom-v1.glb" }
+        ];
+
         let scene, camera, renderer, clock, composer;
         let mixer, characterModel, playerGroup; 
         const animations = {}; 
         let currentAction = null;
         let mainGltfLoader;
 
-        // Belysning
         let mainDirLight, hemiLight;
         let currentThemeHex = '#e58e26'; 
 
-        // Interaktion & Navigation
         const mouse = new THREE.Vector2();
         const raycaster = new THREE.Raycaster();
         let isDragging = false;
@@ -391,13 +580,11 @@
         const artworks = [], floors = []; 
         let hoveredArtwork = null;
 
-        // Auto-Move Variabler
         let autoMoveTarget = null, pingMarker;
         let isFocused = false, isFirstPerson = false;
         let focusCameraTarget = new THREE.Vector3(), focusLookAtTarget = new THREE.Vector3(), currentLookAt = new THREE.Vector3(); 
         let focusedArtwork = null; 
 
-        // Rena tangenter
         const keys = { w: false, a: false, s: false, d: false };
         const moveSpeed = 4.0;
 
@@ -417,7 +604,7 @@
                     art.userData.highlightMesh.material.emissiveIntensity = intensity;
                 }
             });
-            showGuideText(`Galleritema uppdaterat.`);
+            if (typeof showGuideText === 'function') showGuideText(`Galleritema uppdaterat.`);
         };
 
         const init = () => {
@@ -467,7 +654,7 @@
             const personalLight = new THREE.PointLight(0xffffff, 1.2, 20);
             personalLight.position.set(0, 2.5, 0); playerGroup.add(personalLight);
 
-            setTimeout(() => showGuideText("Välkommen till Main Hub. Teleport-valv är markerade."), 3000);
+            setTimeout(() => { if (typeof showGuideText === 'function') showGuideText("Välkommen till Main Hub. Teleport-valv är markerade.") }, 3000);
 
             const loadCharacterSystem = async () => {
                 const loadGLTF = (url) => new Promise((resolve, reject) => mainGltfLoader.load(url, resolve, undefined, reject));
@@ -506,7 +693,7 @@
 
             let lastTap = 0;
             containerEL.addEventListener('touchstart', (e) => {
-                if (e.target.closest('#mobile-controls') || e.target.closest('header') || e.target.closest('#video-modal') || e.target.closest('#lightbox')) return;
+                if (e.target.closest('#mobile-controls') || e.target.closest('header') || e.target.closest('#video-modal') || e.target.closest('#lightbox') || e.target.closest('#left-image-panel') || e.target.closest('#info-panel') || e.target.closest('#portal-modal')) return;
                 if (e.touches.length === 1) {
                     isDragging = true;
                     previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -519,7 +706,7 @@
             }, {passive: false});
 
             containerEL.addEventListener('touchmove', (e) => {
-                if (!isDragging || isFocused || e.target.closest('#mobile-controls') || e.target.closest('#video-modal') || e.target.closest('#lightbox')) return;
+                if (!isDragging || isFocused || e.target.closest('#mobile-controls') || e.target.closest('#video-modal') || e.target.closest('#lightbox') || e.target.closest('#left-image-panel') || e.target.closest('#info-panel') || e.target.closest('#portal-modal')) return;
                 e.preventDefault();
                 const currentX = e.touches[0].clientX; const currentY = e.touches[0].clientY;
                 cameraAngleX -= (currentX - previousMousePosition.x) * 0.005;
@@ -539,12 +726,53 @@
             };
             handleTouchBtn('btn-w', 'w'); handleTouchBtn('btn-a', 'a'); handleTouchBtn('btn-s', 's'); handleTouchBtn('btn-d', 'd');
 
-            document.getElementById('close-panel').addEventListener('click', closeInfoPanel);
-            document.getElementById('close-lightbox').addEventListener('click', () => {
-                const lb = document.getElementById('lightbox'); lb.classList.add('opacity-0'); setTimeout(() => lb.classList.add('hidden'), 300);
-                setTimeout(resetImageTransform, 300); 
-            });
             document.getElementById('system-btn').addEventListener('click', () => document.getElementById('admin-panel').classList.toggle('hidden'));
+            document.getElementById('close-panel').addEventListener('click', closeInfoPanel);
+
+            document.getElementById('save-info').addEventListener('click', () => {
+                if (focusedArtwork && focusedArtwork.userData.info) {
+                    focusedArtwork.userData.info.title = document.getElementById('edit-title').value;
+                    focusedArtwork.userData.info.desc = document.getElementById('edit-desc').value;
+                    document.getElementById('edit-mode-toggle').checked = false;
+                    populateInfoPanel(focusedArtwork.userData.info, focusedArtwork.userData.is3D);
+                    if (typeof showGuideText === 'function') showGuideText("Information sparad lokalt.");
+                }
+            });
+
+            document.getElementById('edit-mode-toggle').addEventListener('change', () => {
+                if (focusedArtwork && focusedArtwork.userData.info) populateInfoPanel(focusedArtwork.userData.info, focusedArtwork.userData.is3D);
+            });
+
+            document.getElementById('export-btn').addEventListener('click', () => {
+                const dataToExport = artworks.map((art, index) => ({ index: index, info: art.userData.info }));
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "gallery_ops_data.json");
+                document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove();
+                if (typeof showGuideText === 'function') showGuideText("Databas exporterad.");
+            });
+
+            document.getElementById('import-file').addEventListener('change', (event) => {
+                const file = event.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        importedData.forEach(item => {
+                            if (artworks[item.index] && artworks[item.index].userData && artworks[item.index].userData.info) {
+                                Object.assign(artworks[item.index].userData.info, item.info);
+                            }
+                        });
+                        if (typeof showGuideText === 'function') showGuideText("Databas importerad.");
+                        if (focusedArtwork && focusedArtwork.userData.info) populateInfoPanel(focusedArtwork.userData.info, focusedArtwork.userData.is3D);
+                    } catch (err) {
+                        console.error("Fel vid import av JSON", err);
+                        if (typeof showGuideText === 'function') showGuideText("Kritiskt fel: Korrupt JSON-fil.");
+                    }
+                };
+                reader.readAsText(file);
+            });
 
             lucide.createIcons();
             animate();
@@ -568,13 +796,12 @@
                 const floor = new THREE.Mesh(geometry, floorMat);
                 floor.rotation.x = -Math.PI / 2; floor.position.set(x, 0, z);
                 floor.receiveShadow = true;
-                
                 scene.add(floor); floors.push(floor); 
             }
 
             createSolidFloor(roomSize, hallA_Length, 0, -20); 
             createSolidFloor(10, 20, 0, 30); 
-            createSolidFloor(60, 60, 0, 70); 
+            createSolidFloor(80, 80, 0, 80); 
 
             const wallMat = new THREE.MeshStandardMaterial({ color: 0x161d2b, roughness: 0.9, bumpMap: createNoiseTexture(), bumpScale: 0.02 });
             const createWall = (width, x, z, rotY) => {
@@ -588,12 +815,12 @@
             
             createWall(15, -12.5, 20, Math.PI); createWall(15, 12.5, 20, Math.PI);  
             createWall(20, -5, 30, Math.PI / 2); createWall(20, 5, 30, -Math.PI / 2); 
-            createWall(60, -30, 70, Math.PI / 2); createWall(60, 30, 70, -Math.PI / 2); createWall(60, 0, 100, Math.PI);      
-            createWall(25, -17.5, 40, 0); createWall(25, 17.5, 40, 0);  
-
-            // Neonskyltar
-            addWallSign("AURA CORRIDOR", 0, 6, 20.1, Math.PI, '#a855f7'); 
-            addWallSign("PORTAL VALVET", 0, 6, 40.1, 0, '#00e5ff');
+            
+            createWall(80, -40, 80, Math.PI / 2); 
+            createWall(80, 40, 80, -Math.PI / 2); 
+            createWall(80, 0, 120, Math.PI);      
+            
+            createWall(35, -22.5, 40, 0); createWall(35, 22.5, 40, 0);  
 
             const createChevron = (x, z, rotY) => {
                 const shape = new THREE.Shape();
@@ -605,20 +832,21 @@
                 chevron.position.set(x, 0.05, z); chevron.rotation.x = Math.PI / 2; chevron.rotation.z = rotY;
                 scene.add(chevron);
             };
-            createChevron(0, -40, Math.PI / 2);
-            createChevron(0, -20, Math.PI / 2);
-            createChevron(0, 0, Math.PI / 2);
+            createChevron(0, -40, Math.PI / 2); createChevron(0, -20, Math.PI / 2); createChevron(0, 0, Math.PI / 2);
 
             // ==========================================
-            // HALL A: DIN PERSONLIGA PRESENTATION (Utökad)
+            // HALL A: DIN PERSONLIGA PRESENTATION
             // ==========================================
 
             addArtworkPlaceholder(0, 6.5, -59.9, 0, 'https://i.imgur.com/Fz6iDRc.png', { title: "Välkommen till 3D Hallen", desc: "Mitt digitala hantverksgalleri." }, 0xe58e26, 0xfff0dd, 4, 1.5);
 
+            // NY TAVLA: Träning med karaktären (Under skylten i Hall A)
+            addArtworkPlaceholder(0, 3, -59.9, 0, 'https://i.imgur.com/U5sAKOJ.jpeg', { title: "Mästaren och Lärlingen", desc: "Jag sitter och lär mig slåss av min egen karaktär." }, 0xe58e26, 0xfff0dd, 5, 3);
+
             addHandicraftDisplay(-8, 0, -50, { 
                 title: "Arkitekten (Blom)",
                 desc: "Jag har utvecklat detta galleri. Gå längs väggarna för att ta del av mitt hantverk och min historia.",
-                imageUrl: 'https://i.imgur.com/bDJwnAS.png'
+                originalImage: 'https://i.imgur.com/e33gjYl.jpeg' 
             }, BLOMSKI_URL, 0xe58e26, 0xfff0dd, 1.5, 0.0);
 
             let startZ = -50;
@@ -626,7 +854,7 @@
             addArtworkPlaceholder(-19.9, 3, startZ + 6, Math.PI / 2, 'https://i.imgur.com/oftwEdE.png', { title: "Del 2: Presentation" }, currentThemeHex);
             addArtworkPlaceholder(-19.9, 3, startZ + 12, Math.PI / 2, 'https://i.imgur.com/GFqcgYE.png', { title: "Del 3: Min Historia" }, currentThemeHex);
             addArtworkPlaceholder(-19.9, 3, startZ + 18, Math.PI / 2, 'https://i.imgur.com/0QaaUSe.png', { title: "Del 4: Bakgrund" }, currentThemeHex);
-            addArtworkPlaceholder(-19.9, 3, startZ + 24, Math.PI / 2, 'https://i.imgur.com/H3IZPS0.png', { title: "Del 5: Hantverk" }, currentThemeHex);
+            addArtworkPlaceholder(-19.9, 3, startZ + 24, Math.PI / 2, 'https://i.edu.com/H3IZPS0.png', { title: "Del 5: Hantverk" }, currentThemeHex);
             addArtworkPlaceholder(-19.9, 3, startZ + 30, Math.PI / 2, 'https://i.imgur.com/WfhijYL.png', { title: "Del 6: Träkonst" }, currentThemeHex);
             addArtworkPlaceholder(-19.9, 3, startZ + 36, Math.PI / 2, 'https://i.imgur.com/83qqYdV.png', { title: "Del 7" }, currentThemeHex);
             addArtworkPlaceholder(-19.9, 3, startZ + 42, Math.PI / 2, 'https://i.imgur.com/4cB8HTr.png', { title: "Del 8" }, currentThemeHex);
@@ -645,8 +873,13 @@
             addArtworkPlaceholder(19.9, 3, startZ + 48, -Math.PI / 2, 'https://i.imgur.com/2hKMziy.png', { title: "Del 20" }, currentThemeHex);
             addArtworkPlaceholder(19.9, 3, startZ + 54, -Math.PI / 2, 'https://i.imgur.com/RJqfR3g.png', { title: "Del 21" }, currentThemeHex);
 
-            addHandicraftDisplay(-6, 0, -2, { title: "Betongbyst med kedja" }, HANDICRAFT_URL_2, 0xe58e26, 0xfff0dd, 1.0, 0.8);
-            addHandicraftDisplay(6, 0, -2, { title: "Stenhuvud (Bobba)" }, HANDICRAFT_URL_1, 0xe58e26, 0xfff0dd, 1.0, 0.8);
+            addHandicraftDisplay(-6, 0, -2, { 
+                title: "Betongbyst med kedja", desc: "Skapad i betong med en integrerad stålkedja.", originalImage: "https://i.imgur.com/0z4yFk3.png" 
+            }, HANDICRAFT_URL_2, 0xe58e26, 0xfff0dd, 1.0, 0.8);
+            
+            addHandicraftDisplay(6, 0, -2, { 
+                title: "Stenhuvud (Bobba)", desc: "En monolitisk skulptur.", originalImage: "https://i.imgur.com/3BVMann.png"
+            }, HANDICRAFT_URL_1, 0xe58e26, 0xfff0dd, 1.0, 0.8);
 
             // ==========================================
             // KORRIDOREN: Monster/Dinosaurie
@@ -654,34 +887,80 @@
             addHandicraftDisplay(0, 0, 30, { title: "T-Rex", desc: "Väktare av portalerna." }, 'https://raw.githubusercontent.com/b10msk1/liljasv-rld223/main/T-rex.glb', 0xa855f7, 0xf3e8ff, 0.5, 0);
 
             // ==========================================
-            // HALL B (PORTAL HUB & BIOGRAF)
+            // HALL B (OMORGANISERAD PORTAL HUB)
             // ==========================================
             const tCyan = 0x00e5ff, lCyan = 0xd0ffff;
             const hallBLight = new THREE.PointLight(tCyan, 1.5, 50);
             hallBLight.position.set(0, 8, 70); scene.add(hallBLight);
 
-            addHandicraftDisplay(0, 0, 70, { title: "Aegis Zeta", desc: "Krigare från spelet 'Genie'. Utvecklad av Blom." }, ZETA_URL, tCyan, lCyan, 1.0, 0.0);
+            // NYA TAVLOR: Korta väggarna vid entrén till Hall B
+            addArtworkPlaceholder(-20, 4, 40.1, 0, 'https://i.imgur.com/9gvydyp.jpeg', { title: "3D Karaktärer i Krig", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
+            addArtworkPlaceholder(20, 4, 40.1, 0, 'https://i.imgur.com/Bg2NInS.jpeg', { title: "Konflikt", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
 
-            addArtworkPlaceholder(-29.9, 6.5, 85, Math.PI / 2, 'https://i.imgur.com/6CFcYkI.png', { title: "App Valvet", desc: "Över 150 applikationer." }, tCyan, lCyan, 6, 2.5);
-            addPortal(-29, 0, 85, Math.PI / 2, 'vault_apps.html', { title: "APP VALVET", desc: "Ingång till mjukvaruvalvet." }, tCyan);
+            // --- MITTEN: ZETA & AVATARER ---
+            addHandicraftDisplay(0, 0, 48, { title: "Aegis Zeta", desc: "Krigare från spelet 'Genie'.", originalImage: "https://i.imgur.com/naYb9j5.jpg" }, ZETA_URL, tCyan, lCyan, 1.0, 0.0);
+            
+            blomAvatars.forEach((avatar, index) => {
+                let xPos = (index < 5) ? -12 : 12;
+                let zPos = 55 + ((index % 5) * 8); 
+                addHandicraftDisplay(xPos, 0, zPos, { title: avatar.name, desc: "Samling: Blom Avatarer" }, avatar.url, tCyan, lCyan, 1.0, 0.0);
+            });
 
-            addArtworkPlaceholder(0, 6.5, 99.9, Math.PI, 'https://i.imgur.com/QffWYdp.png', { title: "Promptvalvet", desc: "Över 500 AI-visioner." }, tCyan, lCyan, 6, 2.5);
-            addPortal(0, 0, 99, Math.PI, 'promptvalvet.html', { title: "PROMPTVALVET", desc: "Ingång till huvudarkivet." }, tCyan);
+            // --- VÄNSTER VÄGG: App Valvet & Prompt Valvet ---
+            addPortal(-39, 0, 60, Math.PI / 2, 'vault_apps.html', { 
+                title: "APP VALVET", desc: "Över 150 applikationer och systemets digitala evolution.", 
+                imageUrl: "https://i.imgur.com/KHL8nfs.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
+            }, tCyan);
 
-            addArtworkPlaceholder(29.9, 6.5, 85, -Math.PI / 2, 'https://i.imgur.com/ON1QUaC.png', { title: "Art Valvet", desc: "Ingång till utställningarna." }, tCyan, lCyan, 6, 2.5);
-            addPortal(29, 0, 85, -Math.PI / 2, 'vault_art.html', { title: "KONSTHALLEN", desc: "Ingång till de utvalda konst-utställningarna." }, tCyan);
+            // De nya affischerna (Konkelbärsjakten & Herr Banan)
+            addArtworkPlaceholder(-39.9, 4, 46, Math.PI / 2, 'https://i.imgur.com/DG1ZDfG.jpeg', { title: "Konkelbärsjakten" }, tCyan, lCyan, 4, 6);
+            addArtworkPlaceholder(-39.9, 4, 74, Math.PI / 2, 'https://i.imgur.com/8AKFLUT.jpeg', { title: "Herr Banan" }, tCyan, lCyan, 4, 6);
 
-            addArtworkPlaceholder(20, 3, 99.9, Math.PI, 'https://i.imgur.com/bJitLD1.png', { title: "Information", desc: "Terminal-data." }, tCyan, lCyan, 3, 5); 
-            addArtworkPlaceholder(12, 3, 99.9, Math.PI, 'https://i.imgur.com/KmLEH8X.png', { title: "Biograf Terminal", desc: "Klicka här för att öppna filmdatabasen.", isVideoModal: true }, tCyan, lCyan, 8, 4.5); 
-            addArtworkPlaceholder(4, 3, 99.9, Math.PI, 'https://i.imgur.com/iNQtwyz.png', { title: "Playlist Data", desc: "Terminal-data." }, tCyan, lCyan, 3, 5);
-        };
+            addPortal(-39, 0, 95, Math.PI / 2, 'promptvalvet.html', { 
+                title: "PROMPTVALVET", desc: "Över 500 AI-visioner med tillhörande krypterad master-data.", 
+                imageUrl: "https://i.imgur.com/IJm4njJ.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
+            }, tCyan);
 
-        const addWallSign = (text, x, y, z, rotY, colorHex) => {
-            const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 128; const ctx = canvas.getContext('2d');
-            ctx.fillStyle = colorHex; ctx.font = '900 64px "Inter", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.letterSpacing = "8px"; 
-            ctx.fillText(text, 512, 64);
-            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.25), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, blending: THREE.AdditiveBlending }));
-            mesh.position.set(x, y, z); mesh.rotation.y = rotY; scene.add(mesh);
+            // --- HÖGER VÄGG: Konsthallen & Sagor/Manus ---
+            addPortal(39, 0, 60, -Math.PI / 2, 'vault_art.html', { 
+                title: "KONSTHALLEN", desc: "Ingång till de utvalda konst-utställningarna.", 
+                imageUrl: "https://i.imgur.com/qJWccGp.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
+            }, tCyan);
+
+            addPortal(39, 0, 95, -Math.PI / 2, 'vault_sagor.html', { 
+                title: "SAGOR & MANUS", desc: "Din självbiografi och ditt arkiv för manus och berättelser.", 
+                imageUrl: "https://i.imgur.com/YO1ZSZN.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
+            }, tCyan);
+
+            // --- RAKT FRAM (LÄNGST BAK): Biografen & Nya Affischer ---
+            const baseW = 16, baseH = 9; 
+            const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(baseW, baseH), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 }));
+            canvasMesh.position.set(0, 5, 119.9); canvasMesh.rotation.y = Math.PI;
+            canvasMesh.userData = { isArtwork: true, info: { title: "Biograf", desc: "Öppna videodatabas", isVideoModal: true } };
+            artworks.push(canvasMesh); scene.add(canvasMesh);
+
+            const decorativeDisplay = (x, w, h, img) => {
+                const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ emissive: tCyan, emissiveIntensity: 0.2 }));
+                mesh.position.set(x, 5, 119.9); mesh.rotation.y = Math.PI;
+                new THREE.TextureLoader().load(img, (tex) => { tex.encoding = THREE.sRGBEncoding; mesh.material.map = tex; mesh.material.needsUpdate = true; });
+                scene.add(mesh);
+            };
+            decorativeDisplay(0, 16, 9, 'https://i.imgur.com/KmLEH8X.png'); // Center Skärm
+
+            // Nya Genie-affischer istället för sidopaneler!
+            addArtworkPlaceholder(-12, 4, 119.9, Math.PI, 'https://i.imgur.com/zD5T4MF.jpeg', { title: "Genie: The 6 Protocol" }, tCyan, lCyan, 4, 6); // Vänster
+            addArtworkPlaceholder(12, 4, 119.9, Math.PI, 'https://i.imgur.com/NChkyqZ.jpeg', { title: "Genie Heroes" }, tCyan, lCyan, 4, 6); // Höger
+            addArtworkPlaceholder(-20, 4, 119.9, Math.PI, 'https://i.imgur.com/QKKMs5d.jpeg', { title: "Aura Partner" }, tCyan, lCyan, 4, 6); // Extra Vänster
+            
+            // Bio-bänkar
+            const benchMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+            const createBenchRow = (z) => {
+                [-12, -6, 0, 6, 12].forEach(x => {
+                    const bench = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 1), benchMat);
+                    bench.position.set(x, 0.5, z); bench.receiveShadow = true; scene.add(bench);
+                });
+            };
+            createBenchRow(112); createBenchRow(108); createBenchRow(104);
         };
 
         const addPortal = (x, y, z, rotY, targetUrl, info, themeColor) => {
@@ -696,8 +975,9 @@
             portalMesh.position.set(x + Math.sin(rotY) * 0.51, y + 5, z + Math.cos(rotY) * 0.51);
             portalMesh.rotation.y = rotY;
             
-            info.actionUrl = targetUrl; info.actionText = "INITIERA TELEPORT";
-            portalMesh.userData = { isArtwork: true, highlightMesh: frame, info: info, isPortal: true };
+            info.actionUrl = targetUrl;
+            info.isPortal = true;
+            portalMesh.userData = { isArtwork: true, highlightMesh: frame, info: info };
             artworks.push(portalMesh); scene.add(portalMesh);
 
             const pLight = new THREE.PointLight(themeColor, 1.5, 10);
@@ -721,9 +1001,7 @@
                     const tH = aspect > 1 ? baseW / aspect : baseH + 0.5;
                     canvasMesh.scale.set(tW / baseW, tH / baseH, 1);
                     frame.scale.set((tW + framePadding) / (baseW + framePadding), (tH + framePadding) / (baseH + framePadding), 1);
-                }, undefined, (err) => {
-                    console.warn("Could not load artwork image: " + imageUrl, err);
-                });
+                }, undefined, (err) => { console.warn("Could not load artwork image: " + imageUrl, err); });
             }
             
             info.imageUrl = imageUrl;
@@ -733,9 +1011,6 @@
         const addHandicraftDisplay = (x, y, z, info, modelUrl, themeColor = currentThemeHex, lightColor = 0xfff0dd, modelScale = 1, yOffset = 0) => {
             const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 1.5, 32), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 }));
             base.position.set(x, y + 0.75, z); base.receiveShadow = true; scene.add(base);
-
-            const glassDome = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 2, 32), new THREE.MeshPhysicalMaterial({ color: 0x0f172a, metalness: 0.1, roughness: 0.05, transmission: 0.9, transparent: true, thickness: 0.5 }));
-            glassDome.position.set(x, y + 2.5, z); scene.add(glassDome);
 
             const hitBox = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 2), new THREE.MeshBasicMaterial({ visible: false }));
             hitBox.position.set(x, y + 2.0, z); scene.add(hitBox);
@@ -750,13 +1025,11 @@
                     const artMesh = gltf.scene; artMesh.scale.set(modelScale, modelScale, modelScale); 
                     artMesh.position.set(x, y + 1.5 + yOffset, z); 
                     scene.add(artMesh); hitBox.userData.modelMesh = artMesh;
-                }, undefined, (err) => {
-                    console.warn("Could not load 3D model: " + modelUrl, err);
-                });
+                }, undefined, (err) => { console.warn("Could not load 3D model: " + modelUrl, err); });
             }
         };
 
-        const openInfoPanel = (info, is3D) => {
+        const populateInfoPanel = (info, is3D) => {
             const isEditMode = document.getElementById('edit-mode-toggle').checked;
             
             if (isEditMode) {
@@ -768,32 +1041,50 @@
                 document.getElementById('edit-title').classList.add('hidden'); document.getElementById('edit-desc').classList.add('hidden'); document.getElementById('save-info').classList.add('hidden');
                 document.getElementById('info-title').innerText = info.title || "Okänd Titel"; document.getElementById('info-desc').innerText = info.desc || "";
                 
-                if (!is3D && info.imageUrl && !info.actionUrl) {
-                    resetImageTransform();
-                    document.getElementById('lightbox-img').src = info.imageUrl; const lb = document.getElementById('lightbox');
-                    lb.classList.remove('hidden'); setTimeout(() => lb.classList.remove('opacity-0'), 10);
+                const origImgContainer = document.getElementById('info-original-img-container');
+                const origImgEl = document.getElementById('info-original-img');
+                if (is3D && info.originalImage) {
+                    origImgContainer.classList.remove('hidden');
+                    origImgEl.src = info.originalImage;
+                    origImgEl.onclick = () => { isLightboxFromThumbnail = true; openLightbox(info.originalImage); };
+                } else {
+                    origImgContainer.classList.add('hidden');
                 }
             }
 
             const actionBtn = document.getElementById('action-btn');
-            if (info.actionUrl && !isEditMode) {
+            const portalActionBtn = document.getElementById('portal-action-btn');
+
+            if (info.isPortal && info.portalEnterImage && !isEditMode) {
+                actionBtn.classList.add('hidden');
+                portalActionBtn.classList.remove('hidden');
+                document.getElementById('portal-action-img').src = info.portalEnterImage;
+                portalActionBtn.onclick = () => {
+                    if (typeof showGuideText === 'function') showGuideText("Teleportering initierad...");
+                    setTimeout(() => window.location.href = info.actionUrl, 1000); 
+                };
+            } else if (info.actionUrl && !isEditMode) {
+                portalActionBtn.classList.add('hidden');
                 actionBtn.classList.remove('hidden');
                 actionBtn.innerText = info.actionText || "ÖPPNA LÄNK";
                 actionBtn.onclick = () => {
-                    showGuideText("Teleportering initierad...");
+                    if (typeof showGuideText === 'function') showGuideText("Teleportering initierad...");
                     setTimeout(() => window.location.href = info.actionUrl, 1000); 
                 };
             } else {
                 actionBtn.classList.add('hidden');
+                portalActionBtn.classList.add('hidden');
             }
-
-            document.getElementById('info-panel').classList.remove('panel-closed'); document.getElementById('info-panel').classList.add('panel-open');
         };
 
         const closeInfoPanel = () => {
             isFocused = false; focusedArtwork = null; 
-            document.getElementById('info-panel').classList.remove('panel-open'); document.getElementById('info-panel').classList.add('panel-closed');
-            showGuideText("Fortsätter skanning..."); 
+            document.getElementById('info-panel').classList.remove('panel-open'); 
+            document.getElementById('info-panel').classList.add('panel-closed');
+            document.getElementById('left-image-panel').classList.add('hidden'); 
+            
+            if (typeof showGuideText === 'function') showGuideText("Fortsätter skanning..."); 
+            
             const lb = document.getElementById('lightbox'); lb.classList.add('opacity-0'); setTimeout(() => lb.classList.add('hidden'), 300);
             setTimeout(resetImageTransform, 300);
         };
@@ -815,6 +1106,7 @@
         };
 
         const finishLoading = (statusText) => { document.getElementById('loader').classList.add('fade-out'); document.getElementById('system-status').innerText = statusText; };
+        
         const onWindowResize = () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); };
 
         const onMouseMove = (event) => {
@@ -822,7 +1114,9 @@
             if (isDragging) { 
                 const deltaX = event.clientX - previousMousePosition.x; const deltaY = event.clientY - previousMousePosition.y;
                 if (isFocused && focusedArtwork && focusedArtwork.userData.is3D && !focusedArtwork.userData.info.isPortal) {
-                    focusedArtwork.userData.modelMesh.rotation.y += deltaX * 0.01;
+                    if (focusedArtwork.userData.modelMesh) {
+                        focusedArtwork.userData.modelMesh.rotation.y += deltaX * 0.01;
+                    }
                 }
                 else if (!isFocused) { cameraAngleX -= deltaX * 0.005; cameraAngleY -= deltaY * 0.005; cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2.2, cameraAngleY)); }
             }
@@ -838,16 +1132,53 @@
                     return; 
                 }
 
-                isFocused = true; focusedArtwork = hoveredArtwork; openInfoPanel(hoveredArtwork.userData.info, hoveredArtwork.userData.is3D);
-                showGuideText(`Analyserar: ${hoveredArtwork.userData.info.title || 'Objekt'}`);
-                autoMoveTarget = null; pingMarker.material.opacity = 0; 
-                const objPos = hoveredArtwork.position; const is3D = hoveredArtwork.userData.is3D;
-                const focusDist = isFirstPerson ? 2.5 : 4.5; 
-                if (is3D || hoveredArtwork.userData.info.isPortal) {
+                if (hoveredArtwork.userData.info.isPortal) {
+                    openPortalModal(hoveredArtwork.userData.info);
+                    const objPos = hoveredArtwork.position; const focusDist = 4.5;
                     let dirToChar = new THREE.Vector3().subVectors(playerGroup.position, objPos); dirToChar.y = 0; dirToChar.normalize();
                     focusCameraTarget.copy(objPos).add(dirToChar.multiplyScalar(focusDist)); focusCameraTarget.y = objPos.y + 1.5; focusLookAtTarget.copy(objPos); focusLookAtTarget.y += 0.5; 
+                    return;
+                }
+
+                isFocused = true; 
+                focusedArtwork = hoveredArtwork; 
+                const info = hoveredArtwork.userData.info;
+                const is3D = hoveredArtwork.userData.is3D;
+                
+                if (typeof showGuideText === 'function') showGuideText(`Analyserar: ${info.title || 'Objekt'}`);
+                autoMoveTarget = null; 
+                if (pingMarker) pingMarker.material.opacity = 0; 
+
+                const objPos = hoveredArtwork.position; 
+                const focusDist = isFirstPerson ? 2.5 : 4.5; 
+                
+                if (is3D) {
+                    populateInfoPanel(info, is3D);
+                    document.getElementById('info-panel').classList.remove('panel-closed');
+                    document.getElementById('info-panel').classList.add('panel-open');
+                    document.getElementById('left-image-panel').classList.add('hidden');
+
+                    let dirToChar = new THREE.Vector3().subVectors(playerGroup.position, objPos); dirToChar.y = 0; dirToChar.normalize();
+                    focusCameraTarget.copy(objPos).add(dirToChar.multiplyScalar(focusDist)); focusCameraTarget.y = objPos.y + 1.5; focusLookAtTarget.copy(objPos); focusLookAtTarget.y += 0.5; 
+
+                    let viewDir = new THREE.Vector3().subVectors(focusLookAtTarget, focusCameraTarget).normalize();
+                    let rightVec = viewDir.cross(new THREE.Vector3(0, 1, 0)).normalize();
+                    let shiftAmount = 1.8; 
+                    focusCameraTarget.add(rightVec.clone().multiplyScalar(shiftAmount));
+                    focusLookAtTarget.add(rightVec.clone().multiplyScalar(shiftAmount));
+
                 } else {
-                    const rotY = hoveredArtwork.rotation.y; focusCameraTarget.set(objPos.x + Math.sin(rotY) * focusDist, objPos.y, objPos.z + Math.cos(rotY) * focusDist); focusLookAtTarget.copy(objPos);
+                    populateInfoPanel(info, false);
+                    
+                    const rotY = hoveredArtwork.rotation.y; 
+                    focusCameraTarget.set(objPos.x + Math.sin(rotY) * focusDist, objPos.y, objPos.z + Math.cos(rotY) * focusDist); 
+                    focusLookAtTarget.copy(objPos);
+                    
+                    document.getElementById('info-panel').classList.add('panel-closed');
+                    document.getElementById('info-panel').classList.remove('panel-open');
+                    
+                    isLightboxFromThumbnail = false;
+                    openLightbox(info.imageUrl);
                 }
             }
         };
@@ -863,24 +1194,37 @@
             const floorIntersects = raycaster.intersectObjects(floors);
             if (floorIntersects.length > 0 && !isFocused) {
                 autoMoveTarget = floorIntersects[0].point;
-                pingMarker.position.set(autoMoveTarget.x, 0.05, autoMoveTarget.z);
-                pingMarker.material.opacity = 1.0;
-                pingMarker.scale.set(0.1, 0.1, 0.1);
-                showGuideText("Navigerar till waypoint...");
+                if (pingMarker) {
+                    pingMarker.position.set(autoMoveTarget.x, 0.05, autoMoveTarget.z);
+                    pingMarker.material.opacity = 1.0;
+                    pingMarker.scale.set(0.1, 0.1, 0.1);
+                }
+                if (typeof showGuideText === 'function') showGuideText("Navigerar till waypoint...");
             }
         };
 
         const onKeyDown = (event) => { 
+            const isEditing = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
+            if (isEditing) return;
+
             const key = event.key.toLowerCase(); if (keys.hasOwnProperty(key)) keys[key] = true; 
-            if (key === 'v') { isFirstPerson = !isFirstPerson; if (characterModel) characterModel.visible = !isFirstPerson; showGuideText(isFirstPerson ? "First-Person Mode: ONLINE" : "Third-Person Mode: ONLINE"); }
+            if (key === 'v') { 
+                isFirstPerson = !isFirstPerson; 
+                if (characterModel) characterModel.visible = !isFirstPerson; 
+                if (typeof showGuideText === 'function') showGuideText(isFirstPerson ? "First-Person Mode: ONLINE" : "Third-Person Mode: ONLINE"); 
+            }
         };
-        const onKeyUp = (event) => { if (keys.hasOwnProperty(event.key.toLowerCase())) keys[event.key.toLowerCase()] = false; };
+        const onKeyUp = (event) => { 
+            const isEditing = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
+            if (isEditing) return;
+            if (keys.hasOwnProperty(event.key.toLowerCase())) keys[event.key.toLowerCase()] = false; 
+        };
 
         const animate = () => {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
 
-            if (pingMarker.material.opacity > 0) {
+            if (pingMarker && pingMarker.material.opacity > 0) {
                 pingMarker.scale.addScalar(delta * 2);
                 pingMarker.material.opacity -= delta * 1.5;
             }
@@ -889,20 +1233,20 @@
 
             if (playerGroup) {
                 let moveX = 0, moveZ = 0;
-                let manualOverride = keys.w || keys.a || keys.s || keys.d;
+                
+                const isEditing = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
+                let manualOverride = (keys.w || keys.a || keys.s || keys.d) && !isFocused && !isEditing;
 
-                if (manualOverride) {
-                    autoMoveTarget = null;
-                }
+                if (manualOverride) autoMoveTarget = null;
 
-                if (autoMoveTarget) {
+                if (autoMoveTarget && !isFocused && !isEditing) {
                     const dx = autoMoveTarget.x - playerGroup.position.x;
                     const dz = autoMoveTarget.z - playerGroup.position.z;
                     const dist = Math.sqrt(dx*dx + dz*dz);
                     
                     if (dist < 0.5) {
                         autoMoveTarget = null; 
-                        showGuideText("Waypoint nådd.");
+                        if (typeof showGuideText === 'function') showGuideText("Waypoint nådd.");
                     } else {
                         const nextX = playerGroup.position.x + (dx/dist) * moveSpeed * delta;
                         const nextZ = playerGroup.position.z + (dz/dist) * moveSpeed * delta;
@@ -942,14 +1286,13 @@
                 let clampX = playerGroup.position.x;
                 let clampZ = playerGroup.position.z;
                 
-                // Nytt, längre rum för Hall A (-60 i Z-led)
                 let inMain = clampZ <= 19.5; let inCorridor = clampZ > 19.5 && clampZ <= 40.5; let inHallB = clampZ > 40.5;
                 if (playerGroup.position.z <= 19.5 && clampZ > 19.5 && (clampX < -4.5 || clampX > 4.5)) { clampZ = 19.5; inMain = true; inCorridor = false; }
                 if (playerGroup.position.z >= 40.5 && clampZ < 40.5 && (clampX < -4.5 || clampX > 4.5)) { clampZ = 40.5; inHallB = true; inCorridor = false; }
 
                 if (inMain) { if (clampX < -19.5) clampX = -19.5; if (clampX > 19.5) clampX = 19.5; if (clampZ < -59.5) clampZ = -59.5; } 
                 else if (inCorridor) { if (clampX < -4.5) clampX = -4.5; if (clampX > 4.5) clampX = 4.5; } 
-                else if (inHallB) { if (clampX < -29.5) clampX = -29.5; if (clampX > 29.5) clampX = 29.5; if (clampZ > 99.5) clampZ = 99.5; }
+                else if (inHallB) { if (clampX < -39.5) clampX = -39.5; if (clampX > 39.5) clampX = 39.5; if (clampZ > 119.5) clampZ = 119.5; }
                 playerGroup.position.x = clampX; playerGroup.position.z = clampZ;
 
                 let targetCameraPos = new THREE.Vector3(); let targetLookAt = new THREE.Vector3();
@@ -980,9 +1323,13 @@
             if (intersects.length > 0) {
                 document.body.style.cursor = 'crosshair';
                 if (hoveredArtwork !== intersects[0].object) {
-                    if (hoveredArtwork && !hoveredArtwork.userData.info.isPortal) hoveredArtwork.userData.highlightMesh.material.emissiveIntensity = hoveredArtwork.userData.is3D ? 0.0 : 0.5;
+                    if (hoveredArtwork && !hoveredArtwork.userData.info.isPortal && !hoveredArtwork.userData.info.isVideoModal) {
+                        hoveredArtwork.userData.highlightMesh.material.emissiveIntensity = hoveredArtwork.userData.is3D ? 0.0 : 0.5;
+                    }
                     hoveredArtwork = intersects[0].object;
-                    if (!hoveredArtwork.userData.info.isPortal) hoveredArtwork.userData.highlightMesh.material.emissiveIntensity = hoveredArtwork.userData.is3D ? 2.5 : 2.5; 
+                    if (!hoveredArtwork.userData.info.isPortal && !hoveredArtwork.userData.info.isVideoModal) {
+                        hoveredArtwork.userData.highlightMesh.material.emissiveIntensity = hoveredArtwork.userData.is3D ? 2.5 : 2.5; 
+                    }
                 }
                 if (!isFocused && hoveredArtwork) {
                     const vector = hoveredArtwork.position.clone(); vector.y += hoveredArtwork.userData.is3D ? 1.5 : 1.0; vector.project(camera);
@@ -992,7 +1339,9 @@
             } else {
                 document.body.style.cursor = 'default'; holoUI.classList.add('opacity-0'); 
                 if (hoveredArtwork) { 
-                    if (!hoveredArtwork.userData.info.isPortal) hoveredArtwork.userData.highlightMesh.material.emissiveIntensity = hoveredArtwork.userData.is3D ? 0.0 : 0.5; 
+                    if (!hoveredArtwork.userData.info.isPortal && !hoveredArtwork.userData.info.isVideoModal) {
+                        hoveredArtwork.userData.highlightMesh.material.emissiveIntensity = hoveredArtwork.userData.is3D ? 0.0 : 0.5; 
+                    }
                     hoveredArtwork = null; 
                 }
             }
