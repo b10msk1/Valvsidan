@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gallery.Ops | App Valvet</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Tailwind Konfiguration (Cyber Theme) -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#050a14',    /* Lite mörkare, kallare bakgrund */
+                        panel: '#0a1224',   /* Server-blå paneler */
+                        card: '#101a30',
+                        accent: 'var(--theme-accent, #00e5ff)', /* Cyan som standard */
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Three.js Kärna & Laddare -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+    
+    <!-- POST-PROCESSING -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+    <style>
+        :root { --theme-accent: #00e5ff; }
+        body { margin: 0; overflow: hidden; background-color: #050a14; touch-action: none; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        .fade-out { opacity: 0; pointer-events: none; transition: opacity 0.5s ease-in-out; }
+        .panel-open { transform: translateX(0); }
+        .panel-closed { transform: translateX(100%); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0a1224; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--theme-accent); border-radius: 10px; }
+
+        #lightbox-img { cursor: grab; transition: transform 0.1s ease-out; }
+        #lightbox-img:active { cursor: grabbing; transition: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-slate-100 font-sans selection:bg-accent/30">
+
+    <!-- Laddningsskärm -->
+    <div id="loader" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-dark transition-opacity duration-500">
+        <i data-lucide="cpu" class="w-12 h-12 text-accent animate-pulse mb-4"></i>
+        <p id="loading-text" class="text-accent text-xs font-black uppercase tracking-widest">Kompilerar Cyber Nexus...</p>
+    </div>
+
+    <!-- LIGHTBOX (Helskärm för app-bilder) -->
+    <div id="lightbox" class="fixed inset-0 z-[60] bg-black/95 hidden flex-col items-center justify-center p-4 md:p-8 backdrop-blur-xl opacity-0 transition-opacity duration-300">
+        <button id="close-lightbox" class="absolute top-8 right-8 text-slate-400 hover:text-accent bg-panel p-3 rounded-2xl border border-[#1e293b] cursor-pointer transition-colors shadow-xl z-20">
+            <i data-lucide="x"></i>
+        </button>
+        <div class="relative w-full h-full flex items-center justify-center overflow-hidden">
+            <img id="lightbox-img" class="max-w-full max-h-[85vh] rounded-xl border border-accent shadow-[0_0_80px_rgba(0,229,255,0.15)] object-contain select-none" src="" draggable="false" />
+        </div>
+    </div>
+
+    <!-- Header & Menyer -->
+    <header class="absolute top-6 left-6 right-6 z-10 flex justify-between items-center bg-panel/80 backdrop-blur-md px-6 py-4 rounded-[2rem] border border-[#1e293b] shadow-2xl">
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='index.html'" class="w-8 h-8 rounded-full bg-card border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-accent hover:border-accent transition-all group mr-2">
+                <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i>
+            </button>
+            <i data-lucide="server" class="w-5 h-5 text-accent"></i>
+            <h1 class="text-slate-100 font-black uppercase italic tracking-tighter text-lg leading-none flex flex-col">
+                Gallery<span class="text-accent">.Ops</span>
+                <span class="text-[8px] tracking-widest text-slate-500 not-italic mt-1">App Valvet / Nexus</span>
+            </h1>
+        </div>
+
+        <nav class="flex gap-2 relative">
+            <button class="flex items-center gap-2 px-4 py-2 bg-card rounded-2xl border border-[#1e293b] hover:border-accent transition-all group cursor-pointer">
+                <i data-lucide="search" class="w-3 h-3 text-slate-400 group-hover:text-accent transition-colors"></i>
+                <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-100 hidden sm:block">Sök App</span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Status panel -->
+    <div class="hidden md:flex absolute bottom-6 left-6 z-10 flex-col gap-2 pointer-events-none">
+        <div class="bg-panel/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1e293b] flex items-center gap-3 shadow-xl">
+            <i data-lucide="activity" class="w-4 h-4 text-accent"></i>
+            <div class="flex flex-col">
+                <span class="text-[8px] font-black uppercase tracking-widest text-slate-500">Nätverk</span>
+                <span id="system-status" class="text-[10px] font-black uppercase tracking-widest text-slate-100">Databas Synkroniserad</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILKONTROLLER -->
+    <div id="mobile-controls" class="md:hidden absolute bottom-8 left-8 z-20 flex flex-col items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
+        <button id="btn-w" class="w-12 h-12 bg-panel/80 border border-[#1e293b] rounded-xl text-slate-400 flex items-center justify-center active:bg-accent active:text-dark"><i data-lucide="arrow-up"></i></button>
+        <div class="flex gap-2">
+            <button id="btn-a" class="w-12 h-12 bg-panel/80 border border-[#1e293b] rounded-xl text-slate-400 flex items-center justify-center active:bg-accent active:text-dark"><i data-lucide="arrow-left"></i></button>
+            <button id="btn-s" class="w-12 h-12 bg-panel/80 border border-[#1e293b] rounded-xl text-slate-400 flex items-center justify-center active:bg-accent active:text-dark"><i data-lucide="arrow-down"></i></button>
+            <button id="btn-d" class="w-12 h-12 bg-panel/80 border border-[#1e293b] rounded-xl text-slate-400 flex items-center justify-center active:bg-accent active:text-dark"><i data-lucide="arrow-right"></i></button>
+        </div>
+    </div>
+
+    <!-- HOLOGRAFISK OVERLAY -->
+    <div id="hologram-ui" class="absolute pointer-events-none opacity-0 transition-opacity duration-300 flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2 z-30 drop-shadow-lg">
+        <span class="text-accent font-black uppercase tracking-widest text-[9px] animate-pulse mb-1">[ KLICKA FÖR ATT INSPEKTERA ]</span>
+        <div class="bg-panel/90 backdrop-blur-sm border border-[#1e293b] px-4 py-2 rounded-xl flex items-center gap-2">
+            <div class="w-1.5 h-1.5 bg-accent rounded-full"></div>
+            <span id="hologram-title" class="text-slate-100 font-bold tracking-tighter text-sm uppercase italic">Titel</span>
+        </div>
+    </div>
+
+    <!-- Taktisk Informations-Panel för Appar -->
+    <div id="info-panel" class="absolute right-0 top-0 bottom-0 w-80 md:w-96 bg-panel/95 backdrop-blur-xl border-l border-[#1e293b] panel-closed transition-transform duration-500 ease-in-out z-40 p-8 flex flex-col shadow-2xl overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-2">
+                <i data-lucide="terminal" class="w-4 h-4 text-accent"></i>
+                <h2 class="text-accent font-black uppercase tracking-widest text-[10px]">Mjukvaru-Data</h2>
+            </div>
+            <button id="close-panel" class="text-slate-500 hover:text-accent transition-colors bg-card p-2 rounded-xl border border-[#1e293b] hover:border-accent cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+        
+        <img id="info-thumbnail" src="" class="w-full h-40 object-cover rounded-xl border border-[#1e293b] mb-4 shadow-lg cursor-pointer hover:border-accent transition-colors" />
+        <span class="text-[8px] text-slate-500 uppercase mt-[-0.5rem] mb-4 block text-center italic">Klicka för helskärm</span>
+
+        <!-- Kategorier -->
+        <div class="flex flex-col gap-1 mb-4 border-l-2 border-accent pl-3">
+            <span id="info-main-category" class="text-[9px] font-black uppercase tracking-widest text-slate-300">Huvudkategori</span>
+            <span id="info-sub-category" class="text-[10px] font-bold text-accent">Subkategori</span>
+        </div>
+
+        <h3 id="info-title" class="text-2xl font-black uppercase italic tracking-tighter text-slate-100 mb-4">Laddar...</h3>
+        <p id="info-desc" class="text-slate-400 text-sm leading-relaxed mb-6 whitespace-pre-wrap">...</p>
+
+        <button id="action-btn" class="hidden w-full bg-accent hover:bg-cyan-400 text-dark font-black uppercase tracking-widest py-4 rounded-xl transition-colors mb-6 shadow-[0_0_20px_rgba(0,229,255,0.3)] hover:scale-105 flex justify-center items-center gap-2">
+            <i data-lucide="external-link" class="w-4 h-4"></i> Initiera App
+        </button>
+        
+        <div class="mt-auto p-4 bg-dark rounded-2xl border border-[#1e293b]">
+            <span class="text-[8px] font-black uppercase tracking-widest text-slate-500 block mb-1">Systemstatus (<span id="info-id">ID</span>)</span>
+            <span class="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2">
+                <div class="w-1.5 h-1.5 bg-accent rounded-full animate-pulse"></div>
+                Operativ / Validerad
+            </span>
+        </div>
+    </div>
+
+    <!-- VIRTUELL GUIDE -->
+    <div id="guide-dialog" class="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 bg-panel/80 backdrop-blur-md px-6 py-3 rounded-[2rem] border border-[#1e293b] shadow-2xl transition-opacity duration-500 opacity-0 pointer-events-none">
+        <div class="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
+        <p id="guide-text" class="text-slate-100 font-black uppercase tracking-widest text-[10px] italic">Söker nätverk...</p>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        lucide.createIcons();
+
+        // Variabler för 3D och miljö
+        let scene, camera, renderer, clock, composer;
+        let mixer, characterModel, playerGroup; 
+        const animations = {}; 
+        let currentAction = null;
+        let mainGltfLoader;
+
+        let mainDirLight, hemiLight;
+        let currentThemeHex = '#00e5ff'; // Cyan som standard här
+
+        const mouse = new THREE.Vector2();
+        const raycaster = new THREE.Raycaster();
+        let isDragging = false, previousMousePosition = { x: 0, y: 0 };
+        let cameraAngleX = 0, cameraAngleY = Math.PI / 6; 
+        const cameraDistance = 8;
+        
+        const artworks = [], floors = []; 
+        let hoveredArtwork = null;
+
+        let autoMoveTarget = null, pingMarker;
+        let isFocused = false, isFirstPerson = false;
+        let focusCameraTarget = new THREE.Vector3(), focusLookAtTarget = new THREE.Vector3(), currentLookAt = new THREE.Vector3(); 
+        let focusedArtwork = null; 
+
+        const keys = { w: false, a: false, s: false, d: false };
+        const moveSpeed = 5.0; 
+
+        // --- RIKTIG JSON DATA FÖR APPAR (Blom's App Vault) ---
+        const loadAppDatabase = () => {
+            return [
+                {
+                    "title": "Bygg eller uppgradera (Världsbyggaren)",
+                    "desc": "Jag har utvecklat \"Bygg eller uppgradera\", en strategisk Al-hubb för att generera och arkivera högupplösta koncept inom multimedia och mjukvara. Mitt arkitektoniska beslut att använda en tvåstegs förfiningslogik och integrera ett systemindex av 60+ tidigare appar skapar ett verktyg som levererar tekniskt polerade prompts med 8K-precision, optimerade för Gemini Pro.",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-BYGG1"
+                },
+                {
+                    "title": "Bygg eller uppgradera (Hyper-Multimodal)",
+                    "desc": "Jag har utvecklat \"Bygg eller uppgradera\", en strategisk Al-hubb och idé-vault för generering av multimedia och mjukvara med 8K-precision. Mitt arkitektoniska beslut att använda en Hyper-Multimodal Neural Engine med tvåstegs prompt-förfining och integration av ett 60-apps systemindex skapar ett verktyg som levererar tekniskt fulländade lösningar optimerade för Gemini Pro:s mest avancerade arkitektur.",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-BYGG2"
+                },
+                {
+                    "title": "Character Consistency Lab Pro + Sago Appen",
+                    "desc": "Jag har utvecklat Character Consistency Lab Pro, ett avancerat verktyg för att designa, fota och hantera visuellt konsekventa Al-karaktärer och deras garderober i en virtuell studio. Appens primära värde ligger i dess förmåga att generera och strukturera denna data som exporterbara \"Ensembler\", redo att agera fundament för nästa generations interaktiva Al-berättelser.",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-CHARL"
+                },
+                {
+                    "title": "Data Neutralizer & Prompt Cleaner",
+                    "desc": "Jag har utvecklat ett specialiserat system för batch-bearbetning som automatiserar städning och neutralisering av komplexa JSON-data. Mitt arkitektoniska beslut var att implementera en lokal logikmotor som identifierar och ersätter personliga referenser samt eliminerar teknisk redundans i textmassor. Genom att fokusera på integritet och prestanda har jag skapat ett verktyg som effektivt transformerar rådata till professionella, import-redo format för vidare Al-användning.",
+                    "mainCategory": "Data & Arkitektur",
+                    "subCategory": "Verktyg & Databehandling",
+                    "id": "SYS-DATNE"
+                },
+                {
+                    "title": "FaceMorph Pro 8K",
+                    "desc": "Jag har utvecklat FaceMorph Pro 8K, en avancerad webbapplikation för högrealistiska och identitetsbevarande ansiktsbyten driven av Gemini- modeller. Mitt arkitektoniska beslut var att implementera en flerstegsprocess med förberedande porträttoptimering och en dual-image-logik som exakt separerar ansiktsstruktur från ytfärg och stil. Detta skapar ett kraftfullt men lättanvänt verktyg för att sömlöst transformera porträtt till fantasifulla karaktärer med full igenkänningsfaktor.",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-FMP8K"
+                },
+                {
+                    "title": "Formfinnaren",
+                    "desc": "Jag har utvecklat Formfinnaren, ett Al-drivet visualiseringsverktyg som hjälper hantverkare att se den optimala potentialen i råmaterial som sten och trä för att minimera materialsvinn. Mitt arkitektoniska beslut var att bygga en iterativ flerstegsarkitektur där Geminis spatiala analys av multivinkelbilder och exakta millimetermått kombineras med Imagens fotorealistiska renderingar, vilket skapar en exakt och kreativ bro mellan råämne och färdigt verk.",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-FORMF"
+                },
+                {
+                    "title": "Gemini OS (Min Digitala Hubb)",
+                    "desc": "Jag har arkitekterat Gemini OS som en central, enhetsoberoende plattform som konsoliderar över 35 specialiserade applikationer under ett och samma digitala tak. Genom att implementera en \"Single-File Architecture\" i React och integrera Firebase för molnsynkronisering, har jag skapat ett robust ekosystem som säkrar kognitiv struktur vid ADHD/bipolär sjukdom, möjliggör avancerat kreativt skapande och erbjuder en magisk digital värld för min dotter.",
+                    "mainCategory": "System & Core Engines",
+                    "subCategory": "Verktyg & Hubbar",
+                    "id": "SYS-GEMOS"
+                },
+                {
+                    "title": "Generationernas Arkitekt - Fas 1",
+                    "desc": "Jag har utvecklat ett modulärt 4-appars system som bryter ner komplex bildgenerering i kontrollerade faser: Miljö, Motiv och Synergi. Mitt beslut var att skapa en central Hub som sammanfogar dessa dataflöden till hyperdetaljerade promptar, vilket ger användaren total arkitektonisk kontroll över varje pixel och emotionell koppling i bilden.",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-GENAR"
+                },
+                {
+                    "title": "Genesis Exodus",
+                    "desc": "Digital implementation och strukturering av spelet Genesis Exodus. Arkitekturen bakom att binda samman lore, kort och mekanik till ett fungerande digitalt väsen.",
+                    "mainCategory": "Spel & Nöje",
+                    "subCategory": "Genie Omega Universumet",
+                    "id": "SYS-GENEX"
+                },
+                {
+                    "title": "Historie-Detektiven Pro (Digitala Fotspår)",
+                    "desc": "Jag har utvecklat ett digitalt forensiskt verktyg som metodiskt återskapar användarens personliga och digitala historia genom Al-driven djupsökning och en interaktiv feedback-loop. Mitt arkitektoniska beslut att kombinera realtidsdata med molnbaserad persistens förvandlar fragmenterade digitala fotspår till ett strukturerat, personligt arkiv med högt nostalgiskt och säkerhetsmässigt värde.",
+                    "mainCategory": "Data & Arkitektur",
+                    "subCategory": "Verktyg & Databehandling",
+                    "id": "SYS-HISD1"
+                },
+                {
+                    "title": "Historie-Detektiven Pro (Publika Arkiv)",
+                    "desc": "Jag har utvecklat en Al-driven utredningsplattform som metodiskt återskapar användarens digitala historia genom djupsökning i publika arkiv. Mitt beslut var att kombinera molnbaserad persistens med ett interaktivt feedback- system, vilket förvandlar fragmenterade data till ett strukturerat personligt arkiv med fokus på nostalgi och informationssäkerhet.",
+                    "mainCategory": "Data & Arkitektur",
+                    "subCategory": "Verktyg & Databehandling",
+                    "id": "SYS-HISD2"
+                },
+                {
+                    "title": "Infinite Zoom Lab",
+                    "desc": "Jag har utvecklat Infinite Zoom Lab, en innovativ plattform för skapandet av oändliga visuella resor där användaren kan zooma in i mikroskopiska detaljer genom en sömlös integration av generativ Al. Mitt arkitektoniska beslut var att separera den kreativa processen i en hybridmodell: jag använder Gemini- 2.5-Flash som \"regissör\" för att logiskt planera nästa steg i resan, och Imagen 4.0 för den visuella exekveringen. Genom att implementera en klientsidig zoom-motor med CSS-transformationer istället för videorendering, har jag skapat ett blixtsnabbt, interaktivt och portabelt verktyg som gör avancerad visuell manipulation tillgänglig för både lek och professionellt skapande.",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-IZOOM"
+                },
+                {
+                    "title": "Genie Omega Combat Engine",
+                    "desc": "Genie Omega Combat Engine är den taktiska motorn som styr alla interaktioner mellan väktare och elementära krafter. Motorn är designad för att vara balanserad, rättvis och djupt strategisk.",
+                    "mainCategory": "Genie Omega Ekosystem",
+                    "subCategory": "Kärnmotorer",
+                    "id": "SYS-GENOC",
+                    "image": "https://i.imgur.com/k6hZVnB.jpg"
+                },
+                {
+                    "title": "Genie Omega: The 6th Protocol",
+                    "desc": "Jag har utvecklat en webbaserad 3D-spelmotor för \"Genie Omega: The 6th Protocol\"...",
+                    "mainCategory": "Genie Omega Ekosystem",
+                    "subCategory": "Kärnmotorer",
+                    "id": "SYS-GEN6P",
+                    "image": "https://i.imgur.com/rjLrPPG.jpeg"
+                },
+                {
+                    "title": "Genie Heroes - Genesis Exodus",
+                    "desc": "Jag har utvecklat en logikstyrd motor som genererar balanserade spelkort...",
+                    "mainCategory": "Genie Omega Ekosystem",
+                    "subCategory": "Kärnmotorer",
+                    "id": "SYS-GENHE",
+                    "image": "https://i.imgur.com/pzcmVnJ.jpg"
+                },
+                {
+                    "title": "Genie Omega - Combat Voice Master",
+                    "desc": "Jag har utvecklat en avancerad röstarkitektur som ger karaktärer liv...",
+                    "mainCategory": "Genie Omega Ekosystem",
+                    "subCategory": "Verktyg & Portaler",
+                    "id": "SYS-GENVO"
+                },
+                {
+                    "title": "Genie The Master Smith",
+                    "desc": "The Master Smith är projektet Genie Omegas centrala grafiska motor...",
+                    "mainCategory": "Genie Omega Ekosystem",
+                    "subCategory": "Verktyg & Portaler",
+                    "id": "SYS-GENMS"
+                },
+                {
+                    "title": "Genie Lore & Cinematic Hub",
+                    "desc": "Lore & Cinematic Hub är projektet Genie Omegas narrativa motor...",
+                    "mainCategory": "Genie Omega Ekosystem",
+                    "subCategory": "Verktyg & Portaler",
+                    "id": "SYS-GENLO"
+                },
+                {
+                    "title": "Genie spelets hemsida",
+                    "desc": "Överskrift: En arkitektoniskt optimerad visuell portal och encyklopedi för spelvärlden Genesis Exodus...",
+                    "mainCategory": "Genie Omega Ekosystem",
+                    "subCategory": "Verktyg & Portaler",
+                    "id": "SYS-GENWB",
+                    "url": "https://b10msk1.github.io/kortspelet/"
+                },
+                {
+                    "title": "Fortnite Battle TCG Engine",
+                    "desc": "Jag har utvecklat en avancerad, nätverksbaserad 3D-spelmotor...",
+                    "mainCategory": "Fortnite Battle TCG",
+                    "subCategory": "Kärnmotorer",
+                    "id": "SYS-FNTCG",
+                    "image": "https://i.imgur.com/XEGxgNo.jpeg"
+                },
+                {
+                    "title": "FORTNITE BATTLE CARDS ENGINE",
+                    "desc": "Ett komplett digitalt ekosystem och nätverksbaserad 3D-motor...",
+                    "mainCategory": "Fortnite Battle TCG",
+                    "subCategory": "Kärnmotorer",
+                    "id": "SYS-FNBCE",
+                    "image": "https://i.imgur.com/bjrBagx.jpeg"
+                },
+                {
+                    "title": "FORTNITE BATTLE TCG EKOSYSTEM",
+                    "desc": "Mitt huvudsyfte med detta projekt var att revolutionera...",
+                    "mainCategory": "Fortnite Battle TCG",
+                    "subCategory": "Kärnmotorer",
+                    "id": "SYS-FNECO",
+                    "image": "https://i.imgur.com/LzDPJN9.jpeg"
+                },
+                {
+                    "title": "Fortnite AI CARD FORGE",
+                    "desc": "Jag har utvecklat Al Card Forge, ett automatiserat produktionsverktyg...",
+                    "mainCategory": "Fortnite Battle TCG",
+                    "subCategory": "Verktyg & Portaler",
+                    "id": "SYS-FNCFO",
+                    "image": "https://i.imgur.com/QiFA7Cm.jpeg"
+                },
+                {
+                    "title": "Fortnite ARENA MAPPER",
+                    "desc": "Jag har utvecklat Arena Mapper, ett visuellt drag-and-drop-verktyg...",
+                    "mainCategory": "Fortnite Battle TCG",
+                    "subCategory": "Verktyg & Portaler",
+                    "id": "SYS-FNMAP",
+                    "image": "https://i.imgur.com/GxMCES5.jpeg"
+                },
+                {
+                    "title": "Liljas Värld",
+                    "desc": "Jag har utvecklat \"Liljas Värld\", en personlig livssimulator...",
+                    "mainCategory": "Spel & Nöje",
+                    "subCategory": "Liljas Universum & Barnspel",
+                    "id": "SYS-LILJV",
+                    "url": "https://b10msk1.github.io/liljaspel/"
+                },
+                {
+                    "title": "Diddis Värld",
+                    "desc": "Jag har utvecklat en interaktiv 3D-miljö i vektorstil för karaktären Diddi...",
+                    "mainCategory": "Spel & Nöje",
+                    "subCategory": "Liljas Universum & Barnspel",
+                    "id": "SYS-DIDDI"
+                },
+                {
+                    "title": "Djur-Memory för barn",
+                    "desc": "Jag har utvecklat Djur-Memory, ett interaktivt och pedagogiskt webbspel...",
+                    "mainCategory": "Spel & Nöje",
+                    "subCategory": "Liljas Universum & Barnspel",
+                    "id": "SYS-DJURM"
+                },
+                {
+                    "title": "Liljas Värld (Gilded Moss 8K Portal)",
+                    "desc": "Jag har utvecklat en mobilanpassad, GPS-styrd webbportal...",
+                    "mainCategory": "Spel & Nöje",
+                    "subCategory": "Liljas Universum & Barnspel",
+                    "id": "SYS-LILGM"
+                },
+                {
+                    "title": "360 Känslan",
+                    "desc": "Jag har utvecklat en interaktiv panoramavisare som transformerar...",
+                    "mainCategory": "Spel & Nöje",
+                    "subCategory": "Indiespel & AR",
+                    "id": "SYS-360KA"
+                },
+                {
+                    "title": "Mulle (Kortspel)",
+                    "desc": "Strategisk spelmotor för den svenska klassikern Mulle...",
+                    "mainCategory": "Spel & Nöje",
+                    "subCategory": "Indiespel & AR",
+                    "id": "SYS-MULLE"
+                },
+                {
+                    "title": "Sagan om Borgarnas Krig - 3D",
+                    "desc": "Jag har utvecklat en isometrisk 3D-spelmotor i webbläsaren...",
+                    "mainCategory": "Spel & Nöje",
+                    "subCategory": "Indiespel & AR",
+                    "id": "SYS-BORGK"
+                },
+                {
+                    "title": "Zombie Chase AR",
+                    "desc": "Jag har utvecklat en avancerad webbaserad AR-applikation...",
+                    "mainCategory": "Spel & Nöje",
+                    "subCategory": "Indiespel & AR",
+                    "id": "SYS-ZOMBC"
+                },
+                {
+                    "title": "DNA-Arkivarie Suiten (v3.3)",
+                    "desc": "Jag har designat och utvecklat DNA-Arkivarie Suiten...",
+                    "mainCategory": "Data & Arkitektur",
+                    "subCategory": "DNA Arkivarie Ekosystem",
+                    "id": "SYS-DNASU",
+                    "image": "https://i.imgur.com/0bF7oMY.jpeg"
+                },
+                {
+                    "title": "DNA-Arkivarien",
+                    "desc": "Jag har utvecklat DNA-Arkivarien, en kognitiv hubb...",
+                    "mainCategory": "Data & Arkitektur",
+                    "subCategory": "DNA Arkivarie Ekosystem",
+                    "id": "SYS-DNAAR",
+                    "image": "https://i.imgur.com/0W8QOkz.jpeg"
+                },
+                {
+                    "title": "DNA-Fragmenteraren",
+                    "desc": "Jag har utvecklat DNA-Fragmenteraren som en specialiserad...",
+                    "mainCategory": "Data & Arkitektur",
+                    "subCategory": "DNA Arkivarie Ekosystem",
+                    "id": "SYS-DNAFR",
+                    "image": "https://i.imgur.com/er9Sb5T.jpeg"
+                },
+                {
+                    "title": "DNA-Analysatorn (Släktträdsbyggaren)",
+                    "desc": "Jag har utvecklat DNA-Analysatorn som den sista...",
+                    "mainCategory": "Data & Arkitektur",
+                    "subCategory": "DNA Arkivarie Ekosystem",
+                    "id": "SYS-DNAAN",
+                    "image": "https://i.imgur.com/z0Vg8Hg.jpeg"
+                },
+                {
+                    "title": "Själsextraktorn (Memoar & Personlighet)",
+                    "desc": "Jag har utvecklat Själsextraktorn, en djupt specialiserad Al-motor...",
+                    "mainCategory": "Data & Arkitektur",
+                    "subCategory": "Aura AI Partner",
+                    "id": "SYS-SOUL",
+                    "image": "https://i.imgur.com/h3Z4OAn.jpg"
+                },
+                {
+                    "title": "Aura Engine V4.2 - Neural Scout",
+                    "desc": "Jag har utvecklat denna 'Intimacy Engine' som ett digitalt påskägg...",
+                    "mainCategory": "Data & Arkitektur",
+                    "subCategory": "Aura AI Partner",
+                    "id": "SYS-AURA",
+                    "image": "https://i.imgur.com/wGLUISi.jpg",
+                    "video": "https://i.imgur.com/PPjDdX9.mp4",
+                    "url": "https://b10msk1.github.io/aura/"
+                },
+                {
+                    "title": "Blom's Psytrance Studio",
+                    "desc": "Jag har utvecklat en komplett studiomiljö med en Web Audio- baserad ljudmotor...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "DAW & Musikproduktion",
+                    "id": "SYS-PSYST",
+                    "image": "https://i.imgur.com/QQ2qNb2.jpeg"
+                },
+                {
+                    "title": "Quantum Psytrance Studio",
+                    "desc": "Jag har utvecklat och arkitekterat en Al-integrerad, webbaserad Digital Audio Workstation...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "DAW & Musikproduktion",
+                    "id": "SYS-QUAPS",
+                    "image": "https://i.imgur.com/9bgdr0R.jpeg"
+                },
+                {
+                    "title": "SongCraft AI - Deconstructor",
+                    "desc": "Jag har designat och utvecklat SongCraft Al...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "DAW & Musikproduktion",
+                    "id": "SYS-SONGC"
+                },
+                {
+                    "title": "Bloms Musikstudio",
+                    "desc": "Jag har utvecklat en komplett, samlad plattform...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "DAW & Musikproduktion",
+                    "id": "SYS-MUSIC",
+                    "image": "https://i.imgur.com/Mb6w3dA.jpeg"
+                },
+                {
+                    "title": "Låtskrivarstudio",
+                    "desc": "Jag har utvecklat Låtskrivarstudio, ett interaktivt verktyg...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "DAW & Musikproduktion",
+                    "id": "SYS-SONGW"
+                },
+                {
+                    "title": "Musikstudion Pro",
+                    "desc": "Jag har utvecklat en helt klientbaserad webbapplikation...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "DAW & Musikproduktion",
+                    "id": "SYS-MSPRO"
+                },
+                {
+                    "title": "Psy-Station Workstation",
+                    "desc": "Jag har utvecklat en ljudmotor som genom realtidsanalys...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "DAW & Musikproduktion",
+                    "id": "SYS-PSYWO",
+                    "image": "https://i.imgur.com/9LLxP3j.jpeg"
+                },
+                {
+                    "title": "Berättarröst Studio Pro",
+                    "desc": "Jag har utvecklat Berättarröst Studio, en fullständigt klientbaserad webbapplikation...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "Röst & Media",
+                    "id": "SYS-VOICE",
+                    "image": "https://i.imgur.com/ylr97GD.jpeg"
+                },
+                {
+                    "title": "PoddStudion",
+                    "desc": "Jag har utvecklat en interaktiv och pedagogisk podcast-modul...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "Röst & Media",
+                    "id": "SYS-PODST",
+                    "image": "https://i.imgur.com/oLF9Lkf.jpeg"
+                },
+                {
+                    "title": "Bloms Radiostation",
+                    "desc": "Jag har utvecklat en hybridradio-applikation i React...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "Röst & Media",
+                    "id": "SYS-RADIO",
+                    "image": "https://i.imgur.com/spg7xim.jpeg"
+                },
+                {
+                    "title": "Audio Fuser",
+                    "desc": "Jag har skapat en specialiserad modul för sömlös fusion...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "Ljudverktyg & Rendering",
+                    "id": "SYS-AUDFU"
+                },
+                {
+                    "title": "AudioCapture Pro",
+                    "desc": "Jag har utvecklat en tekniskt avancerad webbapplikation...",
+                    "mainCategory": "Musik & Ljud",
+                    "subCategory": "Ljudverktyg & Rendering",
+                    "id": "SYS-AUDCA"
+                },
+                {
+                    "title": "MP4 Studio Pro",
+                    "desc": "Jag har utvecklat MP4 Studio Pro, en professionell redigeringsplattform...",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Video & Animering",
+                    "id": "SYS-MP4ST",
+                    "image": "https://i.imgur.com/5dKK787.jpeg"
+                },
+                {
+                    "title": "AI-Bildgenerator",
+                    "desc": "Jag har utvecklat en responsiv webbapplikation som transformerar...",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-AIGEN",
+                    "image": "https://i.imgur.com/U57OGNp.jpeg"
+                },
+                {
+                    "title": "Bildhantering",
+                    "desc": "Jag har utvecklat Skapa med Blom, en specialiserad arkiveringsplattform...",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-BILDH",
+                    "image": "https://i.imgur.com/1dZBuSs.jpeg"
+                },
+                {
+                    "title": "Bildstudio 2",
+                    "desc": "Jag har utvecklat Bildstudio, ett kraftfullt och användarvänligt verktyg...",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-BSTD2",
+                    "image": "https://i.imgur.com/VyKNguK.jpeg"
+                },
+                {
+                    "title": "Bildstudio Pro",
+                    "desc": "Jag har utvecklat Bildstudio Pro, en kraftfull och tillgänglig Al-plattform...",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-BSTDP",
+                    "image": "https://i.imgur.com/rvzMecl.jpeg"
+                },
+                {
+                    "title": "Bildstudion - Bakgrundsborttagare",
+                    "desc": "Jag har utvecklat Bildstudion - Bakgrundsborttagare...",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-BGBORT",
+                    "image": "https://i.imgur.com/5r7EHVU.jpeg"
+                },
+                {
+                    "title": "Bloms Fotokollage",
+                    "desc": "Jag har utvecklat Bloms Fotokollage, en dynamisk webbapplikation...",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-FKOLL",
+                    "image": "https://i.imgur.com/x8siMwv.jpeg"
+                },
+                {
+                    "title": "Foto till Skiss (V1.0.4 Blom Edition)",
+                    "desc": "Jag har utvecklat Foto till Skiss, en blixtsnabb Single Page Application...",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-FTSK",
+                    "image": "https://i.imgur.com/4V5ci84.jpeg"
+                },
+                {
+                    "title": "Fotoassistenten",
+                    "desc": "Jag har utvecklat Fotoassistenten, en pedagogisk webbapplikation...",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-FASS",
+                    "image": "https://i.imgur.com/OPsjbN3.jpeg"
+                },
+                {
+                    "title": "Redigera bild",
+                    "desc": "Jag har utvecklat Redigera bild, en kraftfull allt-i-ett-studio...",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-REDB",
+                    "image": "https://i.imgur.com/lyV62Ur.jpeg"
+                },
+                {
+                    "title": "Skapa bild (utan redigering)",
+                    "desc": "Jag har utvecklat Skapa bild, ett renodlat kraftpaket för bildgenerering...",
+                    "mainCategory": "Visuellt & Design",
+                    "subCategory": "Bild & AI-Studio",
+                    "id": "SYS-SKAPB",
+                    "image": "https://i.imgur.com/qWHtQfD.jpeg"
+                },
+                {
+                    "title": "Bokskapare Pro",
+                    "desc": "Jag har utvecklat Bokskapare Pro, en distraktionsfri och blockbaserad skrivstudio...",
+                    "mainCategory": "Litteratur & Äventyr",
+                    "subCategory": "Författar- & Layoutverktyg",
+                    "id": "SYS-BOKSP",
+                    "image": "https://i.imgur.com/pmsigWv.jpeg"
+                },
+                {
+                    "title": "Bokverkstaden",
+                    "desc": "Jag har utvecklat Bokverkstaden, ett klientsidebaserat layout- och författarverktyg...",
+                    "mainCategory": "Litteratur & Äventyr",
+                    "subCategory": "Författar- & Layoutverktyg",
+                    "id": "SYS-BOKV",
+                    "image": "https://i.imgur.com/DJkPKvT.jpeg"
+                },
+                {
+                    "title": "Bloms Bokskapare",
+                    "desc": "Jag har utvecklat Bloms Bokskapare, en interaktiv plattform...",
+                    "mainCategory": "Litteratur & Äventyr",
+                    "subCategory": "Författar- & Layoutverktyg",
+                    "id": "SYS-BLOMBS",
+                    "image": "https://i.imgur.com/O33ZKQV.jpeg"
+                },
+                {
+                    "title": "Sagovandraren",
+                    "desc": "Jag har utvecklat en avancerad berättarstudio som förvandlar vardagliga foton...",
+                    "mainCategory": "Litteratur & Äventyr",
+                    "subCategory": "Författar- & Layoutverktyg",
+                    "id": "SYS-SAGV",
+                    "image": "https://i.imgur.com/17ZfBYS.jpeg"
+                },
+                {
+                    "title": "Liljas Magiska Äventyr",
+                    "desc": "Jag har utvecklat Liljas Magiska Äventyr, ett pedagogiskt äventyrsverktyg...",
+                    "mainCategory": "Litteratur & Äventyr",
+                    "subCategory": "Interaktiva Sagoupplevelser",
+                    "id": "SYS-LILMA"
+                },
+                {
+                    "title": "Sagostund",
+                    "desc": "Jag har utvecklat en konversations-Al som förvandlar komplexa språkmodeller...",
+                    "mainCategory": "Litteratur & Äventyr",
+                    "subCategory": "Interaktiva Sagoupplevelser",
+                    "id": "SYS-SAGO",
+                    "image": "https://i.imgur.com/LiGiz6Q.jpeg"
+                },
+                {
+                    "title": "SagoLandet",
+                    "desc": "Jag har byggt SagoLandet med en robust, asynkron arkitektur...",
+                    "mainCategory": "Litteratur & Äventyr",
+                    "subCategory": "Interaktiva Sagoupplevelser",
+                    "id": "SYS-SAGL",
+                    "image": "https://i.imgur.com/TbPA5bl.jpeg"
+                },
+                {
+                    "title": "Drömvävaren",
+                    "desc": "Mitt beslut som arkitekt var att skapa en intuitiv upplevelse...",
+                    "mainCategory": "Litteratur & Äventyr",
+                    "subCategory": "Interaktiva Sagoupplevelser",
+                    "id": "SYS-DROM",
+                    "image": "https://i.imgur.com/6KbJ7ke.jpeg"
+                },
+                {
+                    "title": "Layout & Prompt Pro",
+                    "desc": "Ett verktyg jag utvecklat för att automatisera och strukturera skapandet av portfoliokort...",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-PROMP",
+                    "image": "https://i.imgur.com/JC4HpYx.jpeg"
+                },
+                {
+                    "title": "Character Flow Builder prompt",
+                    "desc": "Appen erbjuder ett kraftfullt verktyg för att förvandla statiska referensbilder...",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-CFBP",
+                    "image": "https://i.imgur.com/oFVV0CQ.jpeg"
+                },
+                {
+                    "title": "Prompt Scout Flow",
+                    "desc": "Prompt Scout Flow är ett avancerat verktyg som fungerar som en intelligent mellanhand...",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-PSFLO",
+                    "image": "https://i.imgur.com/pB8ompU.jpeg",
+                    "url": "https://b10msk1.github.io/scoutflow/"
+                },
+                {
+                    "title": "Ad Scout Flow",
+                    "desc": "Ad Scout Flow är en Al-driven Art Director-assistent...",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-ADSCO",
+                    "image": "https://i.imgur.com/PixFqmg.jpeg"
+                },
+                {
+                    "title": "Al Video Prompt Skapare",
+                    "desc": "Jag har arkitekterat och utvecklat en automatiserad applikation...",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-VIDPR",
+                    "image": "https://i.imgur.com/xCd2fu4.jpeg"
+                },
+                {
+                    "title": "Fashion Flow",
+                    "desc": "Fashion Flow är ett Al-drivet verktyg för modeindustrin...",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-FASHF",
+                    "image": "https://i.imgur.com/r0n4RXV.jpeg"
+                },
+                {
+                    "title": "Prompt Manager",
+                    "desc": "Jag har utvecklat en kompakt, resurssnål desktop-applikation...",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-PROMA",
+                    "image": "https://i.imgur.com/iToKcAC.jpeg"
+                },
+                {
+                    "title": "Prompt Scout Motion",
+                    "desc": "Prompt Scout Motion ger skapare total regissörskontroll över Al- videogenerering...",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-PSMOT",
+                    "image": "https://i.imgur.com/KyBvmgN.jpeg"
+                },
+                {
+                    "title": "Prompt Scout Web",
+                    "desc": "Prompt Scout Web Architect är ett 3-stegs design- och kodsystem...",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-PSWEB",
+                    "image": "https://i.imgur.com/aA2QfyW.jpeg"
+                },
+                {
+                    "title": "Prompt Studio Pro",
+                    "desc": "Prompt Studio Pro är en komplett, webbläsarbaserad arbetsstation...",
+                    "mainCategory": "Verktyg & Prompts",
+                    "subCategory": "Prompt Engineering",
+                    "id": "SYS-PSTPR",
+                    "image": "https://i.imgur.com/fvIUvCv.jpeg"
+                },
+                {
+                    "title": "FaceSwap Studio Pro",
+                    "desc": "Jag har utvecklat FaceSwap Studio Pro, en neural applikation...",
+                    "mainCategory": "System & Core Engines",
+                    "subCategory": "Kärnmotorer",
+                    "id": "SYS-FSSPR",
+                    "image": "https://i.imgur.com/PHx8NRF.jpeg"
+                },
+                {
+                    "title": "JokeForge",
+                    "desc": "JokeForge är en specialiserad webbapplikation för generering...",
+                    "mainCategory": "System & Core Engines",
+                    "subCategory": "Verktyg & Hubbar",
+                    "id": "SYS-JOKEF",
+                    "image": "https://i.imgur.com/NBvPbIT.jpeg"
+                },
+                {
+                    "title": "Offertkalkylator Pro",
+                    "desc": "Offertkalkylator Pro är en serverlös, Al-driven webbapplikation...",
+                    "mainCategory": "System & Core Engines",
+                    "subCategory": "Verktyg & Hubbar",
+                    "id": "SYS-OFFPR",
+                    "image": "https://i.imgur.com/Zc885y4.jpeg",
+                    "url": "https://b10msk1.github.io/offer/"
+                },
+                {
+                    "title": "VGP Core Engine (v26.0)",
+                    "desc": "En högpresterande 8K-renderingsmotor och världsbyggare...",
+                    "mainCategory": "System & Core Engines",
+                    "subCategory": "Kärnmotorer",
+                    "id": "SYS-VGPCE",
+                    "image": "https://i.imgur.com/ENqOvTf.jpeg"
+                },
+                {
+                    "title": "App-Inspiration & Skaparglädje",
+                    "desc": "Jag har utvecklat \"Inspiratören\" som en central idé-hubb...",
+                    "mainCategory": "System & Core Engines",
+                    "subCategory": "Verktyg & Hubbar",
+                    "id": "SYS-INSPR",
+                    "image": "https://i.imgur.com/OBp5uYs.jpeg"
+                },
+                {
+                    "title": "Arkitekt Hubb",
+                    "desc": "Ett centralt valv och ekosystem för att säkra, organisera och dokumentera...",
+                    "mainCategory": "System & Core Engines",
+                    "subCategory": "Verktyg & Hubbar",
+                    "id": "SYS-ARKHB",
+                    "image": "https://i.imgur.com/iI0vEY2.jpeg"
+                },
+                {
+                    "title": "Atelier Gallery",
+                    "desc": "Atelier Gallery är en digital kurator- och utställningsplattform...",
+                    "mainCategory": "System & Core Engines",
+                    "subCategory": "Verktyg & Hubbar",
+                    "id": "SYS-ATELG",
+                    "image": "https://i.imgur.com/d57LdvT.jpeg"
+                },
+                {
+                    "title": "Bloms Magiska Pensel",
+                    "desc": "Det här kortet fångar precis kärnan i ditt arbete...",
+                    "mainCategory": "System & Core Engines",
+                    "subCategory": "Verktyg & Hubbar",
+                    "id": "SYS-MAGPE",
+                    "image": "https://i.imgur.com/Ye2aIHV.jpeg"
+                }
+            ];
+        };
+
+        const updateStatus = (text) => document.getElementById('loading-text').innerText = text;
+
+        const init = () => {
+            updateStatus("Initierar Serverrum...");
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color('#050a14');
+            scene.fog = new THREE.FogExp2('#050a14', 0.02); 
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 3, 7); camera.lookAt(0, 1, 0);
+            clock = new THREE.Clock();
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.2; 
+            container.appendChild(renderer.domElement);
+
+            const renderScene = new THREE.RenderPass(scene, camera);
+            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85); 
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(renderScene); composer.addPass(bloomPass);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.3)); 
+            hemiLight = new THREE.HemisphereLight(0x1e293b, 0x050a14, 2.0); scene.add(hemiLight);
+
+            mainDirLight = new THREE.DirectionalLight(0x00e5ff, 2.0); 
+            mainDirLight.position.set(5, 10, 5); mainDirLight.castShadow = true; 
+            scene.add(mainDirLight);
+
+            mainGltfLoader = new THREE.GLTFLoader();
+            const dracoLoader = new THREE.DRACOLoader();
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
+            mainGltfLoader.setDRACOLoader(dracoLoader);
+
+            const pingGeo = new THREE.RingGeometry(0.5, 0.6, 32);
+            pingMarker = new THREE.Mesh(pingGeo, new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0, side: THREE.DoubleSide }));
+            pingMarker.rotation.x = -Math.PI / 2; pingMarker.position.y = 0.05; scene.add(pingMarker);
+
+            // Bygg Cyber-rummet dynamiskt med din JSON data
+            buildCyberNexus();
+
+            playerGroup = new THREE.Group(); scene.add(playerGroup);
+            const personalLight = new THREE.PointLight(0xffffff, 1.0, 15);
+            personalLight.position.set(0, 2.5, 0); playerGroup.add(personalLight);
+
+            // Ladda in bas-karaktären för att gå omkring
+            const MODEL_URL = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/character_base.glb';
+            const IDLE_ANIM_URL = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/idle.glb';
+            const WALK_ANIM_URL = 'https://raw.githubusercontent.com/b10msk1/3dhall/main/walk.glb';
+
+            const loadCharacterSystem = async () => {
+                const loadGLTF = (url) => new Promise((resolve, reject) => mainGltfLoader.load(url, resolve, undefined, reject));
+                try {
+                    const gltfModel = await loadGLTF(MODEL_URL);
+                    characterModel = gltfModel.scene;
+                    characterModel.scale.set(0.01, 0.01, 0.01); characterModel.rotation.x = Math.PI / 2; 
+                    playerGroup.add(characterModel);
+                    characterModel.traverse((node) => { if (node.isMesh) node.castShadow = true; });
+
+                    mixer = new THREE.AnimationMixer(characterModel);
+                    try {
+                        const gltfIdle = await loadGLTF(IDLE_ANIM_URL);
+                        if (gltfIdle.animations.length > 0) animations['idle'] = mixer.clipAction(gltfIdle.animations[0]);
+                        const gltfWalk = await loadGLTF(WALK_ANIM_URL);
+                        if (gltfWalk.animations.length > 0) animations['walk'] = mixer.clipAction(gltfWalk.animations[0]);
+                    } catch (e) { console.warn("Saknar animationsfiler.", e); }
+
+                    if (animations['idle']) playAnimation('idle');
+                    document.getElementById('loader').classList.add('fade-out');
+                    setTimeout(() => showGuideText("App Valvet. Alla system online."), 1000);
+                } catch (error) {
+                    characterModel = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({ color: 0x0f172a, wireframe: true, emissive: 0x00e5ff, emissiveIntensity: 0.2 }));
+                    characterModel.position.y = 1; characterModel.castShadow = true; playerGroup.add(characterModel);
+                    document.getElementById('loader').classList.add('fade-out');
+                }
+            };
+            loadCharacterSystem();
+
+            window.addEventListener('keydown', onKeyDown, false);
+            window.addEventListener('keyup', onKeyUp, false);
+            window.addEventListener('resize', onWindowResize, false);
+            
+            const containerEL = document.getElementById('canvas-container');
+            containerEL.addEventListener('mousemove', onMouseMove, false);
+            containerEL.addEventListener('mousedown', onMouseDown, false); 
+            containerEL.addEventListener('mouseup', () => isDragging = false, false);
+            containerEL.addEventListener('dblclick', onDoubleClick, false);
+
+            document.getElementById('close-panel').addEventListener('click', closeInfoPanel);
+            document.getElementById('close-lightbox').addEventListener('click', closeLightbox);
+
+            animate();
+        };
+
+        const buildCyberNexus = () => {
+            const appData = loadAppDatabase();
+            const totalApps = appData.length;
+            
+            // Beräkna korridorens längd utifrån antalet appar
+            const corridorLength = Math.max(40, (Math.ceil(totalApps / 2) * 6) + 20); 
+            
+            // Det lysande golvet (Tron-Grid)
+            const gridHelper = new THREE.GridHelper(40, corridorLength / 2, 0x00e5ff, 0x00e5ff);
+            gridHelper.position.set(0, 0.01, -corridorLength / 2 + 10);
+            gridHelper.material.opacity = 0.15;
+            gridHelper.material.transparent = true;
+            scene.add(gridHelper);
+
+            // Det fysiska golvet under
+            const floorGeo = new THREE.PlaneGeometry(40, corridorLength);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x02050a, roughness: 0.2, metalness: 0.8 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.set(0, 0, -corridorLength / 2 + 10);
+            floor.receiveShadow = true;
+            scene.add(floor); floors.push(floor);
+
+            // Väggarna
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x0a1224, roughness: 0.7, metalness: 0.5 });
+            const createWall = (x, rotY) => {
+                const wall = new THREE.Mesh(new THREE.PlaneGeometry(corridorLength, 12), wallMat);
+                wall.position.set(x, 6, -corridorLength / 2 + 10);
+                wall.rotation.y = rotY;
+                scene.add(wall);
+            };
+            createWall(-15, Math.PI / 2); // Vänster
+            createWall(15, -Math.PI / 2); // Höger
+            
+            // Bakvägg
+            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(30, 12), wallMat);
+            backWall.position.set(0, 6, -corridorLength + 10);
+            scene.add(backWall);
+
+            // Entré-vägg (bakom spelaren)
+            const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(30, 12), wallMat);
+            frontWall.position.set(0, 6, 10);
+            frontWall.rotation.y = Math.PI;
+            scene.add(frontWall);
+
+            // Placera ut apparna
+            let currentZ = -10; // Starta en bit framför spelaren
+            
+            appData.forEach((app, index) => {
+                const isLeft = index % 2 === 0;
+                const xPos = isLeft ? -14.9 : 14.9;
+                const rotY = isLeft ? Math.PI / 2 : -Math.PI / 2;
+                
+                if (index > 0 && index % 2 === 0) {
+                    currentZ -= 6; 
+                }
+
+                createHologramScreen(xPos, 3, currentZ, rotY, app);
+            });
+        };
+
+        const createHologramScreen = (x, y, z, rotY, info) => {
+            const baseW = 4, baseH = 2.5;
+            
+            const canvasMesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(baseW, baseH), 
+                new THREE.MeshStandardMaterial({ color: 0x000000 })
+            );
+            canvasMesh.position.set(x, y, z); 
+            canvasMesh.rotation.y = rotY;
+            
+            const frameGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(baseW + 0.1, baseH + 0.1));
+            const frameMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.5 });
+            const frame = new THREE.LineSegments(frameGeo, frameMat);
+            frame.position.set(x, y, z);
+            frame.rotation.y = rotY;
+            scene.add(frame);
+
+            // Ladda app-bild (Använd fallback-bild från designen om appen saknar egen bild)
+            const finalImage = info.image || 'https://i.imgur.com/KHL8nfs.jpeg';
+            
+            const texLoader = new THREE.TextureLoader(); texLoader.setCrossOrigin('anonymous'); 
+            texLoader.load(finalImage, (tex) => { 
+                tex.encoding = THREE.sRGBEncoding; 
+                canvasMesh.material = new THREE.MeshStandardMaterial({ 
+                    map: tex, 
+                    roughness: 0.2, 
+                    metalness: 0.8,
+                    emissive: 0xffffff,
+                    emissiveMap: tex,
+                    emissiveIntensity: 0.2 
+                });
+            });
+            
+            canvasMesh.userData = { isArtwork: true, highlightMesh: frame, info: info }; 
+            artworks.push(canvasMesh); 
+            scene.add(canvasMesh);
+        };
+
+        // --- INTERAKTION OCH UI ---
+        const populateInfoPanel = (info) => {
+            document.getElementById('info-title').innerText = info.title || "System App";
+            document.getElementById('info-desc').innerText = info.desc || "Ingen data hittad.";
+            document.getElementById('info-id').innerText = info.id || "SYS-000";
+            
+            // Fyll i Kategorierna om de finns
+            if (info.mainCategory) {
+                document.getElementById('info-main-category').innerText = info.mainCategory;
+                document.getElementById('info-sub-category').innerText = info.subCategory || "";
+            } else {
+                document.getElementById('info-main-category').innerText = "Oklassificerad";
+                document.getElementById('info-sub-category').innerText = "";
+            }
+            
+            const thumb = document.getElementById('info-thumbnail');
+            const finalImage = info.image || 'https://i.imgur.com/KHL8nfs.jpeg';
+            thumb.src = finalImage;
+            thumb.onclick = () => { openLightbox(finalImage); };
+
+            const actionBtn = document.getElementById('action-btn');
+            if (info.url) {
+                actionBtn.classList.remove('hidden');
+                actionBtn.onclick = () => {
+                    showGuideText("Kopplar upp mot extern server...");
+                    setTimeout(() => window.open(info.url, '_blank'), 1000); 
+                };
+            } else {
+                actionBtn.classList.add('hidden');
+            }
+        };
+
+        const closeInfoPanel = () => {
+            isFocused = false; focusedArtwork = null; 
+            document.getElementById('info-panel').classList.remove('panel-open'); 
+            document.getElementById('info-panel').classList.add('panel-closed');
+            showGuideText("Återgår till navigation."); 
+        };
+
+        const openLightbox = (url) => {
+            document.getElementById('lightbox-img').style.transform = `translate(0px, 0px) scale(1)`;
+            document.getElementById('lightbox-img').src = url;
+            const lb = document.getElementById('lightbox'); lb.classList.remove('hidden'); setTimeout(() => lb.classList.remove('opacity-0'), 10);
+        };
+
+        const closeLightbox = () => {
+            const lb = document.getElementById('lightbox'); lb.classList.add('opacity-0'); 
+            setTimeout(() => lb.classList.add('hidden'), 300);
+        };
+
+        const showGuideText = (text) => {
+            const dialog = document.getElementById('guide-dialog'); document.getElementById('guide-text').innerText = text; dialog.classList.remove('opacity-0');
+            clearTimeout(window.guideTimeout); window.guideTimeout = setTimeout(() => { dialog.classList.add('opacity-0'); }, 5000);
+        };
+
+        const playAnimation = (name) => {
+            const action = animations[name]; if (!action || currentAction === action) return;
+            if (currentAction) currentAction.fadeOut(0.3);
+            action.reset().fadeIn(0.3).play(); currentAction = action;
+        };
+
+        const onWindowResize = () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); };
+
+        const onMouseMove = (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1; mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            if (isDragging && !isFocused) { 
+                const deltaX = event.clientX - previousMousePosition.x; const deltaY = event.clientY - previousMousePosition.y;
+                cameraAngleX -= deltaX * 0.005; cameraAngleY -= deltaY * 0.005; cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2.2, cameraAngleY)); 
+            }
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+        };
+
+        const onMouseDown = () => {
+            isDragging = true;
+            if (hoveredArtwork && hoveredArtwork.userData.info && !isFocused) {
+                isFocused = true; 
+                focusedArtwork = hoveredArtwork; 
+                const info = hoveredArtwork.userData.info;
+                
+                showGuideText(`Ansluter till: ${info.title}`);
+                autoMoveTarget = null; 
+                if (pingMarker) pingMarker.material.opacity = 0; 
+
+                populateInfoPanel(info);
+                document.getElementById('info-panel').classList.remove('panel-closed');
+                document.getElementById('info-panel').classList.add('panel-open');
+
+                // Kamerarörelse
+                const objPos = hoveredArtwork.position; 
+                const focusDist = isFirstPerson ? 2.5 : 4.5; 
+                const rotY = hoveredArtwork.rotation.y; 
+                
+                let lookAtPos = objPos.clone();
+                let camPos = new THREE.Vector3(objPos.x + Math.sin(rotY) * focusDist, objPos.y, objPos.z + Math.cos(rotY) * focusDist);
+                
+                let viewDir = new THREE.Vector3().subVectors(lookAtPos, camPos).normalize();
+                let rightVec = viewDir.cross(new THREE.Vector3(0, 1, 0)).normalize();
+                let shiftAmount = 1.8; 
+                camPos.add(rightVec.clone().multiplyScalar(shiftAmount));
+                lookAtPos.add(rightVec.clone().multiplyScalar(shiftAmount));
+
+                focusCameraTarget.copy(camPos); 
+                focusLookAtTarget.copy(lookAtPos);
+            }
+        };
+
+        const onDoubleClick = (event) => {
+            let clientX, clientY;
+            if (event.touches) { clientX = event.touches[0].clientX; clientY = event.touches[0].clientY; } 
+            else { clientX = event.clientX; clientY = event.clientY; }
+
+            const tapMouse = new THREE.Vector2((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1);
+            raycaster.setFromCamera(tapMouse, camera);
+            
+            const floorIntersects = raycaster.intersectObjects(floors);
+            if (floorIntersects.length > 0 && !isFocused) {
+                autoMoveTarget = floorIntersects[0].point;
+                if (pingMarker) {
+                    pingMarker.position.set(autoMoveTarget.x, 0.05, autoMoveTarget.z);
+                    pingMarker.material.opacity = 1.0;
+                    pingMarker.scale.set(0.1, 0.1, 0.1);
+                }
+            }
+        };
+
+        const onKeyDown = (event) => { 
+            const key = event.key.toLowerCase(); if (keys.hasOwnProperty(key)) keys[key] = true; 
+            if (key === 'v') { 
+                isFirstPerson = !isFirstPerson; 
+                if (characterModel) characterModel.visible = !isFirstPerson; 
+            }
+        };
+        const onKeyUp = (event) => { if (keys.hasOwnProperty(event.key.toLowerCase())) keys[event.key.toLowerCase()] = false; };
+
+        const animate = () => {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            if (pingMarker && pingMarker.material.opacity > 0) {
+                pingMarker.scale.addScalar(delta * 2); pingMarker.material.opacity -= delta * 1.5;
+            }
+
+            if (playerGroup) {
+                let moveX = 0, moveZ = 0;
+                let manualOverride = (keys.w || keys.a || keys.s || keys.d) && !isFocused;
+
+                if (manualOverride) autoMoveTarget = null;
+
+                if (autoMoveTarget && !isFocused) {
+                    const dx = autoMoveTarget.x - playerGroup.position.x;
+                    const dz = autoMoveTarget.z - playerGroup.position.z;
+                    const dist = Math.sqrt(dx*dx + dz*dz);
+                    
+                    if (dist < 0.5) {
+                        autoMoveTarget = null; 
+                    } else {
+                        playerGroup.position.x += (dx/dist) * moveSpeed * delta;
+                        playerGroup.position.z += (dz/dist) * moveSpeed * delta;
+                        
+                        const targetAngle = Math.atan2(dx/dist, dz/dist);
+                        let diff = targetAngle - playerGroup.rotation.y;
+                        while (diff < -Math.PI) diff += Math.PI * 2;
+                        while (diff > Math.PI) diff -= Math.PI * 2;
+                        playerGroup.rotation.y += diff * 12 * delta; 
+                        playAnimation('walk');
+                    }
+                } 
+                else if (manualOverride) {
+                    if (keys.w) moveZ -= 1; if (keys.s) moveZ += 1; if (keys.a) moveX -= 1; if (keys.d) moveX += 1;
+                    const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
+                    const dirX = moveX / length, dirZ = moveZ / length;
+                    const s = Math.sin(cameraAngleX), c = Math.cos(cameraAngleX);
+                    const worldDirX = dirX * c - dirZ * s, worldDirZ = dirX * s + dirZ * c;
+
+                    playerGroup.position.x += worldDirX * moveSpeed * delta;
+                    playerGroup.position.z += worldDirZ * moveSpeed * delta;
+
+                    const targetAngle = Math.atan2(worldDirX, worldDirZ);
+                    let diff = targetAngle - playerGroup.rotation.y;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    playerGroup.rotation.y += diff * 12 * delta; 
+                    playAnimation('walk'); 
+                    if (isFocused) closeInfoPanel();
+                } else {
+                    playAnimation('idle'); 
+                }
+
+                // Begränsa spelaren i korridoren dynamiskt
+                let clampX = playerGroup.position.x;
+                let clampZ = playerGroup.position.z;
+                
+                const corridorLength = Math.max(40, (Math.ceil(artworks.length / 2) * 6) + 20);
+                
+                if (clampX < -12) clampX = -12; 
+                if (clampX > 12) clampX = 12; 
+                if (clampZ > 5) clampZ = 5; 
+                if (clampZ < -corridorLength + 15) clampZ = -corridorLength + 15; 
+                
+                playerGroup.position.x = clampX; playerGroup.position.z = clampZ;
+
+                let targetCameraPos = new THREE.Vector3(); let targetLookAt = new THREE.Vector3();
+                if (isFocused) { targetCameraPos.copy(focusCameraTarget); targetLookAt.copy(focusLookAtTarget); } 
+                else if (isFirstPerson) {
+                    targetCameraPos.copy(playerGroup.position).add(new THREE.Vector3(0, 2.5, 0)); 
+                    const lookDir = new THREE.Vector3(-Math.sin(cameraAngleY) * Math.sin(cameraAngleX), -Math.cos(cameraAngleY) + 0.5, -Math.sin(cameraAngleY) * Math.cos(cameraAngleX)).normalize();
+                    targetLookAt.copy(targetCameraPos).add(lookDir);
+                } else {
+                    const offsetX = cameraDistance * Math.sin(cameraAngleY) * Math.sin(cameraAngleX);
+                    const offsetY = cameraDistance * Math.cos(cameraAngleY);
+                    const offsetZ = cameraDistance * Math.sin(cameraAngleY) * Math.cos(cameraAngleX);
+                    targetCameraPos.copy(playerGroup.position).add(new THREE.Vector3(offsetX, offsetY, offsetZ));
+                    targetLookAt.copy(playerGroup.position).add(new THREE.Vector3(0, 1.5, 0));
+                }
+                camera.position.lerp(targetCameraPos, 0.08);
+                if (currentLookAt.length() === 0) currentLookAt.copy(targetLookAt); 
+                currentLookAt.lerp(targetLookAt, 0.08); camera.lookAt(currentLookAt);
+                
+                const targetFOV = isFocused ? 45 : 75;
+                if (Math.abs(camera.fov - targetFOV) > 0.1) { camera.fov += (targetFOV - camera.fov) * 0.1; camera.updateProjectionMatrix(); }
+            }
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(artworks);
+            const holoUI = document.getElementById('hologram-ui');
+
+            if (intersects.length > 0) {
+                document.body.style.cursor = 'crosshair';
+                if (hoveredArtwork !== intersects[0].object) {
+                    if (hoveredArtwork) hoveredArtwork.userData.highlightMesh.material.opacity = 0.5;
+                    hoveredArtwork = intersects[0].object;
+                    hoveredArtwork.userData.highlightMesh.material.opacity = 1.0; 
+                }
+                if (!isFocused && hoveredArtwork) {
+                    const vector = hoveredArtwork.position.clone(); vector.y += 0.5; vector.project(camera);
+                    holoUI.style.left = `${(vector.x * .5 + .5) * window.innerWidth}px`; holoUI.style.top = `${(vector.y * -.5 + .5) * window.innerHeight}px`;
+                    holoUI.classList.remove('opacity-0'); document.getElementById('hologram-title').innerText = hoveredArtwork.userData.info.title || "Granska";
+                } else holoUI.classList.add('opacity-0');
+            } else {
+                document.body.style.cursor = 'default'; holoUI.classList.add('opacity-0'); 
+                if (hoveredArtwork) { 
+                    hoveredArtwork.userData.highlightMesh.material.opacity = 0.5; 
+                    hoveredArtwork = null; 
+                }
+            }
+
+            if (mixer) mixer.update(delta);
+            composer.render();
+        };
+
+        window.onload = init;
+    </script>
+</body>
+</html>
