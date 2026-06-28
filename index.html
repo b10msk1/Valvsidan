@@ -45,6 +45,12 @@
       stroke: #a855f7;
     }
 
+    .animate-data-flow-silver {
+      stroke-dasharray: 10 40;
+      animation: flowData 1.5s linear infinite;
+      stroke: #cbd5e1;
+    }
+
     .modal-fade-in {
       animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
@@ -97,12 +103,14 @@
       { id: 'dna_2', type: 'info', category: 'dna', x: 260, y: 70, title: 'Fragmenteraren', buttonImageUrl: 'https://i.imgur.com/ca2F98e.png', modal: { imageUrl: 'https://i.imgur.com/WbiHLes.png' } },
       { id: 'dna_3', type: 'info', category: 'dna', x: 370, y: -100, title: 'Analysatorn', buttonImageUrl: 'https://i.imgur.com/aR5GMF8.png', modal: { imageUrl: 'https://i.imgur.com/ChpOXSG.png' } },
       { id: 'dna_link', type: 'link', category: 'dna', x: 480, y: 50, title: 'Öppna App-Valv', url: 'appvalvet.html', buttonImageUrl: 'https://i.imgur.com/6CFcYkI.png' },
+      { id: 'dna_3d_link', type: 'link', category: 'dna', x: 480, y: -250, title: '3D-Hallen', url: '3dhallen.html', buttonImageUrl: 'https://i.imgur.com/Fz6iDRc.png' },
       
       // VÄNSTER GREN: PROMPT (Kreationer)
       { id: 'prompt_1', type: 'info', category: 'prompt', x: -150, y: -90, title: 'Prompt Scout Flow', buttonImageUrl: 'https://i.imgur.com/zJhIYWA.png', modal: { imageUrl: 'https://i.imgur.com/oMUYiaZ.png' } },
       { id: 'prompt_2', type: 'info', category: 'prompt', x: -260, y: 70, title: 'Ad Scout Flow', buttonImageUrl: 'https://i.imgur.com/akeUclH.png', modal: { imageUrl: 'https://i.imgur.com/zf6dqoA.png' } },
       { id: 'prompt_3', type: 'info', category: 'prompt', x: -370, y: -100, title: 'Prompt Scout Motion', buttonImageUrl: 'https://i.imgur.com/X3hHys6.png', modal: { imageUrl: 'https://i.imgur.com/RvTLUrJ.png' } },
       { id: 'prompt_link', type: 'link', category: 'prompt', x: -480, y: 50, title: 'Öppna Kreationer', url: 'promptvalvet.html', buttonImageUrl: 'https://i.imgur.com/QffWYdp.png' },
+      { id: 'prompt_3d_link', type: 'link', category: 'prompt', x: -480, y: -250, title: '3D-Hallen', url: '3dhallen.html', buttonImageUrl: 'https://i.imgur.com/Fz6iDRc.png' },
 
       // NY GREN UPPÅT: KONSTHALL & 3D-HALL
       { id: 'art_1', type: 'info', category: 'art', x: -80, y: -160, title: 'Trä', buttonImageUrl: 'https://i.imgur.com/5XWTlKx.png', modal: { imageUrl: 'https://i.imgur.com/tAgt65c.png' } },
@@ -111,7 +119,10 @@
       { id: 'art_4', type: 'info', category: 'art', x: 80, y: -490, title: 'Betong', buttonImageUrl: 'https://i.imgur.com/OvZ5usY.png', modal: { imageUrl: 'https://i.imgur.com/SWmCH98.png' } },
       // Förgrening från Betong (Y-korsning)
       { id: 'art_link', type: 'link', category: 'art', x: -20, y: -600, title: 'Art Vault', url: 'konsthall.html', buttonImageUrl: 'https://i.imgur.com/ON1QUaC.png' },
-      { id: '3d_link', type: 'link', category: 'art', x: 180, y: -600, title: '3D-Hallen', url: '3dhallen.html', buttonImageUrl: 'https://i.imgur.com/Fz6iDRc.png' }
+      { id: '3d_link', type: 'link', category: 'art', x: 180, y: -600, title: '3D-Hallen', url: '3dhallen.html', buttonImageUrl: 'https://i.imgur.com/Fz6iDRc.png' },
+
+      // SILVRIG GREN (Mitten, rakt ner, kort tråd, stor som guld-core)
+      { id: 'silver_portal', type: 'portal', category: 'silver', x: 0, y: 150, title: 'Skifta till 3D-Hallen', buttonImageUrl: 'https://i.imgur.com/mbGOeDq.png', modal: { imageUrl: 'https://i.imgur.com/ymWqPo3.jpeg', linkUrl: '3dhallen.html' } }
     ];
 
     const mapEdges = [
@@ -119,11 +130,13 @@
       { from: 'dna_1', to: 'dna_2', branch: 'dna' },
       { from: 'dna_2', to: 'dna_3', branch: 'dna' },
       { from: 'dna_3', to: 'dna_link', branch: 'dna' },
+      { from: 'dna_3', to: 'dna_3d_link', branch: 'dna' },
       
       { from: 'core', to: 'prompt_1', branch: 'prompt' },
       { from: 'prompt_1', to: 'prompt_2', branch: 'prompt' },
       { from: 'prompt_2', to: 'prompt_3', branch: 'prompt' },
       { from: 'prompt_3', to: 'prompt_link', branch: 'prompt' },
+      { from: 'prompt_3', to: 'prompt_3d_link', branch: 'prompt' },
 
       { from: 'core', to: 'art_1', branch: 'art' },
       { from: 'art_1', to: 'art_2', branch: 'art' },
@@ -131,7 +144,10 @@
       { from: 'art_3', to: 'art_4', branch: 'art' },
       // Y-korsningen från Betong
       { from: 'art_4', to: 'art_link', branch: 'art' },
-      { from: 'art_4', to: '3d_link', branch: 'art' }
+      { from: 'art_4', to: '3d_link', branch: 'art' },
+
+      // Silvrig Tråd
+      { from: 'core', to: 'silver_portal', branch: 'silver' }
     ];
 
     // --- DOM ELEMENT ---
@@ -171,6 +187,7 @@
           let pulseClass = 'animate-data-flow-emerald'; 
           if (edge.branch === 'dna') pulseClass = 'animate-data-flow-amber';
           else if (edge.branch === 'art') pulseClass = 'animate-data-flow-purple';
+          else if (edge.branch === 'silver') pulseClass = 'animate-data-flow-silver';
           
           svgHTML += `
             <g>
@@ -194,8 +211,10 @@
         }
 
         const isCore = node.type === 'core';
+        const isPortal = node.type === 'portal';
+        const isLarge = isCore || isPortal;
         
-        el.className = `absolute transition-all duration-500 hover:scale-110 flex items-center justify-center group outline-none cursor-pointer ${isCore ? 'w-40 h-40 z-30' : 'w-40 h-16 z-20'}`;
+        el.className = `absolute transition-all duration-500 hover:scale-110 flex items-center justify-center group outline-none cursor-pointer ${isLarge ? 'w-40 h-40 z-30' : 'w-40 h-16 z-20'}`;
         el.style.left = `calc(50% + ${node.x}px)`;
         el.style.top = `calc(50% + ${node.y}px)`;
         el.style.transform = 'translate(-50%, -50%)';
@@ -203,6 +222,8 @@
         let pulseHTML = '';
         if (isCore) {
           pulseHTML = `<div class="absolute inset-0 bg-[#e58e26] rounded-full blur-2xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 animate-[pulse_4s_ease-in-out_infinite] pointer-events-none"></div>`;
+        } else if (isPortal) {
+          pulseHTML = `<div class="absolute inset-0 bg-slate-400 rounded-full blur-2xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 animate-[pulse_4s_ease-in-out_infinite] pointer-events-none"></div>`;
         } else {
           let pulseColor = 'bg-emerald-500';
           let pulseAnim = 'animate-[pulse_3s_ease-in-out_infinite]';
@@ -211,7 +232,12 @@
           pulseHTML = `<div class="absolute inset-2 blur-xl opacity-40 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none rounded-full ${pulseColor} ${pulseAnim}"></div>`;
         }
 
-        const imgShadow = isCore ? 'drop-shadow-[0_0_25px_rgba(229,142,38,0.3)] group-hover:drop-shadow-[0_0_35px_rgba(229,142,38,0.6)]' : 'drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]';
+        let imgShadow = 'drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]';
+        if (isCore) {
+            imgShadow = 'drop-shadow-[0_0_25px_rgba(229,142,38,0.3)] group-hover:drop-shadow-[0_0_35px_rgba(229,142,38,0.6)]';
+        } else if (isPortal) {
+            imgShadow = 'drop-shadow-[0_0_25px_rgba(148,163,184,0.3)] group-hover:drop-shadow-[0_0_35px_rgba(148,163,184,0.6)]';
+        }
 
         el.innerHTML = `
           ${pulseHTML}
@@ -224,7 +250,7 @@
         if (!isLink) {
             el.addEventListener('click', (e) => {
               e.stopPropagation();
-              if (node.modal) { openModal(node.modal.imageUrl); }
+              if (node.modal) { openModal(node.modal.imageUrl, node.modal.linkUrl); }
             });
         }
 
@@ -283,8 +309,18 @@
     }, {passive: true});
 
     // --- MODAL LOGIK ---
-    function openModal(imgUrl) {
+    let currentModalLink = null;
+
+    function openModal(imgUrl, linkUrl = null) {
       modalImg.src = imgUrl;
+      currentModalLink = linkUrl;
+      
+      if (linkUrl) {
+        modalImg.classList.add('cursor-pointer', 'hover:scale-[1.02]', 'transition-transform');
+      } else {
+        modalImg.classList.remove('cursor-pointer', 'hover:scale-[1.02]', 'transition-transform');
+      }
+
       modal.classList.remove('hidden');
       modal.classList.add('flex'); 
     }
@@ -294,6 +330,14 @@
       modal.classList.remove('flex');
       modalImg.src = '';
     }
+
+    modalImg.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (currentModalLink) {
+        window.location.href = './' + currentModalLink;
+      }
+    });
+
   </script>
 </body>
 </html>
