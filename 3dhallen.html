@@ -122,7 +122,6 @@
             <i data-lucide="x"></i>
         </button>
 
-        <!-- Bildspels-navigering -->
         <button id="lightbox-prev" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-accent bg-panel p-4 rounded-full border border-[#1e293b] cursor-pointer transition-colors shadow-2xl z-20 hidden hover:scale-110">
             <i data-lucide="chevron-left" class="w-8 h-8"></i>
         </button>
@@ -135,34 +134,29 @@
         </div>
     </div>
 
-    <!-- NY BIOGRAF MODAL (VOD UI MED KATEGORIER) -->
+    <!-- NY BIOGRAF MODAL -->
     <div id="video-modal" class="fixed inset-0 z-[70] bg-black hidden flex-col opacity-0 transition-opacity duration-300">
-        <!-- Meny-vyn -->
         <div id="video-menu" class="flex-1 flex flex-col items-center justify-start w-full h-full relative overflow-hidden">
             <button id="close-video-modal" class="absolute top-8 right-8 z-50 text-white/50 hover:text-white bg-black/50 p-3 rounded-full backdrop-blur-md transition-colors shadow-xl border border-white/10">
                 <i data-lucide="x"></i>
             </button>
 
-            <!-- Bakgrund -->
             <div class="absolute inset-0 z-0">
                 <img id="cinema-backdrop" src="" class="w-full h-full object-cover opacity-30 blur-lg transition-all duration-500" />
                 <div class="absolute inset-0 bg-gradient-to-b from-[#0a0f1a]/80 via-[#0a0f1a]/60 to-[#0a0f1a]"></div>
             </div>
 
-            <!-- Vald Kategori Info & Fillista (Mitten) -->
             <div class="z-10 flex flex-col w-full max-w-4xl mt-20 px-6 h-[50vh] md:h-[60vh]">
                 <div class="text-center mb-8 flex-shrink-0">
                     <h2 id="cinema-title" class="text-4xl md:text-6xl font-black uppercase italic tracking-tighter text-white mb-4 drop-shadow-2xl">Välj Kategori</h2>
                     <p id="cinema-desc" class="text-slate-300 text-lg drop-shadow-md">Scrolla i menyn nedan.</p>
                 </div>
                 
-                <!-- Fillista (Sub-playlist) -->
                 <div id="sub-playlist-container" class="flex-1 overflow-y-auto pr-2 space-y-3 scrollbar-hide">
-                    <!-- Fylls dynamiskt med videos från kategorin -->
+                    <!-- Fylls dynamiskt -->
                 </div>
             </div>
 
-            <!-- Karusell (Botten) -->
             <div class="z-10 w-full mt-auto bg-[#0a0f1a]/80 backdrop-blur-xl border-t border-white/5 pb-8 pt-6 px-6 flex-shrink-0">
                 <h3 class="text-accent font-black uppercase tracking-widest text-xs mb-4 ml-4"><i data-lucide="film" class="w-4 h-4 inline pb-0.5"></i> Biograf Databas - Kategorier</h3>
                 <div id="playlist-container" class="w-full flex gap-4 overflow-x-auto pb-4 px-4 scrollbar-hide snap-x">
@@ -171,7 +165,6 @@
             </div>
         </div>
 
-        <!-- Själva Videospelaren (Dold initialt) -->
         <div id="video-player-container" class="hidden absolute inset-0 z-40 bg-black flex flex-col items-center justify-center">
             <video id="main-video-player" class="w-full h-full object-contain" controls></video>
             <button id="close-player-btn" class="absolute top-8 left-8 text-white hover:text-accent bg-black/50 px-6 py-3 rounded-full backdrop-blur-md border border-white/10 font-bold uppercase tracking-widest text-xs flex items-center gap-2 transition-colors z-50">
@@ -201,7 +194,6 @@
 
             <!-- SYSTEM ADMIN DROPDOWN -->
             <div id="admin-panel" class="absolute top-14 right-0 w-64 bg-panel/95 backdrop-blur-md border border-[#1e293b] p-4 rounded-2xl shadow-2xl hidden z-50">
-                
                 <h3 class="text-accent font-black uppercase tracking-widest text-[10px] mb-2 border-b border-[#1e293b] pb-2">Galleritema (Färg)</h3>
                 <div class="flex gap-2 mb-4">
                     <button onclick="changeTheme('#e58e26')" class="w-6 h-6 rounded-full bg-[#e58e26] border-2 border-white/20 hover:scale-110 transition-transform"></button>
@@ -345,7 +337,6 @@
         <h3 id="info-title" class="text-2xl font-black uppercase italic tracking-tighter text-slate-100 mb-4">Laddar...</h3>
         <p id="info-desc" class="text-slate-400 text-sm leading-relaxed mb-6 whitespace-pre-wrap">...</p>
         
-        <!-- VISAR ORIGINALFOTOT FÖR 3D-OBJEKT HÄR -->
         <div id="info-original-img-container" class="hidden mb-6 bg-black/40 p-4 rounded-2xl border border-white/5">
             <span class="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-3"><i data-lucide="image" class="w-3 h-3 inline pb-0.5"></i> Originalverk</span>
             <img id="info-original-img" src="" class="w-full rounded-xl border border-[#1e293b] cursor-pointer hover:border-accent transition-colors shadow-lg" />
@@ -356,7 +347,6 @@
             Gå Till Länk
         </button>
 
-        <!-- BILD-KNAPP FÖR PORTALER -->
         <button id="portal-action-btn" class="hidden w-full transition-transform hover:scale-105 mb-6 group cursor-pointer">
             <img id="portal-action-img" src="" class="w-full rounded-xl border-2 border-accent shadow-[0_0_30px_rgba(229,142,38,0.3)] group-hover:border-white transition-colors" />
         </button>
@@ -449,11 +439,9 @@
             input.value = '';
             const historyDiv = document.getElementById('aura-chat-history');
             
-            // Add user msg
             historyDiv.innerHTML += `<div class="text-white bg-dark p-3 rounded-xl rounded-tr-none self-end border border-gray-700 max-w-[85%] text-xs shadow-md">${text}</div>`;
             historyDiv.scrollTop = historyDiv.scrollHeight;
 
-            // Typing indicator
             const typingId = 'typing-' + Date.now();
             historyDiv.innerHTML += `<div id="${typingId}" class="text-indigo-200 bg-indigo-900/40 p-3 rounded-xl rounded-tl-none self-start border border-indigo-500/20"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i></div>`;
             lucide.createIcons();
@@ -464,7 +452,6 @@
             const response = await callGemini(text, sysInst);
             
             document.getElementById(typingId).remove();
-            // Omvandla radbrytningar
             const formattedResponse = response.replace(/\n/g, '<br>');
             historyDiv.innerHTML += `<div class="text-indigo-200 bg-indigo-900/40 p-3 rounded-xl rounded-tl-none self-start border border-indigo-500/20 max-w-[90%] text-xs shadow-md leading-relaxed">${formattedResponse}</div>`;
             historyDiv.scrollTop = historyDiv.scrollHeight;
@@ -482,7 +469,7 @@
             resultDiv.classList.remove('hidden');
             resultDiv.innerHTML = '<div class="flex justify-center items-center py-2"><i data-lucide="loader-2" class="w-5 h-5 animate-spin text-indigo-400"></i><span class="ml-2 text-indigo-300">Aura analyserar datamönster...</span></div>';
             lucide.createIcons();
-            btn.classList.add('hidden'); // Dölj knappen medan/efter laddning
+            btn.classList.add('hidden'); 
 
             const title = focusedArtwork.userData.info.title || "Okänt verk";
             const desc = focusedArtwork.userData.info.desc || "";
@@ -534,7 +521,6 @@
 
         window.addEventListener('mouseup', () => isPanningImg = false);
 
-        // Touch Zoom/Pan
         let initialDistance = null, initialScale = 1;
         lightboxImgEl.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
@@ -598,7 +584,6 @@
             setTimeout(() => lb.classList.add('hidden'), 300);
             setTimeout(resetImageTransform, 300);
 
-            // Öppna panelen om vi granskar en tavla ELLER en portal
             if (!isLightboxFromThumbnail && focusedArtwork && !focusedArtwork.userData.is3D && !focusedArtwork.userData.info.isVideoModal) {
                 document.getElementById('info-panel').classList.remove('panel-closed');
                 document.getElementById('info-panel').classList.add('panel-open');
@@ -619,7 +604,6 @@
             }
         };
 
-        // --- FILMDATABASEN (Kategoriserad VOD) ---
         const videoCategories = [
             { 
                 title: "Genie Omega: The 6th Protocol", 
@@ -866,7 +850,6 @@
             }
         };
 
-        // --- DINA TILLGÅNGAR ---
         const MODEL_URL = 'https://raw.githubusercontent.com/b10msk1/3dblom/main/blomidle.glb';
         const IDLE_ANIM_URL = 'https://raw.githubusercontent.com/b10msk1/3dblom/main/blomidle.glb';
         const WALK_ANIM_URL = 'https://raw.githubusercontent.com/b10msk1/3dblom/main/blomiwalk.glb';
@@ -877,7 +860,6 @@
         const BLOMSKI_URL = 'https://raw.githubusercontent.com/b10msk1/valvglb/main/blomski.glb';
         const ZETA_URL = 'https://raw.githubusercontent.com/b10msk1/3dhalle/main/aegis_zeta.glb';
         
-        // Aura-modeller & Lilja
         const AURA_IDLE_URL = 'https://raw.githubusercontent.com/b10msk1/aura/main/Copilot3D-34c47bb2-3d0c-46bd-9c42-c114d5ccaf89.glb';
         const AURA_DANS_URL = 'https://raw.githubusercontent.com/b10msk1/aura3d/main/auradans.glb';
         const LILJA_IDLE_URL = 'https://raw.githubusercontent.com/b10msk1/3dlilja/main/lillyidle.glb';
@@ -930,6 +912,7 @@
 
         let cornerHolos = [];
         let ambientParticles;
+        let tacticalMapGroup = null;
 
         let autoMoveTarget = null, pingMarker;
         let isFocused = false, isFirstPerson = false;
@@ -991,6 +974,9 @@
             scene.add(mainDirLight);
 
             mainGltfLoader = new THREE.GLTFLoader();
+            // Lösning för externa CORS-problem
+            mainGltfLoader.setCrossOrigin('anonymous');
+            
             const dracoLoader = new THREE.DRACOLoader();
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
             mainGltfLoader.setDRACOLoader(dracoLoader);
@@ -1034,7 +1020,6 @@
                     const gltfModel = await loadGLTF(MODEL_URL);
                     characterModel = gltfModel.scene;
                     
-                    // Korrigerad skala och rotation för nya Blom-modellen
                     characterModel.scale.set(1.2, 1.2, 1.2); 
                     characterModel.rotation.x = 0; 
                     characterModel.position.y = 0;
@@ -1070,9 +1055,27 @@
             containerEL.addEventListener('mouseup', () => isDragging = false, false);
             containerEL.addEventListener('dblclick', onDoubleClick, false);
 
+            containerEL.addEventListener('wheel', (e) => {
+                if (isFocused && focusedArtwork && focusedArtwork.userData.is3D && !focusedArtwork.userData.info.isPortal) {
+                    e.preventDefault();
+                    let viewDir = new THREE.Vector3().subVectors(focusCameraTarget, focusLookAtTarget).normalize();
+                    let dist = focusCameraTarget.distanceTo(focusLookAtTarget);
+                    
+                    if (e.deltaY > 0) dist += 0.5; 
+                    else dist -= 0.5; 
+                    
+                    dist = Math.max(1.5, Math.min(dist, 15.0)); 
+                    focusCameraTarget.copy(focusLookAtTarget).add(viewDir.multiplyScalar(dist));
+                }
+            }, { passive: false });
+
             let lastTap = 0;
+            let initial3DDistance = null;
+            let initial3DZoom = null;
+
             containerEL.addEventListener('touchstart', (e) => {
                 if (e.target.closest('#mobile-controls') || e.target.closest('header') || e.target.closest('#video-modal') || e.target.closest('#lightbox') || e.target.closest('#left-image-panel') || e.target.closest('#info-panel') || e.target.closest('#aura-chat-widget')) return;
+                
                 if (e.touches.length === 1) {
                     isDragging = true;
                     previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -1081,11 +1084,29 @@
                     const now = Date.now();
                     if(now - lastTap < 300) onDoubleClick(e.touches[0]); 
                     lastTap = now;
+                } else if (e.touches.length === 2 && isFocused && focusedArtwork && focusedArtwork.userData.is3D) {
+                    isDragging = false;
+                    initial3DDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                    initial3DZoom = focusCameraTarget.distanceTo(focusLookAtTarget);
                 }
             }, {passive: false});
 
             containerEL.addEventListener('touchmove', (e) => {
-                if (!isDragging || isFocused || e.target.closest('#mobile-controls') || e.target.closest('#video-modal') || e.target.closest('#lightbox') || e.target.closest('#left-image-panel') || e.target.closest('#info-panel') || e.target.closest('#aura-chat-widget')) return;
+                if (e.target.closest('#mobile-controls') || e.target.closest('#video-modal') || e.target.closest('#lightbox') || e.target.closest('#left-image-panel') || e.target.closest('#info-panel') || e.target.closest('#aura-chat-widget')) return;
+                
+                if (isFocused && focusedArtwork && focusedArtwork.userData.is3D && e.touches.length === 2 && initial3DDistance) {
+                    e.preventDefault();
+                    const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                    const zoomFactor = initial3DDistance / currentDistance;
+                    let newDist = initial3DZoom * zoomFactor;
+                    newDist = Math.max(1.5, Math.min(newDist, 15.0)); 
+                    
+                    let viewDir = new THREE.Vector3().subVectors(focusCameraTarget, focusLookAtTarget).normalize();
+                    focusCameraTarget.copy(focusLookAtTarget).add(viewDir.multiplyScalar(newDist));
+                    return;
+                }
+
+                if (!isDragging || isFocused) return;
                 e.preventDefault();
                 const currentX = e.touches[0].clientX; const currentY = e.touches[0].clientY;
                 cameraAngleX -= (currentX - previousMousePosition.x) * 0.005;
@@ -1094,7 +1115,11 @@
                 previousMousePosition = { x: currentX, y: currentY };
             }, {passive: false});
 
-            containerEL.addEventListener('touchend', (e) => { isDragging = false; if (Date.now() - lastTap < 250) onMouseDown(); });
+            containerEL.addEventListener('touchend', (e) => { 
+                isDragging = false; 
+                initial3DDistance = null;
+                if (Date.now() - lastTap < 250 && e.touches.length === 0) onMouseDown(); 
+            });
 
             const handleTouchBtn = (id, key) => {
                 const btn = document.getElementById(id);
@@ -1122,7 +1147,6 @@
                         focusedArtwork.userData.info.imageUrl = imgUrl;
                     }
 
-                    // SPARA TILL FIRESTORE
                     const docId = focusedArtwork.userData.id || `art_${Date.now()}`;
                     focusedArtwork.userData.id = docId;
                     
@@ -1202,6 +1226,8 @@
         const buildGalleryRoom = () => {
             const roomSize = 40, wallHeight = 8;
             const hallA_Length = 80;
+            
+            const tCyan = 0x00e5ff, lCyan = 0xd0ffff;
 
             const createNoiseTexture = () => {
                 const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d');
@@ -1255,16 +1281,16 @@
             };
             createChevron(0, -40, Math.PI / 2); createChevron(0, -20, Math.PI / 2); createChevron(0, 0, Math.PI / 2);
 
-            const createCornerHolo = (x, z) => {
+            const createCornerHolo = (x, z, hexColor) => {
                 const geo = new THREE.IcosahedronGeometry(1.5, 0);
-                const mat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, wireframe: true, emissive: 0x00e5ff, emissiveIntensity: 1.0 });
+                const mat = new THREE.MeshStandardMaterial({ color: hexColor, wireframe: true, emissive: hexColor, emissiveIntensity: 1.0 });
                 const mesh = new THREE.Mesh(geo, mat);
                 mesh.position.set(x, 4, z);
                 scene.add(mesh);
                 cornerHolos.push(mesh);
             };
-            createCornerHolo(-10, 20);
-            createCornerHolo(10, 20);
+            createCornerHolo(-10, 20, 0xff003c); // Röd (Vänster)
+            createCornerHolo(10, 20, 0x0044ff);  // Blå (Höger)
 
             const particleCount = 800;
             const particleGeo = new THREE.BufferGeometry();
@@ -1282,11 +1308,6 @@
             ambientParticles = new THREE.Points(particleGeo, particleMat);
             scene.add(ambientParticles);
 
-            // ==========================================
-            // JSON INDEX 0-36
-            // ==========================================
-            
-            // 0 (Nu Blom-staty)
             addHandicraftDisplay(0, 0, -54, { 
                 title: "Arkitekten (Blom)",
                 desc: "Jag har utvecklat detta galleri. Gå längs väggarna för att ta del av mitt hantverk och min historia.",
@@ -1333,18 +1354,14 @@
                 }, craft.url, 0xe58e26, 0xfff0dd, 1.2, 1.0);
             });
 
-            // 25: Aura Korridor (Del 1 - Idle)
             addHandicraftDisplay(0, 0, 26, { title: "Aura Korridor", desc: "En teknisk passage genom tid och rum." }, AURA_IDLE_URL, 0xe58e26, 0xfff0dd, 2.0, 1.5);
             addArtworkPlaceholder(-4, 3, 26, Math.PI / 2, 'https://i.imgur.com/m0xCett.jpeg', { title: "Aura Vänster 1", desc: "Digitalt hantverk.", originalImage: 'https://i.imgur.com/Fz6iDRc.png' }, 0xe58e26);
             addArtworkPlaceholder(4, 3, 26, -Math.PI / 2, 'https://i.imgur.com/s9A9ZHh.jpeg', { title: "Aura Höger 1", desc: "Digitalt hantverk.", originalImage: 'https://i.imgur.com/bcQTvCq.png' }, 0xe58e26);
 
-            // 25.5: Aura Dans & Nya Tavlor (Del 2)
             addHandicraftDisplay(0, 0, 34, { title: "Aura Dans", desc: "Aura i rörelse." }, AURA_DANS_URL, 0xe58e26, 0xfff0dd, 2.0, 0.25);
             addArtworkPlaceholder(-4, 3, 34, Math.PI / 2, 'https://i.imgur.com/4eRhtlm.jpeg', { title: "Aura Vänster 2", desc: "Ny dimension.", originalImage: 'https://i.imgur.com/4eRhtlm.jpeg' }, 0xe58e26);
             addArtworkPlaceholder(4, 3, 34, -Math.PI / 2, 'https://i.imgur.com/MvECSTf.jpg', { title: "Aura Höger 2", desc: "Ny dimension.", originalImage: 'https://i.imgur.com/MvECSTf.jpg' }, 0xe58e26);
 
-
-            const tCyan = 0x00e5ff, lCyan = 0xd0ffff;
             const hallBLight = new THREE.PointLight(tCyan, 1.5, 50);
             hallBLight.position.set(0, 8, 70); scene.add(hallBLight);
 
@@ -1356,28 +1373,93 @@
                 addHandicraftDisplay(xPos, 0, zPos, { title: avatar.name, desc: "Samling: Blom Avatarer" }, avatar.url, tCyan, lCyan, 1.8, 1.9);
             });
 
-            // ==========================================
-            // EFTER INDEX 36
-            // ==========================================
-
-            // Lilja Idle
             addHandicraftDisplay(-4, 0, -54, { 
                 title: "Lilja", desc: "Dottern och inspirationen till mycket av skapandet." 
             }, LILJA_IDLE_URL, 0xe58e26, 0xfff0dd, 1.2, 0.0);
+
+            // --- TAKTISKT BORD FÖR 3D-KARTAN ---
+            const tableMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9, metalness: 0.5 });
+            const tableBase = new THREE.Mesh(new THREE.BoxGeometry(8, 0.6, 8), tableMat);
+            tableBase.position.set(0, 0.3, -46);
+            tableBase.receiveShadow = true;
+            scene.add(tableBase);
+
+            const tableGlowMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x00e5ff, emissiveIntensity: 0.8, wireframe: true });
+            const tableEdge = new THREE.Mesh(new THREE.BoxGeometry(8.1, 0.65, 8.1), tableGlowMat);
+            tableEdge.position.set(0, 0.3, -46);
+            scene.add(tableEdge);
+
+            const mapGroup = new THREE.Group();
+            mapGroup.position.set(0, 0.6, -46);
+            scene.add(mapGroup);
+            tacticalMapGroup = mapGroup;
+
+            const mapHitBox = new THREE.Mesh(new THREE.BoxGeometry(8, 3, 8), new THREE.MeshBasicMaterial({ visible: false }));
+            mapHitBox.position.y = 1.5;
+            mapGroup.add(mapHitBox);
+
+            const mapRing = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.1, 8.2), new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x00e5ff, emissiveIntensity: 0.0, transparent: true, opacity: 0.5 }));
+            mapRing.position.y = 0;
+            mapGroup.add(mapRing);
+
+            mapGroup.userData = { 
+                isArtwork: true, 
+                highlightMesh: mapRing, 
+                info: { title: "N.E.X.U.S Topografi", desc: "En taktisk 3D-projektion över anläggningen.\n\nDu kan klicka och dra för att snurra kartan. Använd scrollhjulet (eller nyp på mobilen) för att zooma in och ut." }, 
+                is3D: true, 
+                id: 'magic_map' 
+            };
+            artworks.push(mapGroup);
+
+            // Använder TextureLoader för att ladda texturer, den här behöver också crossOrigin = 'anonymous' om texturer ligger i GLB
+            mainGltfLoader.load('https://raw.githubusercontent.com/b10msk1/3dlilja/main/Copilot3D-91691b9e-99b7-40a1-bac8-0c6d1eb62de9.glb', (gltf) => {
+                const artMesh = gltf.scene;
+                artMesh.scale.set(5.0, 5.0, 5.0); // Betydligt större karta
+                artMesh.position.y = 0.5; 
+                artMesh.rotation.y = Math.PI; // Roterad för att matcha rummets layout
+                mapGroup.add(artMesh);
+                mapGroup.userData.modelMesh = artMesh;
+            });
+
+            const mapLight = new THREE.PointLight(0x00e5ff, 2.0, 5);
+            mapLight.position.set(0, 1.0, -46);
+            scene.add(mapLight);
 
             addArtworkPlaceholder(0, 3, -59.9, 0, 'https://i.imgur.com/U5sAKOJ.jpeg', { title: "Mästaren och Lärlingen", desc: "Jag sitter och lär mig slåss av min egen karaktär." }, 0xe58e26, 0xfff0dd, 5, 3);
             addArtworkPlaceholder(-20, 4, 40.1, 0, 'https://i.imgur.com/9gvydyp.jpeg', { title: "3D Karaktärer i Krig", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
             addArtworkPlaceholder(20, 4, 40.1, 0, 'https://i.imgur.com/Bg2NInS.jpeg', { title: "Konflikt", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
 
-            // --- FÄRGER FÖR PORTALER ---
             const pRed = 0xff003c;
             const pYellow = 0xffd700;
             const pBlue = 0x0044ff;
             const pGreen = 0x00ff44;
 
-            // --- VÄNSTER VÄGG: App Valvet & Prompt Valvet ---
-            
-            // APP VALVET (Z: 60) - RÖD
+            // --- TELEPORT-NODER PÅ TAKTISKA BORDET ---
+            const createTeleportNode = (x, z, color, title, targetX, targetZ) => {
+                const geo = new THREE.OctahedronGeometry(0.15, 0);
+                const mat = new THREE.MeshStandardMaterial({ color: color, wireframe: true, emissive: color, emissiveIntensity: 2.0 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(x, 1.0, z);
+                scene.add(mesh);
+
+                const hitBox = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshBasicMaterial({ visible: false }));
+                mesh.add(hitBox);
+
+                mesh.userData = {
+                    isArtwork: true,
+                    highlightMesh: mesh,
+                    info: { title: "Snabbresa: " + title, isTeleportNode: true, targetX, targetZ },
+                    is3D: true
+                };
+                artworks.push(mesh);
+                cornerHolos.push(mesh); // Lägg till i listan så de snurrar!
+            };
+
+            createTeleportNode(-3.8, -42.5, pRed, "App Valvet", -35, 60);
+            createTeleportNode(-3.8, -49.5, pYellow, "Prompt Valvet", -35, 95);
+            createTeleportNode(3.8, -42.5, pBlue, "Konsthallen", 35, 60);
+            createTeleportNode(3.8, -49.5, pGreen, "Sagor & Manus", 35, 95);
+
             addPortal(-39, 0, 60, Math.PI / 2, 'https://app-valvet-49057404478.europe-west2.run.app', { 
                 title: "APP VALVET", desc: "Över 150 applikationer och systemets digitala evolution.", 
                 imageUrl: "https://i.imgur.com/KHL8nfs.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
@@ -1387,7 +1469,6 @@
             addArtworkPlaceholder(-39.9, 3, 69, Math.PI / 2, 'https://i.imgur.com/ChpOXSG.png', { title: "App Valv 3" }, pRed, lCyan);
             addArtworkPlaceholder(-39.9, 3, 74, Math.PI / 2, 'https://i.imgur.com/Ne2QW0P.jpg', { title: "App Valv 4" }, pRed, lCyan);
 
-            // PROMPT VALVET (Z: 95) - GUL
             addPortal(-39, 0, 95, Math.PI / 2, 'https://cinematic-3d-gallery-49057404478.europe-west2.run.app', { 
                 title: "PROMPTVALVET", desc: "Över 500 AI-visioner med tillhörande krypterad master-data.", 
                 imageUrl: "https://i.imgur.com/IJm4njJ.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
@@ -1397,9 +1478,6 @@
             addArtworkPlaceholder(-39.9, 3, 104, Math.PI / 2, 'https://i.imgur.com/zf6dqoA.png', { title: "Verktyg 3" }, pYellow, lCyan);
             addArtworkPlaceholder(-39.9, 3, 109, Math.PI / 2, 'https://i.imgur.com/oMUYiaZ.png', { title: "Verktyg 4" }, pYellow, lCyan);
 
-            // --- HÖGER VÄGG: Konsthallen & Sagor/Manus ---
-            
-            // KONSTHALLEN (Z: 60) - BLÅ
             addPortal(39, 0, 60, -Math.PI / 2, 'konst_valvet.html', { 
                 title: "KONSTHALLEN", desc: "Ingång till de utvalda konst-utställningarna.", 
                 imageUrl: "https://i.imgur.com/qJWccGp.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
@@ -1409,7 +1487,6 @@
             addArtworkPlaceholder(39.9, 3, 69, -Math.PI / 2, 'https://i.imgur.com/tAgt65c.png', { title: "Konst 3" }, pBlue, lCyan);
             addArtworkPlaceholder(39.9, 3, 74, -Math.PI / 2, 'https://i.imgur.com/sSRCbRk.png', { title: "Konst 4" }, pBlue, lCyan);
 
-            // SAGOR & MANUS (Z: 95) - GRÖN
             addPortal(39, 0, 95, -Math.PI / 2, 'vault_sagor.html', { 
                 title: "SAGOR & MANUS", desc: "Din självbiografi och ditt arkiv för manus och berättelser.", 
                 imageUrl: "https://i.imgur.com/YO1ZSZN.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
@@ -1419,7 +1496,6 @@
             addArtworkPlaceholder(39.9, 3, 104, -Math.PI / 2, 'https://i.imgur.com/tAgt65c.png', { title: "Saga 3" }, pGreen, lCyan);
             addArtworkPlaceholder(39.9, 3, 109, -Math.PI / 2, 'https://i.imgur.com/sSRCbRk.png', { title: "Saga 4" }, pGreen, lCyan);
 
-            // --- RAKT FRAM (LÄNGST BAK): Biografen & Nya Affischer ---
             const baseW = 16, baseH = 9; 
             const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(baseW, baseH), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 }));
             canvasMesh.position.set(0, 5, 119.9); canvasMesh.rotation.y = Math.PI;
@@ -1429,7 +1505,15 @@
             const decorativeDisplay = (x, w, h, img) => {
                 const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ emissive: tCyan, emissiveIntensity: 0.2 }));
                 mesh.position.set(x, 5, 119.9); mesh.rotation.y = Math.PI;
-                new THREE.TextureLoader().load(img, (tex) => { tex.encoding = THREE.sRGBEncoding; mesh.material.map = tex; mesh.material.needsUpdate = true; });
+                
+                // Textureloader fix
+                const texLoader = new THREE.TextureLoader();
+                texLoader.setCrossOrigin('anonymous');
+                texLoader.load(img, (tex) => { 
+                    tex.encoding = THREE.sRGBEncoding; 
+                    mesh.material.map = tex; 
+                    mesh.material.needsUpdate = true; 
+                });
                 scene.add(mesh);
             };
             decorativeDisplay(0, 16, 9, 'https://i.imgur.com/KmLEH8X.png'); 
@@ -1441,7 +1525,6 @@
             addArtworkPlaceholder(14, 4, 119.9, Math.PI, 'https://i.imgur.com/NChkyqZ.jpeg', { title: "Genie Heroes" }, tCyan, lCyan, 5, 7.5);
             addArtworkPlaceholder(22, 4, 119.9, Math.PI, 'https://i.imgur.com/8AKFLUT.jpeg', { title: "Herr Banan" }, tCyan, lCyan, 5, 7.5);
             
-            // --- PIEDESTAL-PARKEN ---
             const pedestalBaseMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
             const pedestalRingMat = new THREE.MeshStandardMaterial({ color: tCyan, emissive: tCyan, emissiveIntensity: 0.2 });
             
@@ -1757,6 +1840,11 @@
             isDragging = true;
             if (hoveredArtwork && hoveredArtwork.userData.info && !isFocused) {
                 
+                if (hoveredArtwork.userData.info.isTeleportNode) {
+                    teleportTo(hoveredArtwork.userData.info.targetX, hoveredArtwork.userData.info.targetZ);
+                    return;
+                }
+
                 if (hoveredArtwork.userData.info.isVideoModal) {
                     openVideoModal();
                     return; 
@@ -1959,6 +2047,10 @@
                 ambientParticles.geometry.attributes.position.needsUpdate = true;
             }
 
+            // if (tacticalMapGroup) {
+            //     tacticalMapGroup.position.y = 0.6 + Math.sin(clock.getElapsedTime() * 1.5) * 0.05;
+            // }
+
             cornerHolos.forEach(holo => {
                 holo.rotation.x += delta * 0.5;
                 holo.rotation.y += delta * 0.8;
@@ -1966,7 +2058,7 @@
 
             artworks.forEach(item => { 
                 if (item.userData.modelMesh && item !== focusedArtwork) {
-                    if (!item.userData.mixer) {
+                    if (!item.userData.mixer && item.userData.id !== 'magic_map') {
                         item.userData.modelMesh.rotation.y += delta * 0.5; 
                     }
                 }
