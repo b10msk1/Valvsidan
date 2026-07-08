@@ -974,7 +974,6 @@
             scene.add(mainDirLight);
 
             mainGltfLoader = new THREE.GLTFLoader();
-            // Lösning för externa CORS-problem
             mainGltfLoader.setCrossOrigin('anonymous');
             
             const dracoLoader = new THREE.DRACOLoader();
@@ -1006,13 +1005,491 @@
             pingMarker = new THREE.Mesh(pingGeo, new THREE.MeshBasicMaterial({ color: 0xe58e26, transparent: true, opacity: 0, side: THREE.DoubleSide }));
             pingMarker.rotation.x = -Math.PI / 2; pingMarker.position.y = 0.05; scene.add(pingMarker);
 
-            buildGalleryRoom();
+            playerGroup = new THREE.Group();
+            scene.add(playerGroup);
+            const personalLight = new THREE.PointLight(0xffffff, 0.8, 15);
+            personalLight.position.set(0, 2.5, 0); 
+            playerGroup.add(personalLight);
 
-            playerGroup = new THREE.Group(); scene.add(playerGroup);
-            const personalLight = new THREE.PointLight(0xffffff, 1.2, 20);
-            personalLight.position.set(0, 2.5, 0); playerGroup.add(personalLight);
+            // Declaration of functions needed inside buildGalleryRoom
+            const addArtworkPlaceholder = (x, y, z, rotY, imageUrl, info, themeColor = currentThemeHex, lightColor = 0xfff0dd, customW = 4, customH = 3, id = null) => {
+                const baseW = customW, baseH = customH, framePadding = 0.2;
+                const frame = new THREE.Mesh(new THREE.PlaneGeometry(baseW + framePadding, baseH + framePadding), new THREE.MeshStandardMaterial({ color: 0x161d2b, emissive: themeColor, emissiveIntensity: 0.5, side: THREE.DoubleSide }));
+                frame.position.set(x, y, z); frame.rotation.y = rotY; scene.add(frame);
 
-            setTimeout(() => { if (typeof showGuideText === 'function') showGuideText("Välkommen till Main Hub. Teleport-valv är markerade.") }, 3000);
+                const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(baseW, baseH), new THREE.MeshStandardMaterial({ color: 0x0a0f1a }));
+                canvasMesh.position.set(x, y, z + 0.05); canvasMesh.rotation.y = rotY;
+                
+                if (imageUrl) {
+                    const texLoader = new THREE.TextureLoader(); texLoader.setCrossOrigin('anonymous'); 
+                    texLoader.load(imageUrl, (tex) => { 
+                        tex.encoding = THREE.sRGBEncoding; canvasMesh.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.3, metalness: 0.1 });
+                        const aspect = tex.image.width / tex.image.height;
+                        const tW = aspect > 1 ? baseW : (baseH + 0.5) * aspect;
+                        const tH = aspect > 1 ? baseW / aspect : baseH + 0.5;
+                        canvasMesh.scale.set(tW / baseW, tH / baseH, 1);
+                        frame.scale.set((tW + framePadding) / (baseW + framePadding), (tH + framePadding) / (baseH + framePadding), 1);
+                    }, undefined, (err) => { console.warn("Could not load artwork image: " + imageUrl, err); });
+                }
+                
+                info.imageUrl = imageUrl;
+                const artId = id || 'art_' + artworks.length;
+                canvasMesh.userData = { isArtwork: true, highlightMesh: frame, info: info, id: artId }; 
+                artworks.push(canvasMesh); scene.add(canvasMesh);
+            };
+
+            const addHandicraftDisplay = (x, y, z, info, modelUrl, themeColor = currentThemeHex, lightColor = 0xfff0dd, modelScale = 1, yOffset = 0, id = null) => {
+                const group = new THREE.Group();
+                group.position.set(x, y + 0.75, z);
+                scene.add(group);
+
+                const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 1.5, 32), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 }));
+                base.receiveShadow = true; 
+                group.add(base);
+
+                const hitBox = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 2), new THREE.MeshBasicMaterial({ visible: false }));
+                hitBox.position.y = 1.25; 
+                group.add(hitBox);
+
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.03, 16, 64), new THREE.MeshStandardMaterial({ color: themeColor, emissive: themeColor, emissiveIntensity: 0.0 }));
+                ring.position.y = 0.8; ring.rotation.x = Math.PI / 2; 
+                group.add(ring);
+
+                const artId = id || 'art_' + artworks.length;
+                group.userData = { isArtwork: true, highlightMesh: ring, info: info, is3D: true, id: artId }; 
+                artworks.push(group);
+
+                if (modelUrl) {
+                    mainGltfLoader.load(modelUrl, (gltf) => {
+                        const artMesh = gltf.scene; 
+                        artMesh.scale.set(modelScale, modelScale, modelScale); 
+                        artMesh.position.y = 0.75 + yOffset; 
+                        group.add(artMesh); 
+                        group.userData.modelMesh = artMesh;
+
+                        if (gltf.animations && gltf.animations.length > 0) {
+                            const mixer = new THREE.AnimationMixer(artMesh);
+                            const action = mixer.clipAction(gltf.animations[0]);
+                            action.play();
+                            group.userData.mixer = mixer;
+                        }
+                    }, undefined, (err) => { console.warn("Could not load 3D model: " + modelUrl, err); });
+                }
+            };
+
+            const addPortal = (x, y, z, rotY, targetUrl, info, themeColor) => {
+                const frameMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8, metalness: 0.5 });
+                const frameGeo = new THREE.BoxGeometry(6, 10, 1);
+                const frame = new THREE.Mesh(frameGeo, frameMat);
+                frame.position.set(x, y + 5, z); frame.rotation.y = rotY; scene.add(frame);
+
+                const portalMat = new THREE.MeshBasicMaterial({ color: themeColor, transparent: true, opacity: 0.8, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
+                const portalGeo = new THREE.PlaneGeometry(4.5, 8.5);
+                const portalMesh = new THREE.Mesh(portalGeo, portalMat);
+                portalMesh.position.set(x + Math.sin(rotY) * 0.51, y + 5, z + Math.cos(rotY) * 0.51);
+                portalMesh.rotation.y = rotY;
+                
+                info.actionUrl = targetUrl;
+                info.isPortal = true;
+                
+                const artId = 'portal_' + artworks.length;
+                portalMesh.userData = { isArtwork: true, highlightMesh: frame, info: info, id: artId };
+                artworks.push(portalMesh); scene.add(portalMesh);
+
+                const pLight = new THREE.PointLight(themeColor, 1.5, 10);
+                pLight.position.set(x + Math.sin(rotY) * 2, y + 5, z + Math.cos(rotY) * 2); scene.add(pLight);
+
+                const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 128; const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, 256, 128);
+                ctx.strokeStyle = themeColor; ctx.lineWidth = 8; ctx.strokeRect(0, 0, 256, 128);
+                ctx.fillStyle = '#e58e26'; ctx.font = 'bold 32px Inter, sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText('OBJECT DATA', 128, 50);
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 48px Inter, sans-serif';
+                const count = Math.floor(Math.random() * 500) + 50;
+                ctx.fillText(count.toString(), 128, 105);
+
+                const counterTex = new THREE.CanvasTexture(canvas);
+                const counterMat = new THREE.MeshBasicMaterial({ map: counterTex, transparent: true });
+                const counterMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 1), counterMat);
+                
+                const offsetX = -Math.cos(rotY) * 4; const offsetZ = Math.sin(rotY) * 4;
+                counterMesh.position.set(x + offsetX, y + 3, z + offsetZ);
+                counterMesh.rotation.y = rotY;
+                scene.add(counterMesh);
+            };
+
+            const loadFromFirestore = () => {
+                if (!db) {
+                    console.warn("N.E.X.U.S: Database not ready, retrying in 2s...");
+                    setTimeout(loadFromFirestore, 2000);
+                    return;
+                }
+                db.collection("artworks").get().then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const info = {
+                            title: data.title,
+                            desc: data.desc,
+                            imageUrl: data.imageUrl,
+                            originalImage: data.originalImage,
+                            actionUrl: data.actionUrl,
+                            portalEnterImage: data.portalEnterImage
+                        };
+                        
+                        const existingArt = artworks.find(art => art.userData.id === doc.id);
+                        
+                        if (existingArt) {
+                            Object.assign(existingArt.userData.info, info);
+                            if(data.position) existingArt.position.set(data.position.x, data.position.y, data.position.z);
+                            if(data.rotation) existingArt.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
+                        } else {
+                            if (data.is3D) {
+                                addHandicraftDisplay(data.position.x, data.position.y - 0.75, data.position.z, info, data.modelUrl, 0xe58e26, 0xfff0dd, data.scale, 0, doc.id);
+                            } else {
+                                addArtworkPlaceholder(data.position.x, data.position.y, data.position.z, data.rotation.y, data.imageUrl, info, 0xe58e26, 0xfff0dd, 4, 3, doc.id);
+                            }
+                        }
+                    });
+                    if (typeof showGuideText === 'function') showGuideText("Moln-data synkroniserad.");
+                }).catch(err => {
+                    console.error("N.E.X.U.S: Failed to load from Firestore:", err);
+                });
+            };
+
+            const buildGalleryRoom = () => {
+                const roomSize = 40, wallHeight = 8;
+                const hallA_Length = 80;
+                
+                const tCyan = 0x00e5ff, lCyan = 0xd0ffff;
+
+                const createNoiseTexture = () => {
+                    const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d');
+                    const imgData = ctx.createImageData(512, 512);
+                    for (let i = 0; i < imgData.data.length; i += 4) { const val = Math.random() * 255; imgData.data[i] = val; imgData.data[i+1] = val; imgData.data[i+2] = val; imgData.data[i+3] = 255; }
+                    ctx.putImageData(imgData, 0, 0); const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+                    return texture;
+                };
+
+                const createSolidFloor = (w, h, x, z) => {
+                    const geometry = new THREE.PlaneGeometry(w, h);
+                    const floorMat = new THREE.MeshStandardMaterial({ color: 0x05080f, roughness: 0.1, metalness: 0.3, bumpMap: createNoiseTexture(), bumpScale: 0.01 });
+                    const floor = new THREE.Mesh(geometry, floorMat);
+                    floor.rotation.x = -Math.PI / 2; floor.position.set(x, 0, z);
+                    floor.receiveShadow = true;
+                    scene.add(floor); floors.push(floor); 
+                }
+
+                createSolidFloor(roomSize, hallA_Length, 0, -20); 
+                createSolidFloor(10, 20, 0, 30); 
+                createSolidFloor(80, 80, 0, 80); 
+
+                const wallMat = new THREE.MeshStandardMaterial({ color: 0x161d2b, roughness: 0.9, bumpMap: createNoiseTexture(), bumpScale: 0.02 });
+                const createWall = (width, x, z, rotY) => {
+                    const wall = new THREE.Mesh(new THREE.PlaneGeometry(width, wallHeight), wallMat);
+                    wall.position.set(x, wallHeight / 2, z); wall.rotation.y = rotY; wall.receiveShadow = true; scene.add(wall);
+                };
+
+                createWall(40, 0, -60, 0); 
+                createWall(hallA_Length, -20, -20, Math.PI / 2); 
+                createWall(hallA_Length, 20, -20, -Math.PI / 2); 
+                
+                createWall(15, -12.5, 20, Math.PI); createWall(15, 12.5, 20, Math.PI);  
+                createWall(20, -5, 30, Math.PI / 2); createWall(20, 5, 30, -Math.PI / 2); 
+                
+                createWall(80, -40, 80, Math.PI / 2); 
+                createWall(80, 40, 80, -Math.PI / 2); 
+                createWall(80, 0, 120, Math.PI);      
+                
+                createWall(35, -22.5, 40, 0); createWall(35, 22.5, 40, 0);  
+
+                const createChevron = (x, z, rotY) => {
+                    const shape = new THREE.Shape();
+                    shape.moveTo(0, 0); shape.lineTo(1, 1); shape.lineTo(0.5, 1); shape.lineTo(-0.5, 0); shape.lineTo(0.5, -1); shape.lineTo(1, -1); shape.lineTo(0, 0);
+                    const extrudeSettings = { depth: 0.1, bevelEnabled: false };
+                    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                    const material = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 1.0 });
+                    const chevron = new THREE.Mesh(geometry, material);
+                    chevron.position.set(x, 0.05, z); chevron.rotation.x = Math.PI / 2; chevron.rotation.z = rotY;
+                    scene.add(chevron);
+                };
+                createChevron(0, -40, Math.PI / 2); createChevron(0, -20, Math.PI / 2); createChevron(0, 0, Math.PI / 2);
+
+                const createCornerHolo = (x, z, hexColor) => {
+                    const geo = new THREE.IcosahedronGeometry(1.5, 0);
+                    const mat = new THREE.MeshStandardMaterial({ color: hexColor, wireframe: true, emissive: hexColor, emissiveIntensity: 1.0 });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.set(x, 4, z);
+                    scene.add(mesh);
+                    cornerHolos.push(mesh);
+                };
+                createCornerHolo(-10, 20, 0xff003c); 
+                createCornerHolo(10, 20, 0x0044ff);  
+
+                const particleCount = 800;
+                const particleGeo = new THREE.BufferGeometry();
+                const particlePos = new Float32Array(particleCount * 3);
+                const particleSpeeds = new Float32Array(particleCount);
+                for(let i=0; i < particleCount; i++) {
+                    particlePos[i*3] = (Math.random() - 0.5) * 40;
+                    particlePos[i*3+1] = Math.random() * 15;
+                    particlePos[i*3+2] = (Math.random() - 0.5) * 150 + 20; 
+                    particleSpeeds[i] = Math.random() * 0.2 + 0.05;
+                }
+                particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+                particleGeo.setAttribute('speed', new THREE.BufferAttribute(particleSpeeds, 1));
+                const particleMat = new THREE.PointsMaterial({ color: 0xe58e26, size: 0.05, transparent: true, opacity: 0.4 });
+                ambientParticles = new THREE.Points(particleGeo, particleMat);
+                scene.add(ambientParticles);
+
+                addHandicraftDisplay(0, 0, -54, { 
+                    title: "Arkitekten (Blom)",
+                    desc: "Jag har utvecklat detta galleri. Gå längs väggarna för att ta del av mitt hantverk och min historia.",
+                    originalImage: 'https://i.imgur.com/e33gjYl.jpeg' 
+                }, BLOMSKI_URL, 0xe58e26, 0xfff0dd, 1.5, 1.2);
+
+                let startZ = -50;
+                addArtworkPlaceholder(-19.9, 3, startZ, Math.PI / 2, 'https://i.imgur.com/bcQTvCq.png', { title: "Del 1: Material" }, currentThemeHex);
+                addArtworkPlaceholder(-19.9, 3, startZ + 6, Math.PI / 2, 'https://i.imgur.com/oftwEdE.png', { title: "Del 2: Presentation" }, currentThemeHex);
+                addArtworkPlaceholder(-19.9, 3, startZ + 12, Math.PI / 2, 'https://i.imgur.com/GFqcgYE.png', { title: "Del 3: Min Historia" }, currentThemeHex);
+                addArtworkPlaceholder(-19.9, 3, startZ + 18, Math.PI / 2, 'https://i.imgur.com/0QaaUSe.png', { title: "Del 4: Bakgrund" }, currentThemeHex);
+                addArtworkPlaceholder(-19.9, 3, startZ + 24, Math.PI / 2, 'https://i.edu.com/H3IZPS0.png', { title: "Del 5: Hantverk" }, currentThemeHex);
+                addArtworkPlaceholder(-19.9, 3, startZ + 30, Math.PI / 2, 'https://i.imgur.com/WfhijYL.png', { title: "Del 6: Träkonst" }, currentThemeHex);
+                addArtworkPlaceholder(-19.9, 3, startZ + 36, Math.PI / 2, 'https://i.imgur.com/83qqYdV.png', { title: "Del 7" }, currentThemeHex);
+                addArtworkPlaceholder(-19.9, 3, startZ + 42, Math.PI / 2, 'https://i.imgur.com/4cB8HTr.png', { title: "Del 8" }, currentThemeHex);
+                addArtworkPlaceholder(-19.9, 3, startZ + 48, Math.PI / 2, 'https://i.imgur.com/NJamoLG.png', { title: "Del 9" }, currentThemeHex);
+                addArtworkPlaceholder(-19.9, 3, startZ + 54, Math.PI / 2, 'https://i.imgur.com/QV7Rf8u.png', { title: "Del 10" }, currentThemeHex);
+                addArtworkPlaceholder(-19.9, 3, startZ + 60, Math.PI / 2, 'https://i.imgur.com/q5oAJPV.png', { title: "Del 11" }, currentThemeHex);
+
+                addArtworkPlaceholder(19.9, 3, startZ, -Math.PI / 2, 'https://i.imgur.com/ZZsWPir.png', { title: "Del 12" }, currentThemeHex);
+                addArtworkPlaceholder(19.9, 3, startZ + 6, -Math.PI / 2, 'https://i.imgur.com/7kjC0rP.png', { title: "Del 13" }, currentThemeHex);
+                addArtworkPlaceholder(19.9, 3, startZ + 12, -Math.PI / 2, 'https://i.imgur.com/mURAjph.png', { title: "Del 14" }, currentThemeHex);
+                addArtworkPlaceholder(19.9, 3, startZ + 18, -Math.PI / 2, 'https://i.imgur.com/Mzrp4KS.png', { title: "Del 15" }, currentThemeHex);
+                addArtworkPlaceholder(19.9, 3, startZ + 24, -Math.PI / 2, 'https://i.edu.com/dYnq7Ev.png', { title: "Del 16" }, currentThemeHex);
+                addArtworkPlaceholder(19.9, 3, startZ + 30, -Math.PI / 2, 'https://i.imgur.com/e7W2O8E.png', { title: "Del 17" }, currentThemeHex);
+                addArtworkPlaceholder(19.9, 3, startZ + 36, -Math.PI / 2, 'https://i.imgur.com/seEhThO.png', { title: "Del 18" }, currentThemeHex);
+                addArtworkPlaceholder(19.9, 3, startZ + 42, -Math.PI / 2, 'https://i.imgur.com/flrBLC1.png', { title: "Del 19" }, currentThemeHex);
+                addArtworkPlaceholder(19.9, 3, startZ + 48, -Math.PI / 2, 'https://i.imgur.com/2hKMziy.png', { title: "Del 20" }, currentThemeHex);
+                addArtworkPlaceholder(19.9, 3, startZ + 54, -Math.PI / 2, 'https://i.imgur.com/RJqfR3g.png', { title: "Del 21" }, currentThemeHex);
+
+                addHandicraftDisplay(-6, 0, -2, { 
+                    title: "Betongbyst med kedja", desc: "Skapad i betong med en integrerad stålkedja.", originalImage: "https://i.imgur.com/0z4yFk3.png" 
+                }, HANDICRAFT_URL_2, 0xe58e26, 0xfff0dd, 1.0, 0.8);
+                
+                addHandicraftDisplay(6, 0, -2, { 
+                    title: "Stenhuvud (Bobba)", desc: "En monolitisk skulptur.", originalImage: "https://i.imgur.com/3BVMann.png"
+                }, HANDICRAFT_URL_1, 0xe58e26, 0xfff0dd, 1.0, 0.8);
+
+                newHandicrafts.forEach((craft, index) => {
+                    let xPos = (index % 2 === 0) ? -12 : 12;
+                    let zPos = -15 - (Math.floor(index / 2) * 10);
+                    addHandicraftDisplay(xPos, 0, zPos, { 
+                        title: craft.name, desc: craft.desc 
+                    }, craft.url, 0xe58e26, 0xfff0dd, 1.2, 1.0);
+                });
+
+                addHandicraftDisplay(0, 0, 26, { title: "Aura Korridor", desc: "En teknisk passage genom tid och rum." }, AURA_IDLE_URL, 0xe58e26, 0xfff0dd, 2.0, 1.5);
+                addArtworkPlaceholder(-4, 3, 26, Math.PI / 2, 'https://i.imgur.com/m0xCett.jpeg', { title: "Aura Vänster 1", desc: "Digitalt hantverk.", originalImage: 'https://i.imgur.com/Fz6iDRc.png' }, 0xe58e26);
+                addArtworkPlaceholder(4, 3, 26, -Math.PI / 2, 'https://i.imgur.com/s9A9ZHh.jpeg', { title: "Aura Höger 1", desc: "Digitalt hantverk.", originalImage: 'https://i.imgur.com/bcQTvCq.png' }, 0xe58e26);
+
+                addHandicraftDisplay(0, 0, 34, { title: "Aura Dans", desc: "Aura i rörelse." }, AURA_DANS_URL, 0xe58e26, 0xfff0dd, 2.0, 0.25);
+                addArtworkPlaceholder(-4, 3, 34, Math.PI / 2, 'https://i.imgur.com/4eRhtlm.jpeg', { title: "Aura Vänster 2", desc: "Ny dimension.", originalImage: 'https://i.imgur.com/4eRhtlm.jpeg' }, 0xe58e26);
+                addArtworkPlaceholder(4, 3, 34, -Math.PI / 2, 'https://i.imgur.com/MvECSTf.jpg', { title: "Aura Höger 2", desc: "Ny dimension.", originalImage: 'https://i.imgur.com/MvECSTf.jpg' }, 0xe58e26);
+
+                const hallBLight = new THREE.PointLight(tCyan, 1.5, 50);
+                hallBLight.position.set(0, 8, 70); scene.add(hallBLight);
+
+                addHandicraftDisplay(0, 0, 48, { title: "Aegis Zeta", desc: "Krigare från spelet 'Genie'.", originalImage: "https://i.imgur.com/naYb9j5.jpg" }, ZETA_URL, tCyan, lCyan, 1.0, 0.0);
+                
+                blomAvatars.forEach((avatar, index) => {
+                    let xPos = (index < 5) ? -12 : 12;
+                    let zPos = 55 + ((index % 5) * 8); 
+                    addHandicraftDisplay(xPos, 0, zPos, { title: avatar.name, desc: "Samling: Blom Avatarer" }, avatar.url, tCyan, lCyan, 1.8, 1.9);
+                });
+
+                addHandicraftDisplay(-4, 0, -54, { 
+                    title: "Lilja", desc: "Dottern och inspirationen till mycket av skapandet." 
+                }, LILJA_IDLE_URL, 0xe58e26, 0xfff0dd, 1.2, 0.0);
+
+                // --- TAKTISKT BORD FÖR 3D-KARTAN ---
+                const tableMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9, metalness: 0.5 });
+                const tableBase = new THREE.Mesh(new THREE.BoxGeometry(8, 0.6, 8), tableMat);
+                tableBase.position.set(0, 0.3, -46);
+                tableBase.receiveShadow = true;
+                scene.add(tableBase);
+
+                const tableGlowMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x00e5ff, emissiveIntensity: 0.8, wireframe: true });
+                const tableEdge = new THREE.Mesh(new THREE.BoxGeometry(8.1, 0.65, 8.1), tableGlowMat);
+                tableEdge.position.set(0, 0.3, -46);
+                scene.add(tableEdge);
+
+                const mapGroup = new THREE.Group();
+                mapGroup.position.set(0, 0.6, -46);
+                scene.add(mapGroup);
+                tacticalMapGroup = mapGroup;
+
+                const mapHitBox = new THREE.Mesh(new THREE.BoxGeometry(8, 3, 8), new THREE.MeshBasicMaterial({ visible: false }));
+                mapHitBox.position.y = 1.5;
+                mapGroup.add(mapHitBox);
+
+                const mapRing = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.1, 8.2), new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x00e5ff, emissiveIntensity: 0.0, transparent: true, opacity: 0.5 }));
+                mapRing.position.y = 0;
+                mapGroup.add(mapRing);
+
+                mapGroup.userData = { 
+                    isArtwork: true, 
+                    highlightMesh: mapRing, 
+                    info: { title: "N.E.X.U.S Topografi", desc: "En taktisk 3D-projektion över anläggningen.\n\nDu kan klicka och dra för att snurra kartan. Använd scrollhjulet (eller nyp på mobilen) för att zooma in och ut." }, 
+                    is3D: true, 
+                    id: 'magic_map' 
+                };
+                artworks.push(mapGroup);
+
+                mainGltfLoader.load('https://raw.githubusercontent.com/b10msk1/3dlilja/main/Copilot3D-91691b9e-99b7-40a1-bac8-0c6d1eb62de9.glb', (gltf) => {
+                    const artMesh = gltf.scene;
+                    artMesh.scale.set(5.0, 5.0, 5.0); 
+                    artMesh.position.y = 0.5; 
+                    artMesh.rotation.y = Math.PI; 
+                    mapGroup.add(artMesh);
+                    mapGroup.userData.modelMesh = artMesh;
+                });
+
+                const mapLight = new THREE.PointLight(0x00e5ff, 2.0, 5);
+                mapLight.position.set(0, 1.0, -46);
+                scene.add(mapLight);
+
+                const pRed = 0xff003c;
+                const pYellow = 0xffd700;
+                const pBlue = 0x0044ff;
+                const pGreen = 0x00ff44;
+
+                const createTeleportNode = (x, z, color, title, targetX, targetZ) => {
+                    const geo = new THREE.OctahedronGeometry(0.15, 0);
+                    const mat = new THREE.MeshStandardMaterial({ color: color, wireframe: true, emissive: color, emissiveIntensity: 2.0 });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.set(x, 1.0, z);
+                    scene.add(mesh);
+
+                    const hitBox = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshBasicMaterial({ visible: false }));
+                    mesh.add(hitBox);
+
+                    mesh.userData = {
+                        isArtwork: true,
+                        highlightMesh: mesh,
+                        info: { title: "Snabbresa: " + title, isTeleportNode: true, targetX, targetZ },
+                        is3D: true
+                    };
+                    artworks.push(mesh);
+                    cornerHolos.push(mesh); 
+                };
+
+                createTeleportNode(-3.8, -42.5, pRed, "App Valvet", -35, 60);
+                createTeleportNode(-3.8, -49.5, pYellow, "Prompt Valvet", -35, 95);
+                createTeleportNode(3.8, -42.5, pBlue, "Konsthallen", 35, 60);
+                createTeleportNode(3.8, -49.5, pGreen, "Sagor & Manus", 35, 95);
+
+                addArtworkPlaceholder(0, 3, -59.9, 0, 'https://i.imgur.com/U5sAKOJ.jpeg', { title: "Mästaren och Lärlingen", desc: "Jag sitter och lär mig slåss av min egen karaktär." }, 0xe58e26, 0xfff0dd, 5, 3);
+                addArtworkPlaceholder(-20, 4, 40.1, 0, 'https://i.imgur.com/9gvydyp.jpeg', { title: "3D Karaktärer i Krig", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
+                addArtworkPlaceholder(20, 4, 40.1, 0, 'https://i.imgur.com/Bg2NInS.jpeg', { title: "Konflikt", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
+
+                addPortal(-39, 0, 60, Math.PI / 2, 'https://app-valvet-49057404478.europe-west2.run.app', { 
+                    title: "APP VALVET", desc: "Över 150 applikationer och systemets digitala evolution.", 
+                    imageUrl: "https://i.imgur.com/KHL8nfs.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
+                }, pRed);
+                addArtworkPlaceholder(-39.9, 3, 46, Math.PI / 2, 'https://i.imgur.com/Ne2QW0P.jpg', { title: "App Valv 1" }, pRed, lCyan);
+                addArtworkPlaceholder(-39.9, 3, 51, Math.PI / 2, 'https://i.imgur.com/WbiHLes.png', { title: "App Valv 2" }, pRed, lCyan);
+                addArtworkPlaceholder(-39.9, 3, 69, Math.PI / 2, 'https://i.imgur.com/ChpOXSG.png', { title: "App Valv 3" }, pRed, lCyan);
+                addArtworkPlaceholder(-39.9, 3, 74, Math.PI / 2, 'https://i.imgur.com/Ne2QW0P.jpg', { title: "App Valv 4" }, pRed, lCyan);
+
+                addPortal(-39, 0, 95, Math.PI / 2, 'https://cinematic-3d-gallery-49057404478.europe-west2.run.app', { 
+                    title: "PROMPTVALVET", desc: "Över 500 AI-visioner med tillhörande krypterad master-data.", 
+                    imageUrl: "https://i.imgur.com/IJm4njJ.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
+                }, pYellow);
+                addArtworkPlaceholder(-39.9, 3, 81, Math.PI / 2, 'https://i.imgur.com/oMUYiaZ.png', { title: "Verktyg 1" }, pYellow, lCyan);
+                addArtworkPlaceholder(-39.9, 3, 86, Math.PI / 2, 'https://i.edu.com/c0u8FZS.png', { title: "Verktyg 2" }, pYellow, lCyan);
+                addArtworkPlaceholder(-39.9, 3, 104, Math.PI / 2, 'https://i.imgur.com/zf6dqoA.png', { title: "Verktyg 3" }, pYellow, lCyan);
+                addArtworkPlaceholder(-39.9, 3, 109, Math.PI / 2, 'https://i.imgur.com/oMUYiaZ.png', { title: "Verktyg 4" }, pYellow, lCyan);
+
+                addPortal(39, 0, 60, -Math.PI / 2, 'konst_valvet.html', { 
+                    title: "KONSTHALLEN", desc: "Ingång till de utvalda konst-utställningarna.", 
+                    imageUrl: "https://i.imgur.com/qJWccGp.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
+                }, pBlue);
+                addArtworkPlaceholder(39.9, 3, 46, -Math.PI / 2, 'https://i.imgur.com/SWmCH98.png', { title: "Konst 1" }, pBlue, lCyan);
+                addArtworkPlaceholder(39.9, 3, 51, -Math.PI / 2, 'https://i.imgur.com/c0u8FZS.png', { title: "Konst 2" }, pBlue, lCyan);
+                addArtworkPlaceholder(39.9, 3, 69, -Math.PI / 2, 'https://i.imgur.com/tAgt65c.png', { title: "Konst 3" }, pBlue, lCyan);
+                addArtworkPlaceholder(39.9, 3, 74, -Math.PI / 2, 'https://i.imgur.com/sSRCbRk.png', { title: "Konst 4" }, pBlue, lCyan);
+
+                addPortal(39, 0, 95, -Math.PI / 2, 'vault_sagor.html', { 
+                    title: "SAGOR & MANUS", desc: "Din självbiografi och ditt arkiv för manus och berättelser.", 
+                    imageUrl: "https://i.imgur.com/YO1ZSZN.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
+                }, pGreen);
+                addArtworkPlaceholder(39.9, 3, 81, -Math.PI / 2, 'https://i.imgur.com/SWmCH98.png', { title: "Saga 1" }, pGreen, lCyan);
+                addArtworkPlaceholder(39.9, 3, 86, -Math.PI / 2, 'https://i.edu.com/c0u8FZS.png', { title: "Saga 2" }, pGreen, lCyan);
+                addArtworkPlaceholder(39.9, 3, 104, -Math.PI / 2, 'https://i.imgur.com/tAgt65c.png', { title: "Saga 3" }, pGreen, lCyan);
+                addArtworkPlaceholder(39.9, 3, 109, -Math.PI / 2, 'https://i.imgur.com/sSRCbRk.png', { title: "Saga 4" }, pGreen, lCyan);
+
+                const baseW = 16, baseH = 9; 
+                const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(baseW, baseH), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 }));
+                canvasMesh.position.set(0, 5, 119.9); canvasMesh.rotation.y = Math.PI;
+                canvasMesh.userData = { isArtwork: true, info: { title: "Biograf", desc: "Öppna videodatabas", isVideoModal: true } };
+                artworks.push(canvasMesh); scene.add(canvasMesh);
+
+                const decorativeDisplay = (x, w, h, img) => {
+                    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ emissive: tCyan, emissiveIntensity: 0.2 }));
+                    mesh.position.set(x, 5, 119.9); mesh.rotation.y = Math.PI;
+                    
+                    const texLoader = new THREE.TextureLoader();
+                    texLoader.setCrossOrigin('anonymous');
+                    texLoader.load(img, (tex) => { 
+                        tex.encoding = THREE.sRGBEncoding; 
+                        mesh.material.map = tex; 
+                        mesh.material.needsUpdate = true; 
+                    });
+                    scene.add(mesh);
+                };
+                decorativeDisplay(0, 16, 9, 'https://i.imgur.com/KmLEH8X.png'); 
+
+                addArtworkPlaceholder(-14, 4, 119.9, Math.PI, 'https://i.imgur.com/zD5T4MF.jpeg', { title: "Genie: The 6 Protocol" }, tCyan, lCyan, 5, 7.5);
+                addArtworkPlaceholder(-22, 4, 119.9, Math.PI, 'https://i.imgur.com/QKKMs5d.jpeg', { title: "Aura Partner" }, tCyan, lCyan, 5, 7.5);
+                addArtworkPlaceholder(-30, 4, 119.9, Math.PI, 'https://i.imgur.com/DG1ZDfG.jpeg', { title: "Konkelbärsjakten" }, tCyan, lCyan, 5, 7.5);
+                
+                addArtworkPlaceholder(14, 4, 119.9, Math.PI, 'https://i.imgur.com/NChkyqZ.jpeg', { title: "Genie Heroes" }, tCyan, lCyan, 5, 7.5);
+                addArtworkPlaceholder(22, 4, 119.9, Math.PI, 'https://i.imgur.com/8AKFLUT.jpeg', { title: "Herr Banan" }, tCyan, lCyan, 5, 7.5);
+                
+                // --- PIEDESTAL-PARKEN & GENIE WARRIORS ---
+                const genieWarriors = [
+                    "https://raw.githubusercontent.com/b10msk1/gall3d/main/Copilot3D-02f09948-6daf-4ad8-a719-b8ef50b439ed-v1.glb",
+                    "https://raw.githubusercontent.com/b10msk1/gall3d/main/Copilot3D-032de3d6-7a29-4c0f-820b-7fdc64f0ad19-v1.glb",
+                    "https://raw.githubusercontent.com/b10msk1/gall3d/main/Copilot3D-0d7f4dbb-b7bc-4479-8b8d-ecb682acde49-v1.glb",
+                    "https://raw.githubusercontent.com/b10msk1/gall3d/main/Copilot3D-1e4d43bc-a942-48e7-830d-a82623df322d-v1.glb",
+                    "https://raw.githubusercontent.com/b10msk1/gall3d/main/Copilot3D-2f8d4d9b-0ec5-4de1-890b-89df7bdf5ebd-v1.glb",
+                    "https://raw.githubusercontent.com/b10msk1/gall3d/main/Copilot3D-3135290a-5e80-475d-ab23-533797695aab-v1.glb",
+                    "https://raw.githubusercontent.com/b10msk1/gall3d/main/Copilot3D-580d5d3b-622c-42f7-b00d-75e85adff412-v1.glb",
+                    "https://raw.githubusercontent.com/b10msk1/gall3d/main/Copilot3D-5c81c959-ced5-4c91-b0c3-726d84639911-v1.glb",
+                    "https://raw.githubusercontent.com/b10msk1/gall3d/main/Copilot3D-965f59c3-8e12-4a95-88ab-bd0fa99f5392-v1.glb"
+                ];
+
+                let warriorIndex = 0;
+                // Vi har 3 rader med 5 stativ i varje = 15 stativ totalt
+                [104, 108, 112].forEach(z => {
+                    [-12, -6, 0, 6, 12].forEach(x => {
+                        if (warriorIndex < genieWarriors.length) {
+                            addHandicraftDisplay(x, 0, z, { 
+                                title: `Genie Krigare ${warriorIndex + 1}`, 
+                                desc: "En legendarisk karaktär från Genie Omega-universumet." 
+                            }, genieWarriors[warriorIndex], tCyan, lCyan, 2.5, 2.5, `genie_warrior_${warriorIndex}`);
+                            warriorIndex++;
+                        } else {
+                            // Resterande stativ lämnas tomma men klickbara
+                            addHandicraftDisplay(x, 0, z, { 
+                                title: "Tomt Stativ", 
+                                desc: "Reserverad plats för kommande objekt." 
+                            }, null, tCyan, lCyan, 1.0, 0.0, `empty_pedestal_${x}_${z}`);
+                        }
+                    });
+                });
+
+                loadFromFirestore();
+            };
 
             const loadCharacterSystem = async () => {
                 const loadGLTF = (url) => new Promise((resolve, reject) => mainGltfLoader.load(url, resolve, undefined, reject));
@@ -1043,6 +1520,8 @@
                     createFallbackCharacter(); finishLoading("Karaktär: Fallback");
                 }
             };
+
+            buildGalleryRoom();
             loadCharacterSystem();
 
             window.addEventListener('keydown', onKeyDown, false);
@@ -1223,479 +1702,6 @@
             animate();
         };
 
-        const buildGalleryRoom = () => {
-            const roomSize = 40, wallHeight = 8;
-            const hallA_Length = 80;
-            
-            const tCyan = 0x00e5ff, lCyan = 0xd0ffff;
-
-            const createNoiseTexture = () => {
-                const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d');
-                const imgData = ctx.createImageData(512, 512);
-                for (let i = 0; i < imgData.data.length; i += 4) { const val = Math.random() * 255; imgData.data[i] = val; imgData.data[i+1] = val; imgData.data[i+2] = val; imgData.data[i+3] = 255; }
-                ctx.putImageData(imgData, 0, 0); const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
-                return texture;
-            };
-
-            const createSolidFloor = (w, h, x, z) => {
-                const geometry = new THREE.PlaneGeometry(w, h);
-                const floorMat = new THREE.MeshStandardMaterial({ color: 0x05080f, roughness: 0.1, metalness: 0.3, bumpMap: createNoiseTexture(), bumpScale: 0.01 });
-                const floor = new THREE.Mesh(geometry, floorMat);
-                floor.rotation.x = -Math.PI / 2; floor.position.set(x, 0, z);
-                floor.receiveShadow = true;
-                scene.add(floor); floors.push(floor); 
-            }
-
-            createSolidFloor(roomSize, hallA_Length, 0, -20); 
-            createSolidFloor(10, 20, 0, 30); 
-            createSolidFloor(80, 80, 0, 80); 
-
-            const wallMat = new THREE.MeshStandardMaterial({ color: 0x161d2b, roughness: 0.9, bumpMap: createNoiseTexture(), bumpScale: 0.02 });
-            const createWall = (width, x, z, rotY) => {
-                const wall = new THREE.Mesh(new THREE.PlaneGeometry(width, wallHeight), wallMat);
-                wall.position.set(x, wallHeight / 2, z); wall.rotation.y = rotY; wall.receiveShadow = true; scene.add(wall);
-            };
-
-            createWall(40, 0, -60, 0); 
-            createWall(hallA_Length, -20, -20, Math.PI / 2); 
-            createWall(hallA_Length, 20, -20, -Math.PI / 2); 
-            
-            createWall(15, -12.5, 20, Math.PI); createWall(15, 12.5, 20, Math.PI);  
-            createWall(20, -5, 30, Math.PI / 2); createWall(20, 5, 30, -Math.PI / 2); 
-            
-            createWall(80, -40, 80, Math.PI / 2); 
-            createWall(80, 40, 80, -Math.PI / 2); 
-            createWall(80, 0, 120, Math.PI);      
-            
-            createWall(35, -22.5, 40, 0); createWall(35, 22.5, 40, 0);  
-
-            const createChevron = (x, z, rotY) => {
-                const shape = new THREE.Shape();
-                shape.moveTo(0, 0); shape.lineTo(1, 1); shape.lineTo(0.5, 1); shape.lineTo(-0.5, 0); shape.lineTo(0.5, -1); shape.lineTo(1, -1); shape.lineTo(0, 0);
-                const extrudeSettings = { depth: 0.1, bevelEnabled: false };
-                const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-                const material = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 1.0 });
-                const chevron = new THREE.Mesh(geometry, material);
-                chevron.position.set(x, 0.05, z); chevron.rotation.x = Math.PI / 2; chevron.rotation.z = rotY;
-                scene.add(chevron);
-            };
-            createChevron(0, -40, Math.PI / 2); createChevron(0, -20, Math.PI / 2); createChevron(0, 0, Math.PI / 2);
-
-            const createCornerHolo = (x, z, hexColor) => {
-                const geo = new THREE.IcosahedronGeometry(1.5, 0);
-                const mat = new THREE.MeshStandardMaterial({ color: hexColor, wireframe: true, emissive: hexColor, emissiveIntensity: 1.0 });
-                const mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(x, 4, z);
-                scene.add(mesh);
-                cornerHolos.push(mesh);
-            };
-            createCornerHolo(-10, 20, 0xff003c); // Röd (Vänster)
-            createCornerHolo(10, 20, 0x0044ff);  // Blå (Höger)
-
-            const particleCount = 800;
-            const particleGeo = new THREE.BufferGeometry();
-            const particlePos = new Float32Array(particleCount * 3);
-            const particleSpeeds = new Float32Array(particleCount);
-            for(let i=0; i < particleCount; i++) {
-                particlePos[i*3] = (Math.random() - 0.5) * 40;
-                particlePos[i*3+1] = Math.random() * 15;
-                particlePos[i*3+2] = (Math.random() - 0.5) * 150 + 20; 
-                particleSpeeds[i] = Math.random() * 0.2 + 0.05;
-            }
-            particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
-            particleGeo.setAttribute('speed', new THREE.BufferAttribute(particleSpeeds, 1));
-            const particleMat = new THREE.PointsMaterial({ color: 0xe58e26, size: 0.05, transparent: true, opacity: 0.4 });
-            ambientParticles = new THREE.Points(particleGeo, particleMat);
-            scene.add(ambientParticles);
-
-            addHandicraftDisplay(0, 0, -54, { 
-                title: "Arkitekten (Blom)",
-                desc: "Jag har utvecklat detta galleri. Gå längs väggarna för att ta del av mitt hantverk och min historia.",
-                originalImage: 'https://i.imgur.com/e33gjYl.jpeg' 
-            }, BLOMSKI_URL, 0xe58e26, 0xfff0dd, 1.5, 1.2);
-
-            let startZ = -50;
-            addArtworkPlaceholder(-19.9, 3, startZ, Math.PI / 2, 'https://i.imgur.com/bcQTvCq.png', { title: "Del 1: Material" }, currentThemeHex);
-            addArtworkPlaceholder(-19.9, 3, startZ + 6, Math.PI / 2, 'https://i.imgur.com/oftwEdE.png', { title: "Del 2: Presentation" }, currentThemeHex);
-            addArtworkPlaceholder(-19.9, 3, startZ + 12, Math.PI / 2, 'https://i.imgur.com/GFqcgYE.png', { title: "Del 3: Min Historia" }, currentThemeHex);
-            addArtworkPlaceholder(-19.9, 3, startZ + 18, Math.PI / 2, 'https://i.imgur.com/0QaaUSe.png', { title: "Del 4: Bakgrund" }, currentThemeHex);
-            addArtworkPlaceholder(-19.9, 3, startZ + 24, Math.PI / 2, 'https://i.edu.com/H3IZPS0.png', { title: "Del 5: Hantverk" }, currentThemeHex);
-            addArtworkPlaceholder(-19.9, 3, startZ + 30, Math.PI / 2, 'https://i.imgur.com/WfhijYL.png', { title: "Del 6: Träkonst" }, currentThemeHex);
-            addArtworkPlaceholder(-19.9, 3, startZ + 36, Math.PI / 2, 'https://i.imgur.com/83qqYdV.png', { title: "Del 7" }, currentThemeHex);
-            addArtworkPlaceholder(-19.9, 3, startZ + 42, Math.PI / 2, 'https://i.imgur.com/4cB8HTr.png', { title: "Del 8" }, currentThemeHex);
-            addArtworkPlaceholder(-19.9, 3, startZ + 48, Math.PI / 2, 'https://i.imgur.com/NJamoLG.png', { title: "Del 9" }, currentThemeHex);
-            addArtworkPlaceholder(-19.9, 3, startZ + 54, Math.PI / 2, 'https://i.imgur.com/QV7Rf8u.png', { title: "Del 10" }, currentThemeHex);
-            addArtworkPlaceholder(-19.9, 3, startZ + 60, Math.PI / 2, 'https://i.imgur.com/q5oAJPV.png', { title: "Del 11" }, currentThemeHex);
-
-            addArtworkPlaceholder(19.9, 3, startZ, -Math.PI / 2, 'https://i.imgur.com/ZZsWPir.png', { title: "Del 12" }, currentThemeHex);
-            addArtworkPlaceholder(19.9, 3, startZ + 6, -Math.PI / 2, 'https://i.imgur.com/7kjC0rP.png', { title: "Del 13" }, currentThemeHex);
-            addArtworkPlaceholder(19.9, 3, startZ + 12, -Math.PI / 2, 'https://i.imgur.com/mURAjph.png', { title: "Del 14" }, currentThemeHex);
-            addArtworkPlaceholder(19.9, 3, startZ + 18, -Math.PI / 2, 'https://i.imgur.com/Mzrp4KS.png', { title: "Del 15" }, currentThemeHex);
-            addArtworkPlaceholder(19.9, 3, startZ + 24, -Math.PI / 2, 'https://i.edu.com/dYnq7Ev.png', { title: "Del 16" }, currentThemeHex);
-            addArtworkPlaceholder(19.9, 3, startZ + 30, -Math.PI / 2, 'https://i.imgur.com/e7W2O8E.png', { title: "Del 17" }, currentThemeHex);
-            addArtworkPlaceholder(19.9, 3, startZ + 36, -Math.PI / 2, 'https://i.imgur.com/seEhThO.png', { title: "Del 18" }, currentThemeHex);
-            addArtworkPlaceholder(19.9, 3, startZ + 42, -Math.PI / 2, 'https://i.imgur.com/flrBLC1.png', { title: "Del 19" }, currentThemeHex);
-            addArtworkPlaceholder(19.9, 3, startZ + 48, -Math.PI / 2, 'https://i.imgur.com/2hKMziy.png', { title: "Del 20" }, currentThemeHex);
-            addArtworkPlaceholder(19.9, 3, startZ + 54, -Math.PI / 2, 'https://i.imgur.com/RJqfR3g.png', { title: "Del 21" }, currentThemeHex);
-
-            addHandicraftDisplay(-6, 0, -2, { 
-                title: "Betongbyst med kedja", desc: "Skapad i betong med en integrerad stålkedja.", originalImage: "https://i.imgur.com/0z4yFk3.png" 
-            }, HANDICRAFT_URL_2, 0xe58e26, 0xfff0dd, 1.0, 0.8);
-            
-            addHandicraftDisplay(6, 0, -2, { 
-                title: "Stenhuvud (Bobba)", desc: "En monolitisk skulptur.", originalImage: "https://i.imgur.com/3BVMann.png"
-            }, HANDICRAFT_URL_1, 0xe58e26, 0xfff0dd, 1.0, 0.8);
-
-            newHandicrafts.forEach((craft, index) => {
-                let xPos = (index % 2 === 0) ? -12 : 12;
-                let zPos = -15 - (Math.floor(index / 2) * 10);
-                addHandicraftDisplay(xPos, 0, zPos, { 
-                    title: craft.name, desc: craft.desc 
-                }, craft.url, 0xe58e26, 0xfff0dd, 1.2, 1.0);
-            });
-
-            addHandicraftDisplay(0, 0, 26, { title: "Aura Korridor", desc: "En teknisk passage genom tid och rum." }, AURA_IDLE_URL, 0xe58e26, 0xfff0dd, 2.0, 1.5);
-            addArtworkPlaceholder(-4, 3, 26, Math.PI / 2, 'https://i.imgur.com/m0xCett.jpeg', { title: "Aura Vänster 1", desc: "Digitalt hantverk.", originalImage: 'https://i.imgur.com/Fz6iDRc.png' }, 0xe58e26);
-            addArtworkPlaceholder(4, 3, 26, -Math.PI / 2, 'https://i.imgur.com/s9A9ZHh.jpeg', { title: "Aura Höger 1", desc: "Digitalt hantverk.", originalImage: 'https://i.imgur.com/bcQTvCq.png' }, 0xe58e26);
-
-            addHandicraftDisplay(0, 0, 34, { title: "Aura Dans", desc: "Aura i rörelse." }, AURA_DANS_URL, 0xe58e26, 0xfff0dd, 2.0, 0.25);
-            addArtworkPlaceholder(-4, 3, 34, Math.PI / 2, 'https://i.imgur.com/4eRhtlm.jpeg', { title: "Aura Vänster 2", desc: "Ny dimension.", originalImage: 'https://i.imgur.com/4eRhtlm.jpeg' }, 0xe58e26);
-            addArtworkPlaceholder(4, 3, 34, -Math.PI / 2, 'https://i.imgur.com/MvECSTf.jpg', { title: "Aura Höger 2", desc: "Ny dimension.", originalImage: 'https://i.imgur.com/MvECSTf.jpg' }, 0xe58e26);
-
-            const hallBLight = new THREE.PointLight(tCyan, 1.5, 50);
-            hallBLight.position.set(0, 8, 70); scene.add(hallBLight);
-
-            addHandicraftDisplay(0, 0, 48, { title: "Aegis Zeta", desc: "Krigare från spelet 'Genie'.", originalImage: "https://i.imgur.com/naYb9j5.jpg" }, ZETA_URL, tCyan, lCyan, 1.0, 0.0);
-            
-            blomAvatars.forEach((avatar, index) => {
-                let xPos = (index < 5) ? -12 : 12;
-                let zPos = 55 + ((index % 5) * 8); 
-                addHandicraftDisplay(xPos, 0, zPos, { title: avatar.name, desc: "Samling: Blom Avatarer" }, avatar.url, tCyan, lCyan, 1.8, 1.9);
-            });
-
-            addHandicraftDisplay(-4, 0, -54, { 
-                title: "Lilja", desc: "Dottern och inspirationen till mycket av skapandet." 
-            }, LILJA_IDLE_URL, 0xe58e26, 0xfff0dd, 1.2, 0.0);
-
-            // --- TAKTISKT BORD FÖR 3D-KARTAN ---
-            const tableMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9, metalness: 0.5 });
-            const tableBase = new THREE.Mesh(new THREE.BoxGeometry(8, 0.6, 8), tableMat);
-            tableBase.position.set(0, 0.3, -46);
-            tableBase.receiveShadow = true;
-            scene.add(tableBase);
-
-            const tableGlowMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x00e5ff, emissiveIntensity: 0.8, wireframe: true });
-            const tableEdge = new THREE.Mesh(new THREE.BoxGeometry(8.1, 0.65, 8.1), tableGlowMat);
-            tableEdge.position.set(0, 0.3, -46);
-            scene.add(tableEdge);
-
-            const mapGroup = new THREE.Group();
-            mapGroup.position.set(0, 0.6, -46);
-            scene.add(mapGroup);
-            tacticalMapGroup = mapGroup;
-
-            const mapHitBox = new THREE.Mesh(new THREE.BoxGeometry(8, 3, 8), new THREE.MeshBasicMaterial({ visible: false }));
-            mapHitBox.position.y = 1.5;
-            mapGroup.add(mapHitBox);
-
-            const mapRing = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.1, 8.2), new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x00e5ff, emissiveIntensity: 0.0, transparent: true, opacity: 0.5 }));
-            mapRing.position.y = 0;
-            mapGroup.add(mapRing);
-
-            mapGroup.userData = { 
-                isArtwork: true, 
-                highlightMesh: mapRing, 
-                info: { title: "N.E.X.U.S Topografi", desc: "En taktisk 3D-projektion över anläggningen.\n\nDu kan klicka och dra för att snurra kartan. Använd scrollhjulet (eller nyp på mobilen) för att zooma in och ut." }, 
-                is3D: true, 
-                id: 'magic_map' 
-            };
-            artworks.push(mapGroup);
-
-            // Använder TextureLoader för att ladda texturer, den här behöver också crossOrigin = 'anonymous' om texturer ligger i GLB
-            mainGltfLoader.load('https://raw.githubusercontent.com/b10msk1/3dlilja/main/Copilot3D-91691b9e-99b7-40a1-bac8-0c6d1eb62de9.glb', (gltf) => {
-                const artMesh = gltf.scene;
-                artMesh.scale.set(5.0, 5.0, 5.0); // Betydligt större karta
-                artMesh.position.y = 0.5; 
-                artMesh.rotation.y = Math.PI; // Roterad för att matcha rummets layout
-                mapGroup.add(artMesh);
-                mapGroup.userData.modelMesh = artMesh;
-            });
-
-            const mapLight = new THREE.PointLight(0x00e5ff, 2.0, 5);
-            mapLight.position.set(0, 1.0, -46);
-            scene.add(mapLight);
-
-            addArtworkPlaceholder(0, 3, -59.9, 0, 'https://i.imgur.com/U5sAKOJ.jpeg', { title: "Mästaren och Lärlingen", desc: "Jag sitter och lär mig slåss av min egen karaktär." }, 0xe58e26, 0xfff0dd, 5, 3);
-            addArtworkPlaceholder(-20, 4, 40.1, 0, 'https://i.imgur.com/9gvydyp.jpeg', { title: "3D Karaktärer i Krig", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
-            addArtworkPlaceholder(20, 4, 40.1, 0, 'https://i.imgur.com/Bg2NInS.jpeg', { title: "Konflikt", desc: "Actionscen med galleriets avatarer." }, tCyan, lCyan, 6, 3.5);
-
-            const pRed = 0xff003c;
-            const pYellow = 0xffd700;
-            const pBlue = 0x0044ff;
-            const pGreen = 0x00ff44;
-
-            // --- TELEPORT-NODER PÅ TAKTISKA BORDET ---
-            const createTeleportNode = (x, z, color, title, targetX, targetZ) => {
-                const geo = new THREE.OctahedronGeometry(0.15, 0);
-                const mat = new THREE.MeshStandardMaterial({ color: color, wireframe: true, emissive: color, emissiveIntensity: 2.0 });
-                const mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(x, 1.0, z);
-                scene.add(mesh);
-
-                const hitBox = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshBasicMaterial({ visible: false }));
-                mesh.add(hitBox);
-
-                mesh.userData = {
-                    isArtwork: true,
-                    highlightMesh: mesh,
-                    info: { title: "Snabbresa: " + title, isTeleportNode: true, targetX, targetZ },
-                    is3D: true
-                };
-                artworks.push(mesh);
-                cornerHolos.push(mesh); // Lägg till i listan så de snurrar!
-            };
-
-            createTeleportNode(-3.8, -42.5, pRed, "App Valvet", -35, 60);
-            createTeleportNode(-3.8, -49.5, pYellow, "Prompt Valvet", -35, 95);
-            createTeleportNode(3.8, -42.5, pBlue, "Konsthallen", 35, 60);
-            createTeleportNode(3.8, -49.5, pGreen, "Sagor & Manus", 35, 95);
-
-            addPortal(-39, 0, 60, Math.PI / 2, 'https://app-valvet-49057404478.europe-west2.run.app', { 
-                title: "APP VALVET", desc: "Över 150 applikationer och systemets digitala evolution.", 
-                imageUrl: "https://i.imgur.com/KHL8nfs.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
-            }, pRed);
-            addArtworkPlaceholder(-39.9, 3, 46, Math.PI / 2, 'https://i.imgur.com/Ne2QW0P.jpg', { title: "App Valv 1" }, pRed, lCyan);
-            addArtworkPlaceholder(-39.9, 3, 51, Math.PI / 2, 'https://i.imgur.com/WbiHLes.png', { title: "App Valv 2" }, pRed, lCyan);
-            addArtworkPlaceholder(-39.9, 3, 69, Math.PI / 2, 'https://i.imgur.com/ChpOXSG.png', { title: "App Valv 3" }, pRed, lCyan);
-            addArtworkPlaceholder(-39.9, 3, 74, Math.PI / 2, 'https://i.imgur.com/Ne2QW0P.jpg', { title: "App Valv 4" }, pRed, lCyan);
-
-            addPortal(-39, 0, 95, Math.PI / 2, 'https://cinematic-3d-gallery-49057404478.europe-west2.run.app', { 
-                title: "PROMPTVALVET", desc: "Över 500 AI-visioner med tillhörande krypterad master-data.", 
-                imageUrl: "https://i.imgur.com/IJm4njJ.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
-            }, pYellow);
-            addArtworkPlaceholder(-39.9, 3, 81, Math.PI / 2, 'https://i.imgur.com/oMUYiaZ.png', { title: "Verktyg 1" }, pYellow, lCyan);
-            addArtworkPlaceholder(-39.9, 3, 86, Math.PI / 2, 'https://i.edu.com/c0u8FZS.png', { title: "Verktyg 2" }, pYellow, lCyan);
-            addArtworkPlaceholder(-39.9, 3, 104, Math.PI / 2, 'https://i.imgur.com/zf6dqoA.png', { title: "Verktyg 3" }, pYellow, lCyan);
-            addArtworkPlaceholder(-39.9, 3, 109, Math.PI / 2, 'https://i.imgur.com/oMUYiaZ.png', { title: "Verktyg 4" }, pYellow, lCyan);
-
-            addPortal(39, 0, 60, -Math.PI / 2, 'konst_valvet.html', { 
-                title: "KONSTHALLEN", desc: "Ingång till de utvalda konst-utställningarna.", 
-                imageUrl: "https://i.imgur.com/qJWccGp.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
-            }, pBlue);
-            addArtworkPlaceholder(39.9, 3, 46, -Math.PI / 2, 'https://i.imgur.com/SWmCH98.png', { title: "Konst 1" }, pBlue, lCyan);
-            addArtworkPlaceholder(39.9, 3, 51, -Math.PI / 2, 'https://i.imgur.com/c0u8FZS.png', { title: "Konst 2" }, pBlue, lCyan);
-            addArtworkPlaceholder(39.9, 3, 69, -Math.PI / 2, 'https://i.imgur.com/tAgt65c.png', { title: "Konst 3" }, pBlue, lCyan);
-            addArtworkPlaceholder(39.9, 3, 74, -Math.PI / 2, 'https://i.imgur.com/sSRCbRk.png', { title: "Konst 4" }, pBlue, lCyan);
-
-            addPortal(39, 0, 95, -Math.PI / 2, 'vault_sagor.html', { 
-                title: "SAGOR & MANUS", desc: "Din självbiografi och ditt arkiv för manus och berättelser.", 
-                imageUrl: "https://i.imgur.com/YO1ZSZN.jpeg", portalEnterImage: "https://i.imgur.com/Q0eRqCC.jpeg" 
-            }, pGreen);
-            addArtworkPlaceholder(39.9, 3, 81, -Math.PI / 2, 'https://i.imgur.com/SWmCH98.png', { title: "Saga 1" }, pGreen, lCyan);
-            addArtworkPlaceholder(39.9, 3, 86, -Math.PI / 2, 'https://i.edu.com/c0u8FZS.png', { title: "Saga 2" }, pGreen, lCyan);
-            addArtworkPlaceholder(39.9, 3, 104, -Math.PI / 2, 'https://i.imgur.com/tAgt65c.png', { title: "Saga 3" }, pGreen, lCyan);
-            addArtworkPlaceholder(39.9, 3, 109, -Math.PI / 2, 'https://i.imgur.com/sSRCbRk.png', { title: "Saga 4" }, pGreen, lCyan);
-
-            const baseW = 16, baseH = 9; 
-            const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(baseW, baseH), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 }));
-            canvasMesh.position.set(0, 5, 119.9); canvasMesh.rotation.y = Math.PI;
-            canvasMesh.userData = { isArtwork: true, info: { title: "Biograf", desc: "Öppna videodatabas", isVideoModal: true } };
-            artworks.push(canvasMesh); scene.add(canvasMesh);
-
-            const decorativeDisplay = (x, w, h, img) => {
-                const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ emissive: tCyan, emissiveIntensity: 0.2 }));
-                mesh.position.set(x, 5, 119.9); mesh.rotation.y = Math.PI;
-                
-                // Textureloader fix
-                const texLoader = new THREE.TextureLoader();
-                texLoader.setCrossOrigin('anonymous');
-                texLoader.load(img, (tex) => { 
-                    tex.encoding = THREE.sRGBEncoding; 
-                    mesh.material.map = tex; 
-                    mesh.material.needsUpdate = true; 
-                });
-                scene.add(mesh);
-            };
-            decorativeDisplay(0, 16, 9, 'https://i.imgur.com/KmLEH8X.png'); 
-
-            addArtworkPlaceholder(-14, 4, 119.9, Math.PI, 'https://i.imgur.com/zD5T4MF.jpeg', { title: "Genie: The 6 Protocol" }, tCyan, lCyan, 5, 7.5);
-            addArtworkPlaceholder(-22, 4, 119.9, Math.PI, 'https://i.imgur.com/QKKMs5d.jpeg', { title: "Aura Partner" }, tCyan, lCyan, 5, 7.5);
-            addArtworkPlaceholder(-30, 4, 119.9, Math.PI, 'https://i.imgur.com/DG1ZDfG.jpeg', { title: "Konkelbärsjakten" }, tCyan, lCyan, 5, 7.5);
-            
-            addArtworkPlaceholder(14, 4, 119.9, Math.PI, 'https://i.imgur.com/NChkyqZ.jpeg', { title: "Genie Heroes" }, tCyan, lCyan, 5, 7.5);
-            addArtworkPlaceholder(22, 4, 119.9, Math.PI, 'https://i.imgur.com/8AKFLUT.jpeg', { title: "Herr Banan" }, tCyan, lCyan, 5, 7.5);
-            
-            const pedestalBaseMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
-            const pedestalRingMat = new THREE.MeshStandardMaterial({ color: tCyan, emissive: tCyan, emissiveIntensity: 0.2 });
-            
-            const createPedestalRow = (z) => {
-                [-12, -6, 0, 6, 12].forEach(x => {
-                    const group = new THREE.Group();
-                    group.position.set(x, 0.75, z);
-                    scene.add(group);
-
-                    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 1.5, 32), pedestalBaseMat);
-                    base.receiveShadow = true; 
-                    group.add(base);
-
-                    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.03, 16, 64), pedestalRingMat);
-                    ring.position.y = 0.8; 
-                    ring.rotation.x = Math.PI / 2; 
-                    group.add(ring);
-                });
-            };
-            
-            createPedestalRow(112); 
-            createPedestalRow(108); 
-            createPedestalRow(104);
-
-            loadFromFirestore();
-        };
-
-        const loadFromFirestore = () => {
-            if (!db) {
-                console.warn("N.E.X.U.S: Database not ready, retrying in 2s...");
-                setTimeout(loadFromFirestore, 2000);
-                return;
-            }
-            db.collection("artworks").get().then((querySnapshot) => {
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const info = {
-                        title: data.title,
-                        desc: data.desc,
-                        imageUrl: data.imageUrl,
-                        originalImage: data.originalImage,
-                        actionUrl: data.actionUrl,
-                        portalEnterImage: data.portalEnterImage
-                    };
-                    
-                    const existingArt = artworks.find(art => art.userData.id === doc.id);
-                    
-                    if (existingArt) {
-                        Object.assign(existingArt.userData.info, info);
-                        if(data.position) existingArt.position.set(data.position.x, data.position.y, data.position.z);
-                        if(data.rotation) existingArt.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
-                    } else {
-                        if (data.is3D) {
-                            addHandicraftDisplay(data.position.x, data.position.y - 0.75, data.position.z, info, data.modelUrl, 0xe58e26, 0xfff0dd, data.scale, 0, doc.id);
-                        } else {
-                            addArtworkPlaceholder(data.position.x, data.position.y, data.position.z, data.rotation.y, data.imageUrl, info, 0xe58e26, 0xfff0dd, 4, 3, doc.id);
-                        }
-                    }
-                });
-                if (typeof showGuideText === 'function') showGuideText("Moln-data synkroniserad.");
-            }).catch(err => {
-                console.error("N.E.X.U.S: Failed to load from Firestore:", err);
-            });
-        };
-
-        const addPortal = (x, y, z, rotY, targetUrl, info, themeColor) => {
-            const frameMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8, metalness: 0.5 });
-            const frameGeo = new THREE.BoxGeometry(6, 10, 1);
-            const frame = new THREE.Mesh(frameGeo, frameMat);
-            frame.position.set(x, y + 5, z); frame.rotation.y = rotY; scene.add(frame);
-
-            const portalMat = new THREE.MeshBasicMaterial({ color: themeColor, transparent: true, opacity: 0.8, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
-            const portalGeo = new THREE.PlaneGeometry(4.5, 8.5);
-            const portalMesh = new THREE.Mesh(portalGeo, portalMat);
-            portalMesh.position.set(x + Math.sin(rotY) * 0.51, y + 5, z + Math.cos(rotY) * 0.51);
-            portalMesh.rotation.y = rotY;
-            
-            info.actionUrl = targetUrl;
-            info.isPortal = true;
-            
-            const artId = 'portal_' + artworks.length;
-            portalMesh.userData = { isArtwork: true, highlightMesh: frame, info: info, id: artId };
-            artworks.push(portalMesh); scene.add(portalMesh);
-
-            const pLight = new THREE.PointLight(themeColor, 1.5, 10);
-            pLight.position.set(x + Math.sin(rotY) * 2, y + 5, z + Math.cos(rotY) * 2); scene.add(pLight);
-
-            const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 128; const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, 256, 128);
-            ctx.strokeStyle = themeColor; ctx.lineWidth = 8; ctx.strokeRect(0, 0, 256, 128);
-            ctx.fillStyle = '#e58e26'; ctx.font = 'bold 32px Inter, sans-serif'; ctx.textAlign = 'center';
-            ctx.fillText('OBJECT DATA', 128, 50);
-            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 48px Inter, sans-serif';
-            const count = Math.floor(Math.random() * 500) + 50;
-            ctx.fillText(count.toString(), 128, 105);
-
-            const counterTex = new THREE.CanvasTexture(canvas);
-            const counterMat = new THREE.MeshBasicMaterial({ map: counterTex, transparent: true });
-            const counterMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 1), counterMat);
-            
-            const offsetX = -Math.cos(rotY) * 4; const offsetZ = Math.sin(rotY) * 4;
-            counterMesh.position.set(x + offsetX, y + 3, z + offsetZ);
-            counterMesh.rotation.y = rotY;
-            scene.add(counterMesh);
-        };
-
-        const addArtworkPlaceholder = (x, y, z, rotY, imageUrl, info, themeColor = currentThemeHex, lightColor = 0xfff0dd, customW = 4, customH = 3, id = null) => {
-            const baseW = customW, baseH = customH, framePadding = 0.2;
-            const frame = new THREE.Mesh(new THREE.PlaneGeometry(baseW + framePadding, baseH + framePadding), new THREE.MeshStandardMaterial({ color: 0x161d2b, emissive: themeColor, emissiveIntensity: 0.5, side: THREE.DoubleSide }));
-            frame.position.set(x, y, z); frame.rotation.y = rotY; scene.add(frame);
-
-            const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(baseW, baseH), new THREE.MeshStandardMaterial({ color: 0x0a0f1a }));
-            canvasMesh.position.set(x, y, z + 0.05); canvasMesh.rotation.y = rotY;
-            
-            if (imageUrl) {
-                const texLoader = new THREE.TextureLoader(); texLoader.setCrossOrigin('anonymous'); 
-                texLoader.load(imageUrl, (tex) => { 
-                    tex.encoding = THREE.sRGBEncoding; canvasMesh.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.3, metalness: 0.1 });
-                    const aspect = tex.image.width / tex.image.height;
-                    const tW = aspect > 1 ? baseW : (baseH + 0.5) * aspect;
-                    const tH = aspect > 1 ? baseW / aspect : baseH + 0.5;
-                    canvasMesh.scale.set(tW / baseW, tH / baseH, 1);
-                    frame.scale.set((tW + framePadding) / (baseW + framePadding), (tH + framePadding) / (baseH + framePadding), 1);
-                }, undefined, (err) => { console.warn("Could not load artwork image: " + imageUrl, err); });
-            }
-            
-            info.imageUrl = imageUrl;
-            const artId = id || 'art_' + artworks.length;
-            canvasMesh.userData = { isArtwork: true, highlightMesh: frame, info: info, id: artId }; 
-            artworks.push(canvasMesh); scene.add(canvasMesh);
-        };
-
-        const addHandicraftDisplay = (x, y, z, info, modelUrl, themeColor = currentThemeHex, lightColor = 0xfff0dd, modelScale = 1, yOffset = 0, id = null) => {
-            const group = new THREE.Group();
-            group.position.set(x, y + 0.75, z);
-            scene.add(group);
-
-            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 1.5, 32), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 }));
-            base.receiveShadow = true; 
-            group.add(base);
-
-            const hitBox = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 2), new THREE.MeshBasicMaterial({ visible: false }));
-            hitBox.position.y = 1.25; 
-            group.add(hitBox);
-
-            const ring = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.03, 16, 64), new THREE.MeshStandardMaterial({ color: themeColor, emissive: themeColor, emissiveIntensity: 0.0 }));
-            ring.position.y = 0.8; ring.rotation.x = Math.PI / 2; 
-            group.add(ring);
-
-            const artId = id || 'art_' + artworks.length;
-            group.userData = { isArtwork: true, highlightMesh: ring, info: info, is3D: true, id: artId }; 
-            artworks.push(group);
-
-            if (modelUrl) {
-                mainGltfLoader.load(modelUrl, (gltf) => {
-                    const artMesh = gltf.scene; 
-                    artMesh.scale.set(modelScale, modelScale, modelScale); 
-                    artMesh.position.y = 0.75 + yOffset; 
-                    group.add(artMesh); 
-                    group.userData.modelMesh = artMesh;
-
-                    if (gltf.animations && gltf.animations.length > 0) {
-                        const mixer = new THREE.AnimationMixer(artMesh);
-                        const action = mixer.clipAction(gltf.animations[0]);
-                        action.play();
-                        group.userData.mixer = mixer;
-                    }
-                }, undefined, (err) => { console.warn("Could not load 3D model: " + modelUrl, err); });
-            }
-        };
-
         const populateInfoPanel = (info, is3D) => {
             const isEditMode = document.getElementById('edit-mode-toggle').checked;
             
@@ -1827,7 +1833,7 @@
             if (isDragging) { 
                 const deltaX = event.clientX - previousMousePosition.x; const deltaY = event.clientY - previousMousePosition.y;
                 if (isFocused && focusedArtwork && focusedArtwork.userData.is3D && !focusedArtwork.userData.info.isPortal) {
-                    if (focusedArtwork.userData.modelMesh) {
+                    if (focusedArtwork.userData.modelMesh && focusedArtwork.userData.id !== 'magic_map') {
                         focusedArtwork.userData.modelMesh.rotation.y += deltaX * 0.01;
                     }
                 }
@@ -2046,10 +2052,6 @@
                 }
                 ambientParticles.geometry.attributes.position.needsUpdate = true;
             }
-
-            // if (tacticalMapGroup) {
-            //     tacticalMapGroup.position.y = 0.6 + Math.sin(clock.getElapsedTime() * 1.5) * 0.05;
-            // }
 
             cornerHolos.forEach(holo => {
                 holo.rotation.x += delta * 0.5;
