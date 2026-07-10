@@ -85,8 +85,8 @@
     <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeModal()"></div>
     
     <div class="relative inline-flex flex-col items-center justify-center max-w-full max-h-[90vh] modal-fade-in">
-      <img id="modal-img" src="" class="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-[0_0_100px_rgba(0,0,0,0.9)] pointer-events-auto" />
-      <button onclick="closeModal()" class="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-black/50 hover:bg-neutral-800 border border-neutral-700 hover:border-white rounded-full text-neutral-400 hover:text-white transition-all backdrop-blur-xl z-50 pointer-events-auto">
+      <img id="modal-img" src="" class="max-w-full max-h-[90vh] object-contain rounded-[2rem] border border-slate-800 shadow-[0_0_100px_rgba(0,0,0,0.9)] pointer-events-auto" />
+      <button onclick="closeModal()" class="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-black/50 hover:bg-neutral-800 border border-neutral-700 hover:border-[#e58e26] rounded-full text-neutral-400 hover:text-white transition-all backdrop-blur-xl z-50 pointer-events-auto">
         <i data-lucide="x"></i>
       </button>
     </div>
@@ -122,7 +122,11 @@
       { id: '3d_link', type: 'link', category: 'art', x: 180, y: -600, title: '3D-Hallen', url: '3dhallen.html', buttonImageUrl: 'https://i.imgur.com/Fz6iDRc.png' },
 
       // SILVRIG GREN (Mitten, rakt ner, kort tråd, stor som guld-core)
-      { id: 'silver_portal', type: 'portal', category: 'silver', x: 0, y: 150, title: 'Skifta till 3D-Hallen', buttonImageUrl: 'https://i.imgur.com/mbGOeDq.png', modal: { imageUrl: 'https://i.imgur.com/ymWqPo3.jpeg', linkUrl: '3dhallen.html' } }
+      { id: 'silver_portal', type: 'portal', category: 'silver', x: 0, y: 150, title: 'Skifta till 3D-Hallen', buttonImageUrl: 'https://i.imgur.com/mbGOeDq.png', modal: { imageUrl: 'https://i.imgur.com/ymWqPo3.jpeg', linkUrl: '3dhallen.html' } },
+
+      // NYA KNAPPAR UNDER PORTALEN
+      { id: 'genie_kortspel', type: 'link', category: 'silver', x: -140, y: 310, title: 'Genie kortspel', url: 'https://b10msk1.github.io/kortspelet/', buttonImageUrl: 'https://i.imgur.com/JURi3rD.jpeg' },
+      { id: 'aura_intim', type: 'link', category: 'silver', x: 140, y: 310, title: 'Aura intim app', url: 'https://b10msk1.github.io/aura/', buttonImageUrl: 'https://i.imgur.com/QKKMs5d.jpg' }
     ];
 
     const mapEdges = [
@@ -142,12 +146,13 @@
       { from: 'art_1', to: 'art_2', branch: 'art' },
       { from: 'art_2', to: 'art_3', branch: 'art' },
       { from: 'art_3', to: 'art_4', branch: 'art' },
-      // Y-korsningen från Betong
       { from: 'art_4', to: 'art_link', branch: 'art' },
       { from: 'art_4', to: '3d_link', branch: 'art' },
 
       // Silvrig Tråd
-      { from: 'core', to: 'silver_portal', branch: 'silver' }
+      { from: 'core', to: 'silver_portal', branch: 'silver' },
+      { from: 'silver_portal', to: 'genie_kortspel', branch: 'silver' },
+      { from: 'silver_portal', to: 'aura_intim', branch: 'silver' }
     ];
 
     // --- DOM ELEMENT ---
@@ -207,12 +212,19 @@
         const el = document.createElement(isLink ? 'a' : 'div');
         
         if (isLink) {
+          if (node.url.startsWith('http')) {
+            el.href = node.url;
+            el.target = '_blank';
+            el.rel = 'noopener noreferrer';
+          } else {
             el.href = './' + node.url;
+          }
         }
 
         const isCore = node.type === 'core';
         const isPortal = node.type === 'portal';
         const isLarge = isCore || isPortal;
+        const isNewNode = node.id === 'genie_kortspel' || node.id === 'aura_intim';
         
         el.className = `absolute transition-all duration-500 hover:scale-110 flex items-center justify-center group outline-none cursor-pointer ${isLarge ? 'w-40 h-40 z-30' : 'w-40 h-16 z-20'}`;
         el.style.left = `calc(50% + ${node.x}px)`;
@@ -234,14 +246,22 @@
 
         let imgShadow = 'drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]';
         if (isCore) {
-            imgShadow = 'drop-shadow-[0_0_25px_rgba(229,142,38,0.3)] group-hover:drop-shadow-[0_0_35px_rgba(229,142,38,0.6)]';
+            imgShadow = 'drop-shadow-[0_0_25px_rgba(229,142,38,0.35)] group-hover:drop-shadow-[0_0_35px_rgba(229,142,38,0.6)]';
         } else if (isPortal) {
-            imgShadow = 'drop-shadow-[0_0_25px_rgba(148,163,184,0.3)] group-hover:drop-shadow-[0_0_35px_rgba(148,163,184,0.6)]';
+            imgShadow = 'drop-shadow-[0_0_25px_rgba(148,163,184,0.35)] group-hover:drop-shadow-[0_0_35px_rgba(148,163,184,0.6)]';
+        } else if (isNewNode) {
+            imgShadow = 'drop-shadow-[0_0_20px_rgba(229,142,38,0.3)] group-hover:drop-shadow-[0_0_30px_rgba(229,142,38,0.55)]';
+        }
+
+        let imageStyles = '';
+        if (isNewNode) {
+          imageStyles = 'style="border-radius: 9999px; border: 1px solid rgba(229,142,38,0.3); padding: 2px; background-color: rgba(0,0,0,0.4);"';
         }
 
         el.innerHTML = `
           ${pulseHTML}
-          <img src="${node.buttonImageUrl}" alt="${node.title}" draggable="false" class="w-full h-full object-contain transition-transform duration-500 group-hover:rotate-2 relative z-10 ${imgShadow} pointer-events-none">
+          <img src="${node.buttonImageUrl}" ${imageStyles} alt="${node.title}" draggable="false" class="w-full h-full object-contain transition-transform duration-500 group-hover:rotate-2 relative z-10 ${imgShadow} pointer-events-none">
+          ${isNewNode ? '<div class="absolute inset-0 rounded-full border border-dashed border-[#e58e26]/40 group-hover:border-[#e58e26] animate-[spin_20s_linear_infinite] pointer-events-none z-10"></div>' : ''}
         `;
 
         el.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -341,3 +361,648 @@
   </script>
 </body>
 </html>
+Alternativ 2: React-koden (för din AI Studio-miljö)
+Om du snarare ville ha källkodstexten för /src/App.tsx som jag precis modifierade och lanserade i appleten, så är det den här:
+code
+TypeScript
+import React, { useState, useEffect, useRef } from "react";
+import { X, RefreshCw, Compass, Link2, ExternalLink, ShieldAlert } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+
+// --- TYPDEFINITIONER ---
+interface NodeModal {
+  imageUrl: string;
+  linkUrl?: string;
+}
+
+interface MapNode {
+  id: string;
+  type: "core" | "info" | "link" | "portal";
+  category: "core" | "dna" | "prompt" | "art" | "silver";
+  x: number;
+  y: number;
+  title: string;
+  buttonImageUrl: string;
+  url?: string;
+  modal?: NodeModal;
+}
+
+interface MapEdge {
+  from: string;
+  to: string;
+  branch: "dna" | "prompt" | "art" | "silver";
+}
+
+// --- NOD- OCH KANT-DATABAS ---
+const mapNodes: MapNode[] = [
+  // Core Node
+  {
+    id: "core",
+    type: "core",
+    category: "core",
+    x: 0,
+    y: 0,
+    title: "Jonas Blomquist",
+    buttonImageUrl: "https://i.imgur.com/e15bk2d.png",
+    modal: { imageUrl: "https://i.imgur.com/jBnpApX.jpeg" }
+  },
+  
+  // HÖGER GREN: DNA (App-Valv)
+  {
+    id: "dna_1",
+    type: "info",
+    category: "dna",
+    x: 150,
+    y: -90,
+    title: "DNA-Arkivarien",
+    buttonImageUrl: "https://i.imgur.com/PFAdjgu.png",
+    modal: { imageUrl: "https://i.imgur.com/Ne2QW0P.jpeg" }
+  },
+  {
+    id: "dna_2",
+    type: "info",
+    category: "dna",
+    x: 260,
+    y: 70,
+    title: "Fragmenteraren",
+    buttonImageUrl: "https://i.imgur.com/ca2F98e.png",
+    modal: { imageUrl: "https://i.imgur.com/WbiHLes.png" }
+  },
+  {
+    id: "dna_3",
+    type: "info",
+    category: "dna",
+    x: 370,
+    y: -100,
+    title: "Analysatorn",
+    buttonImageUrl: "https://i.imgur.com/aR5GMF8.png",
+    modal: { imageUrl: "https://i.imgur.com/ChpOXSG.png" }
+  },
+  {
+    id: "dna_link",
+    type: "link",
+    category: "dna",
+    x: 480,
+    y: 50,
+    title: "Öppna App-Valv",
+    url: "appvalvet.html",
+    buttonImageUrl: "https://i.imgur.com/6CFcYkI.png"
+  },
+  {
+    id: "dna_3d_link",
+    type: "link",
+    category: "dna",
+    x: 480,
+    y: -250,
+    title: "3D-Hallen",
+    url: "3dhallen.html",
+    buttonImageUrl: "https://i.imgur.com/Fz6iDRc.png"
+  },
+  
+  // VÄNSTER GREN: PROMPT (Kreationer)
+  {
+    id: "prompt_1",
+    type: "info",
+    category: "prompt",
+    x: -150,
+    y: -90,
+    title: "Prompt Scout Flow",
+    buttonImageUrl: "https://i.imgur.com/zJhIYWA.png",
+    modal: { imageUrl: "https://i.imgur.com/oMUYiaZ.png" }
+  },
+  {
+    id: "prompt_2",
+    type: "info",
+    category: "prompt",
+    x: -260,
+    y: 70,
+    title: "Ad Scout Flow",
+    buttonImageUrl: "https://i.imgur.com/akeUclH.png",
+    modal: { imageUrl: "https://i.imgur.com/zf6dqoA.png" }
+  },
+  {
+    id: "prompt_3",
+    type: "info",
+    category: "prompt",
+    x: -370,
+    y: -100,
+    title: "Prompt Scout Motion",
+    buttonImageUrl: "https://i.imgur.com/X3hHys6.png",
+    modal: { imageUrl: "https://i.imgur.com/RvTLUrJ.png" }
+  },
+  {
+    id: "prompt_link",
+    type: "link",
+    category: "prompt",
+    x: -480,
+    y: 50,
+    title: "Öppna Kreationer",
+    url: "promptvalvet.html",
+    buttonImageUrl: "https://i.imgur.com/QffWYdp.png"
+  },
+  {
+    id: "prompt_3d_link",
+    type: "link",
+    category: "prompt",
+    x: -480,
+    y: -250,
+    title: "3D-Hallen",
+    url: "3dhallen.html",
+    buttonImageUrl: "https://i.imgur.com/Fz6iDRc.png"
+  },
+
+  // NY GREN UPPÅT: KONSTHALL & 3D-HALL
+  {
+    id: "art_1",
+    type: "info",
+    category: "art",
+    x: -80,
+    y: -160,
+    title: "Trä",
+    buttonImageUrl: "https://i.imgur.com/5XWTlKx.png",
+    modal: { imageUrl: "https://i.imgur.com/tAgt65c.png" }
+  },
+  {
+    id: "art_2",
+    type: "info",
+    category: "art",
+    x: 80,
+    y: -270,
+    title: "Sten",
+    buttonImageUrl: "https://i.imgur.com/XFaUeAZ.png",
+    modal: { imageUrl: "https://i.imgur.com/sSRCbRk.png" }
+  },
+  {
+    id: "art_3",
+    type: "info",
+    category: "art",
+    x: -80,
+    y: -380,
+    title: "Glas",
+    buttonImageUrl: "https://i.imgur.com/JCMZdfK.png",
+    modal: { imageUrl: "https://i.imgur.com/c0u8FZS.png" }
+  },
+  {
+    id: "art_4",
+    type: "info",
+    category: "art",
+    x: 80,
+    y: -490,
+    title: "Betong",
+    buttonImageUrl: "https://i.imgur.com/OvZ5usY.png",
+    modal: { imageUrl: "https://i.imgur.com/SWmCH98.png" }
+  },
+  // Förgrening från Betong (Y-korsning)
+  {
+    id: "art_link",
+    type: "link",
+    category: "art",
+    x: -20,
+    y: -600,
+    title: "Art Vault",
+    url: "konsthall.html",
+    buttonImageUrl: "https://i.imgur.com/ON1QUaC.png"
+  },
+  {
+    id: "3d_link",
+    type: "link",
+    category: "art",
+    x: 180,
+    y: -600,
+    title: "3D-Hallen",
+    url: "3dhallen.html",
+    buttonImageUrl: "https://i.imgur.com/Fz6iDRc.png"
+  },
+
+  // SILVRIG GREN (Mitten, rakt ner, kort tråd, stor som guld-core)
+  {
+    id: "silver_portal",
+    type: "portal",
+    category: "silver",
+    x: 0,
+    y: 150,
+    title: "Skifta till 3D-Hallen",
+    buttonImageUrl: "https://i.imgur.com/mbGOeDq.png",
+    modal: { imageUrl: "https://i.imgur.com/ymWqPo3.jpeg", linkUrl: "3dhallen.html" }
+  },
+
+  // NYA KNAPPAR (Placerade längst ner på sidan under 3d valv-knappen)
+  {
+    id: "genie_kortspel",
+    type: "link",
+    category: "silver",
+    x: -140,
+    y: 310,
+    title: "Genie kortspel",
+    url: "https://b10msk1.github.io/kortspelet/",
+    buttonImageUrl: "https://i.imgur.com/JURi3rD.jpeg"
+  },
+  {
+    id: "aura_intim",
+    type: "link",
+    category: "silver",
+    x: 140,
+    y: 310,
+    title: "Aura intim app",
+    url: "https://b10msk1.github.io/aura/",
+    buttonImageUrl: "https://i.imgur.com/QKKMs5d.jpg"
+  }
+];
+
+const mapEdges: MapEdge[] = [
+  { from: "core", to: "dna_1", branch: "dna" },
+  { from: "dna_1", to: "dna_2", branch: "dna" },
+  { from: "dna_2", to: "dna_3", branch: "dna" },
+  { from: "dna_3", to: "dna_link", branch: "dna" },
+  { from: "dna_3", to: "dna_3d_link", branch: "dna" },
+  
+  { from: "core", to: "prompt_1", branch: "prompt" },
+  { from: "prompt_1", to: "prompt_2", branch: "prompt" },
+  { from: "prompt_2", to: "prompt_3", branch: "prompt" },
+  { from: "prompt_3", to: "prompt_link", branch: "prompt" },
+  { from: "prompt_3", to: "prompt_3d_link", branch: "prompt" },
+
+  { from: "core", to: "art_1", branch: "art" },
+  { from: "art_1", to: "art_2", branch: "art" },
+  { from: "art_2", to: "art_3", branch: "art" },
+  { from: "art_3", to: "art_4", branch: "art" },
+  { from: "art_4", to: "art_link", branch: "art" },
+  { from: "art_4", to: "3d_link", branch: "art" },
+
+  // Silvrig Tråd rakt ner
+  { from: "core", to: "silver_portal", branch: "silver" },
+
+  // Förgrening under silver_portal till de nya apparna
+  { from: "silver_portal", to: "genie_kortspel", branch: "silver" },
+  { from: "silver_portal", to: "aura_intim", branch: "silver" }
+];
+
+export default function App() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const scrollStart = useRef({ left: 0, top: 0 });
+  
+  const [isDragging, setIsDragging] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalImg, setModalImg] = useState("");
+  const [currentModalLink, setCurrentModalLink] = useState<string | null>(null);
+
+  // Scrolla till centrum när sidan laddas
+  useEffect(() => {
+    recenterMap();
+  }, []);
+
+  const recenterMap = () => {
+    if (containerRef.current) {
+      const container = containerRef.current;
+      container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
+      container.scrollTop = (container.scrollHeight - container.clientHeight) / 2;
+    }
+  };
+
+  // Panneringshantering (Mus)
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    setIsDragging(true);
+    dragStart.current = {
+      x: e.pageX - containerRef.current.offsetLeft,
+      y: e.pageY - containerRef.current.offsetTop,
+    };
+    scrollStart.current = {
+      left: containerRef.current.scrollLeft,
+      top: containerRef.current.scrollTop,
+    };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !containerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - containerRef.current.offsetLeft;
+    const y = e.pageY - containerRef.current.offsetTop;
+    const walkX = (x - dragStart.current.x) * 1.5;
+    const walkY = (y - dragStart.current.y) * 1.5;
+    containerRef.current.scrollLeft = scrollStart.current.left - walkX;
+    containerRef.current.scrollTop = scrollStart.current.top - walkY;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    setIsDragging(false);
+  };
+
+  // Panneringshantering (Touch)
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!containerRef.current || e.touches.length === 0) return;
+    setIsDragging(true);
+    dragStart.current = {
+      x: e.touches[0].pageX - containerRef.current.offsetLeft,
+      y: e.touches[0].pageY - containerRef.current.offsetTop,
+    };
+    scrollStart.current = {
+      left: containerRef.current.scrollLeft,
+      top: containerRef.current.scrollTop,
+    };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging || !containerRef.current || e.touches.length === 0) return;
+    const x = e.touches[0].pageX - containerRef.current.offsetLeft;
+    const y = e.touches[0].pageY - containerRef.current.offsetTop;
+    const walkX = (x - dragStart.current.x) * 1.5;
+    const walkY = (y - dragStart.current.y) * 1.5;
+    containerRef.current.scrollLeft = scrollStart.current.left - walkX;
+    containerRef.current.scrollTop = scrollStart.current.top - walkY;
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  const openModal = (imgUrl: string, linkUrl?: string) => {
+    setModalImg(imgUrl);
+    setCurrentModalLink(linkUrl || null);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalImg("");
+    setCurrentModalLink(null);
+  };
+
+  const getUrl = (url: string) => {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    return `./${url}`;
+  };
+
+  return (
+    <div className="relative min-h-screen w-full bg-[#0a0f1a] text-slate-100 font-sans overflow-hidden select-none">
+      
+      {/* Sömlös roterande rymdbakgrund */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div 
+          className="w-[300vw] h-[300vh] absolute -top-[100vh] -left-[100vw] opacity-70 bg-cover bg-center animate-space-spin"
+          style={{ backgroundImage: "url('https://i.imgur.com/03qVtdg.jpeg')" }}
+        />
+        <div className="absolute inset-0 bg-radial-gradient pointer-events-none" />
+      </div>
+
+      {/* Taktiskt HUD Gränssnitt */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-[#0f172a]/80 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#e58e26] animate-[pulse_2s_infinite]" />
+          <div>
+            <h1 className="text-xs font-black uppercase italic tracking-tighter text-slate-100 flex items-center gap-1.5">
+              N.E.X.U.S Node Map <span className="text-[9px] font-black tracking-widest text-[#e58e26] uppercase px-1.5 py-0.5 rounded border border-[#e58e26]/30 bg-[#e58e26]/10">v2.1</span>
+            </h1>
+            <p className="text-[9px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">Tactical Portal Network &amp; Vaults</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={recenterMap}
+            className="flex items-center space-x-1 px-3 py-1.5 rounded-lg border border-slate-800 bg-[#161d2b]/80 hover:border-[#e58e26] hover:bg-[#161d2b] hover:text-white transition-all text-slate-400 text-[10px] font-black uppercase tracking-widest cursor-pointer"
+          >
+            <Compass className="w-3.5 h-3.5 text-[#e58e26]" />
+            <span className="hidden sm:inline">Centrera</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Huvudkarta */}
+      <main 
+        ref={containerRef}
+        className={`h-screen w-full overflow-auto relative z-10 cursor-grab ${isDragging ? "cursor-grabbing" : ""}`}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUpOrLeave}
+        onMouseLeave={handleMouseUpOrLeave}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="w-[3000px] h-[3000px] relative flex items-center justify-center" id="map-area">
+          
+          {/* SVG Linjesystem */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-0">
+            <g transform="translate(1500, 1500)">
+              {mapEdges.map((edge, index) => {
+                const from = mapNodes.find(n => n.id === edge.from);
+                const to = mapNodes.find(n => n.id === edge.to);
+                if (!from || !to) return null;
+
+                const isVertical = Math.abs(from.y - to.y) > Math.abs(from.x - to.x);
+                let path = "";
+                if (isVertical) {
+                  const midY = (from.y + to.y) / 2;
+                  path = `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`;
+                } else {
+                  const midX = (from.x + to.x) / 2;
+                  path = `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`;
+                }
+
+                let pulseClass = "animate-data-flow-emerald"; 
+                if (edge.branch === "dna") pulseClass = "animate-data-flow-amber";
+                else if (edge.branch === "art") pulseClass = "animate-data-flow-purple";
+                else if (edge.branch === "silver") pulseClass = "animate-data-flow-silver";
+                
+                return (
+                  <g key={`${edge.from}-${edge.to}-${index}`}>
+                    <path d={path} fill="none" stroke="#0f172a" strokeWidth="5" className="opacity-90" />
+                    <path d={path} fill="none" stroke="#1e293b" strokeWidth="3" />
+                    <path d={path} fill="none" strokeWidth="2" className={`${pulseClass} opacity-90`} />
+                  </g>
+                );
+              })}
+            </g>
+          </svg>
+
+          {/* Interaktiva Noder */}
+          {mapNodes.map((node) => {
+            const isLink = !!node.url;
+            const isCore = node.type === "core";
+            const isPortal = node.type === "portal";
+            const isLarge = isCore || isPortal;
+            const isNewNode = node.id === "genie_kortspel" || node.id === "aura_intim";
+            
+            let pulseColor = "bg-emerald-500";
+            let pulseAnim = "animate-[pulse_3s_ease-in-out_infinite]";
+            if (node.category === "dna") {
+              pulseColor = "bg-amber-500";
+              pulseAnim = "animate-[pulse_4s_ease-in-out_infinite]";
+            } else if (node.category === "art") {
+              pulseColor = "bg-purple-500";
+              pulseAnim = "animate-[pulse_3.5s_ease-in-out_infinite]";
+            } else if (node.category === "silver") {
+              pulseColor = "bg-slate-400";
+              pulseAnim = "animate-[pulse_4s_ease-in-out_infinite]";
+            }
+
+            let imgShadow = "drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]";
+            if (isCore) {
+              imgShadow = "drop-shadow-[0_0_25px_rgba(229,142,38,0.35)] group-hover:drop-shadow-[0_0_35px_rgba(229,142,38,0.6)]";
+            } else if (isPortal) {
+              imgShadow = "drop-shadow-[0_0_25px_rgba(148,163,184,0.35)] group-hover:drop-shadow-[0_0_35px_rgba(148,163,184,0.6)]";
+            } else if (isNewNode) {
+              imgShadow = "drop-shadow-[0_0_20px_rgba(229,142,38,0.3)] group-hover:drop-shadow-[0_0_30px_rgba(229,142,38,0.55)]";
+            }
+
+            const handleClick = (e: React.MouseEvent) => {
+              e.stopPropagation();
+              if (isLink && node.url) {
+                if (node.url.startsWith("http")) {
+                  window.open(node.url, "_blank", "noopener,noreferrer");
+                } else {
+                  window.location.href = `./${node.url}`;
+                }
+              } else if (node.modal) {
+                openModal(node.modal.imageUrl, node.modal.linkUrl);
+              }
+            };
+
+            return (
+              <div
+                key={node.id}
+                className={`absolute flex items-center justify-center group outline-none cursor-pointer transition-all duration-500 hover:scale-112 ${
+                  isLarge ? "w-40 h-40 z-30" : "w-40 h-16 z-20"
+                }`}
+                style={{
+                  left: `calc(50% + ${node.x}px)`,
+                  top: `calc(50% + ${node.y}px)`,
+                  transform: "translate(-50%, -50%)",
+                }}
+                onClick={handleClick}
+              >
+                {isCore ? (
+                  <div className="absolute inset-0 bg-[#e58e26] rounded-full blur-2xl opacity-25 group-hover:opacity-55 transition-opacity duration-500 animate-[pulse_4s_ease-in-out_infinite] pointer-events-none" />
+                ) : isPortal ? (
+                  <div className="absolute inset-0 bg-slate-400 rounded-full blur-2xl opacity-25 group-hover:opacity-55 transition-opacity duration-500 animate-[pulse_4s_ease-in-out_infinite] pointer-events-none" />
+                ) : (
+                  <div className={`absolute inset-2 blur-xl opacity-35 group-hover:opacity-75 transition-opacity duration-500 pointer-events-none rounded-full ${pulseColor} ${pulseAnim}`} />
+                )}
+
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <img
+                    src={node.buttonImageUrl}
+                    alt={node.title}
+                    draggable="false"
+                    className={`w-full h-full object-contain transition-transform duration-500 group-hover:rotate-1 relative z-10 ${imgShadow} pointer-events-none ${
+                      isNewNode ? "rounded-full border border-[#e58e26]/30 p-0.5 bg-black/40 group-hover:border-[#e58e26]" : ""
+                    }`}
+                  />
+
+                  {isNewNode && (
+                    <div className="absolute inset-0 rounded-full border border-dashed border-[#e58e26]/40 group-hover:border-[#e58e26] animate-[spin_20s_linear_infinite] pointer-events-none z-10" />
+                  )}
+
+                  {isLink && !isLarge && (
+                    <div className="absolute right-3 bottom-0.5 z-20 bg-black/80 border border-slate-800 text-slate-400 group-hover:text-[#e58e26] group-hover:border-[#e58e26] p-1 rounded-md text-[8px] transition-all">
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="absolute -bottom-8 bg-[#0f172a]/95 border border-slate-800 group-hover:border-[#e58e26] px-3 py-1 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-40 whitespace-nowrap">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-100 flex items-center gap-1.5">
+                    {node.title}
+                    {isLink && <span className="text-[8px] font-medium text-[#e58e26] tracking-normal lowercase">{node.url?.startsWith("http") ? "extern" : "intern"}</span>}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+
+        </div>
+      </main>
+
+      {/* Legend */}
+      <footer className="fixed bottom-6 left-6 z-40 bg-[#0f172a]/80 backdrop-blur-md border border-slate-800 px-4 py-3 rounded-2xl max-w-xs shadow-2xl pointer-events-auto">
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2 border-b border-slate-800 pb-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-ping" />
+            <h3 className="text-[9px] font-black uppercase tracking-widest text-slate-400">NET_MAP LEGEND</h3>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-[9px] font-semibold text-slate-300">
+              <span className="flex items-center"><span className="w-2 h-2 rounded-full bg-[#e58e26] mr-1.5" />DNA-VALV</span>
+              <span className="text-slate-500 tracking-wider">AMBER_FLOW</span>
+            </div>
+            <div className="flex items-center justify-between text-[9px] font-semibold text-slate-300">
+              <span className="flex items-center"><span className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />KREATIONER</span>
+              <span className="text-slate-500 tracking-wider">EMERALD_FLOW</span>
+            </div>
+            <div className="flex items-center justify-between text-[9px] font-semibold text-slate-300">
+              <span className="flex items-center"><span className="w-2 h-2 rounded-full bg-purple-500 mr-1.5" />KONST / 3D</span>
+              <span className="text-slate-500 tracking-wider">PURPLE_FLOW</span>
+            </div>
+            <div className="flex items-center justify-between text-[9px] font-semibold text-slate-300">
+              <span className="flex items-center"><span className="w-2 h-2 rounded-full bg-slate-400 mr-1.5" />3D-PORTALER</span>
+              <span className="text-slate-500 tracking-wider">SILVER_FLOW</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Status */}
+      <div className="fixed bottom-6 right-6 z-40 bg-[#0f172a]/80 backdrop-blur-md border border-slate-800 px-4 py-3 rounded-2xl shadow-2xl pointer-events-auto flex flex-col space-y-1">
+        <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">SYSTEM_FEED_INFO</span>
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-[pulse_1.5s_infinite]" />
+          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">ONLINE</span>
+        </div>
+        <span className="text-[8px] font-mono text-slate-500 tracking-wider">COORDINATES: X0.Y0</span>
+      </div>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {modalOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+          >
+            <div className="absolute inset-0 bg-black/85 backdrop-blur-md" onClick={closeModal} />
+            
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              className="relative inline-flex flex-col items-center justify-center max-w-full max-h-[90vh] z-10"
+            >
+              <img
+                src={modalImg}
+                alt="Modal vy"
+                className={`max-w-full max-h-[90vh] object-contain rounded-[2rem] border border-slate-800 shadow-[0_0_100px_rgba(0,0,0,0.95)] pointer-events-auto ${
+                  currentModalLink ? "cursor-pointer hover:scale-[1.01] transition-transform duration-300 border-[#e58e26]/30 hover:border-[#e58e26]" : ""
+                }`}
+                onClick={() => {
+                  if (currentModalLink) {
+                    window.open(getUrl(currentModalLink), "_blank", "noopener,noreferrer");
+                  }
+                }}
+              />
+              
+              {currentModalLink && (
+                <div className="absolute bottom-4 bg-[#0f172a]/95 border border-[#e58e26]/50 text-[#e58e26] text-[9px] font-black uppercase tracking-widest px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-2xl backdrop-blur-md pointer-events-none">
+                  <Link2 className="w-3.5 h-3.5" />
+                  Klicka på bilden för att öppna {currentModalLink}
+                </div>
+              )}
+
+              <button 
+                onClick={closeModal} 
+                className="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-black/70 hover:bg-neutral-800 border border-slate-700 hover:border-[#e58e26] hover:text-white rounded-full text-slate-400 transition-all backdrop-blur-xl z-50 pointer-events-auto cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
